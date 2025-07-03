@@ -285,26 +285,34 @@ function rollD6(count) {
 
 function handlePasteImage(event) {
   console.log('📋 paste event fired!', event);
+
   const items = (event.clipboardData || event.originalEvent.clipboardData).items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (item.type.startsWith('image/')) {
+      // **1)** Stop the browser from inserting the blob itself
+      event.preventDefault();
+
       const file = item.getAsFile();
       console.log('🖼️ got image file', file);
 
-      // upload to storage…
+      // **2)** Upload to Firebase Storage
       const path = `chatImages/${Date.now()}_${file.name}`;
       const storageRef = storage.ref(path);
       storageRef.put(file)
-        .then(snap => snap.ref.getDownloadURL())
+        .then(snapshot => snapshot.ref.getDownloadURL())
         .then(url => {
           console.log('✅ got download URL', url);
+
           const user = auth.currentUser;
           if (!user || !selectedSessionId) {
-            console.warn('🔒 no user or session, aborting message send');
+            console.warn('🔒 no user or session, aborting');
             return;
           }
+
           const characterName = document.getElementById('player-name').value || user.email;
+
+          // **3)** Send the message with imageUrl
           return db.collection('sessions')
                    .doc(selectedSessionId)
                    .collection('chat')
@@ -315,11 +323,14 @@ function handlePasteImage(event) {
                      color: "#ffffff"
                    });
         })
-        .then(() => console.log('📸 image message sent to Firestore!'))
+        .then(() => console.log('📸 image message sent!'))
         .catch(err => {
           console.error('🔥 upload or Firestore write failed', err);
           alert('Failed to upload image.');
-        
+        });
+
+      // **4)** Only handle the first image
+      return;
     }
   }
 }

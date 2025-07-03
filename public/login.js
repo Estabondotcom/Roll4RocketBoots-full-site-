@@ -319,11 +319,7 @@ function handlePasteImage(event) {
         .catch(err => {
           console.error('🔥 upload or Firestore write failed', err);
           alert('Failed to upload image.');
-        });
-
-      // prevent the default "insert image blob" behavior
-      event.preventDefault();
-      return;  // only handle the first image
+        
     }
   }
 }

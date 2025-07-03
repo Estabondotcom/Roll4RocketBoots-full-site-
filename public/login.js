@@ -236,26 +236,65 @@ function setupChatListener(sessionId) {
 
 function sendChatMessage() {
   const input = document.getElementById('chatInput');
-  const message = input.innerText.trim();
-
-  if (!selectedSessionId || !auth.currentUser) return alert('Must be logged in and in a session.');
-  if (!message) {
-    // no text, but maybe an image was already pasted
-    input.innerText = ''; // still clear it
+  const text = input.innerText.trim();
+  const imgs = Array.from(input.querySelectorAll('img'));
+  
+  if (!selectedSessionId || !auth.currentUser) {
+    return alert('Must be logged in and in a session.');
+  }
+  // nothing to send?
+  if (!text && imgs.length === 0) {
+    input.innerHTML = '';
     return;
   }
 
   const user = auth.currentUser;
   const characterName = document.getElementById('player-name').value || user.email;
 
-  db.collection("users").doc(user.uid).get().then(doc => {
-    const color = doc.data()?.displayNameColor || "#ffffff";
-    db.collection('sessions').doc(selectedSessionId).collection('chat').add({
-      characterName,
-      text: message,
-      color,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => input.innerText = '');
+  // fetch your saved color once
+  db.collection("users").doc(user.uid).get().then(userDoc => {
+    const color = userDoc.data()?.displayNameColor || "#ffffff";
+
+    // build an array of promises: one for the text message, one per image
+    const writes = [];
+
+    if (text) {
+      writes.push(
+        db.collection('sessions')
+          .doc(selectedSessionId)
+          .collection('chat')
+          .add({
+            characterName,
+            text,
+            color,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          })
+      );
+    }
+
+    imgs.forEach(img => {
+      writes.push(
+        db.collection('sessions')
+          .doc(selectedSessionId)
+          .collection('chat')
+          .add({
+            characterName,
+            imageUrl: img.src,
+            color,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          })
+      );
+    });
+
+    // once all writes finish, clear the input
+    return Promise.all(writes);
+  })
+  .then(() => {
+    input.innerHTML = '';
+  })
+  .catch(err => {
+    console.error("Failed to send chat message:", err);
+    alert("Failed to send chat message.");
   });
 }
 

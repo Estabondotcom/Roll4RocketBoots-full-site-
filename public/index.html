@@ -245,12 +245,13 @@ function addCondition() {
 
 </div>
 
-<!-- Firebase App (compat) -->
+<!-- Firebase SDKs FIRST -->
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-
-<!-- Firebase Auth (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
 
+<!-- THEN initialize Firebase -->
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyCvjcNDhsFrbsc-U3Osp1Xqb-e9MyGfgEI",
@@ -268,18 +269,9 @@ function addCondition() {
   const storage = firebase.storage();
 </script>
 
-<!-- Firebase Firestore (compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-
-<!-- Firebase Storage (compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
-
-
-<!-- site logic -->
+<!-- ✅ NOW load your logic files AFTER Firebase is ready -->
 <script src="login.js"></script>
 <script src="script.js"></script>
-
-
 </body>
 
       </html>

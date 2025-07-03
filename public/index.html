@@ -266,6 +266,8 @@ function addCondition() {
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
+  const db = firebase.firestore();
+  const storage = firebase.storage();
 </script>
 
 <!-- Firebase Firestore (compat) -->
@@ -274,12 +276,6 @@ function addCondition() {
 <!-- Firebase Storage (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
 
-<script>
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-  const storage = firebase.storage();
- 
-</script>
 
 <!-- Your Firebase Auth functions -->
 <script 

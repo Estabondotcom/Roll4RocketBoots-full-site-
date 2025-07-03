@@ -1,13 +1,12 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap');
 
 body {
   background: url('background/br1.png') repeat;
   font-family: 'Bungee', cursive;
   color: #222;
+  padding: 20px;
   margin: 0;
-  padding: 0;
-  height: 100vh;
-  overflow: hidden;
 }
 
 h1 {
@@ -16,10 +15,12 @@ h1 {
   padding: 10px 15px;
   background-color: #00e5ff;
   box-shadow: 4px 4px #000;
+  padding: 10px;
   border-radius: 0;
   font-size: 3.1em;
-  text-shadow: 2px 2px 0 #000;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
   color: #ff00ff;
+  text-shadow: 2px 2px 0 #000;
   margin-bottom: 20px;
 }
 
@@ -58,90 +59,155 @@ textarea {
   height: 100px;
 }
 
-##app-content {
+#skills-container,
+#items-container {
   display: flex;
-  flex-direction: row;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.skill-levels {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.skill-level {
+  accent-color: #ff00ff;
+}
+
+.delete-button {
+  margin-top: 4px;
+  background-color: #ff0000;
+  color: white;
+  font-size: 14px;
+  border: none;
+  padding: 4px 8px;
+  box-shadow: 2px 2px #000;
+}
+
+#counters-section {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.counter-block h2 {
+  margin: 0;
+  font-size: 1.2em;
+  text-align: center;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  padding-top: 5px;
+}
+
+.wounds {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.wounds button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: #000;
+  font-weight: bold;
+  border: 2px solid #000;
+  cursor: pointer;
+}
+
+.wounds button.active {
+  background-color: darkred;
+  color: white;
+}
+
+#rules-button {
+  margin-bottom: 10px;
+  background-color: #fff;
+  color: #000;
+  font-size: 14px;
+  padding: 6px 10px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 5% auto;
+  padding: 20px;
+  width: 80%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modal-content img {
+  max-width: 100%;
+  margin: 10px 0;
+}
+
+.close {
+  align-self: flex-end;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 #main-container {
-  width: 75%;
-  height: 100%;
-  overflow: auto;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 10px;
-  box-sizing: border-box;
+  background-color: rgba(144, 238, 144, 0.7);
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-#chat-wrapper {
-  width: 25%;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-#main-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  background: black;
-  padding: 8px;
-  border-bottom: 2px solid #555;
-}
-
-#main-tabs .tab {
-  background: #00d8ff;
-  color: black;
-  border: none;
+label, h2 {
+  background-color: rgba(255, 255, 0, 0.7);
   padding: 4px 8px;
-  font-weight: bold;
-  font-family: 'Press Start 2P', monospace;
+  border-radius: 6px;
+  display: inline-block;
 }
 
-#main-tabs .tab.active {
-  background: yellow;
+  font-size: 1.5em;
+  background-color: rgba(255, 255, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
 }
-
-#chat-panel {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  border-left: 2px solid #555;
-  background: #222;
-  color: white;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-#chat-messages {
-  flex-grow: 1;
-  overflow-y: auto;
-}
-
-#chat-input-area {
-  display: flex;
-  gap: 4px;
-  padding-top: 6px;
-}
-
-#chat-input-area input {
-  flex-grow: 1;
-}
-#main-tabs .tab.active {
-  background: yellow;
-}
-
 label[for="player-name"] {
   font-size: 1.5em;
   background-color: rgba(255, 255, 0, 0.7);
   padding: 4px 8px;
   border-radius: 6px;
+  display: inline-block;
   font-family: 'Bungee', cursive;
   margin-right: 10px;
 }
+
 
 .section-label {
   font-size: 2em;
@@ -152,6 +218,7 @@ label[for="player-name"] {
   display: inline-block;
   margin: 6px 0;
 }
+
 
 #player-name {
   font-family: monospace;
@@ -165,21 +232,66 @@ label[for="player-name"] {
   box-shadow: inset 2px 2px #888;
 }
 
-@media (max-width: 768px) {
-  #app-content {
-    flex-direction: column;
-    height: auto;
-  }
 
-  #main-container,
-  #chat-panel {
-    width: 100%;
-    max-width: 100%;
-    flex: none;
-  }
 
-  #chat-panel {
-    height: 50vh;
-  }
+
+.add-button {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  padding: 10px 14px;
+  margin: 5px;
+  border: 3px solid #000;
+  background-color: #00e5ff;
+  color: #000;
+  box-shadow: 3px 3px #000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.condition-input {
+  width: 250px;
+  font-size: 16px;
+  padding: 6px;
+  font-family: monospace;
+  border: 2px solid #000;
+  background-color: #fff6d1;
+  box-shadow: inset 2px 2px #888;
+  margin: 4px 0;
 }
 
+.section-title {
+  font-size: 1.95em;
+}
+
+.skills-title {
+  font-size: 2.535em;
+}
+
+.wounds-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.exp-section, .luck-section {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-template-rows: auto auto;
+  gap: 4px;
+  align-items: center;
+  justify-items: center;
+}
+
+.exp-label, .luck-label {
+  grid-column: 2 / 3;
+  font-weight: bold;
+  font-size: 1.2em;
+  background: #ff0;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.exp-section h2,
+.luck-section h2 {
+  grid-column: 1 / -1;
+  margin: 0;
+}

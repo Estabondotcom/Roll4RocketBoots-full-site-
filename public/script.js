@@ -586,19 +586,3 @@ document.addEventListener('DOMContentLoaded', () => {
     addCondition();
   }
 });
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('#main-tabs .tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Highlight the selected tab
-      document.querySelectorAll('#main-tabs .tab')
-        .forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      // Toggle views
-      const which = btn.dataset.tab;
-      document.getElementById('tab-char').style.display = (which === 'char' ? 'block' : 'none');
-      document.getElementById('tab-map' ).style.display = (which === 'map'  ? 'block' : 'none');
-    });
-  });
-});

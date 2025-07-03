@@ -279,7 +279,7 @@ document.getElementById('chatInput').addEventListener('paste', function(event) {
     const item = items[i];
     if (item.type.indexOf('image') !== -1) {
       const file = item.getAsFile();
-      const storageRef = firebase.storage().ref().child(`chatImages/${Date.now()}_${file.name}`);
+      const storageRef = storage.ref().child(`chatImages/${Date.now()}_${file.name}`);
 
       storageRef.put(file).then(snapshot => {
         return snapshot.ref.getDownloadURL();

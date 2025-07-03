@@ -227,9 +227,17 @@ function setupChatListener(sessionId) {
 function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const message = input.innerText.trim();
-  if (!message || !selectedSessionId || !auth.currentUser) return alert('no text!');
+
+  if (!selectedSessionId || !auth.currentUser) return alert('Must be logged in and in a session.');
+  if (!message) {
+    // no text, but maybe an image was already pasted
+    input.innerText = ''; // still clear it
+    return;
+  }
+
   const user = auth.currentUser;
   const characterName = document.getElementById('player-name').value || user.email;
+
   db.collection("users").doc(user.uid).get().then(doc => {
     const color = doc.data()?.displayNameColor || "#ffffff";
     db.collection('sessions').doc(selectedSessionId).collection('chat').add({

@@ -196,7 +196,7 @@ textarea {
 
 /* TABS ABOVE MAIN CONTENT */
 #main-tabs {
-  display: flex;
+  display: flex: 1;
   justify-content: center;
   align-items: center;
   gap: 10px;

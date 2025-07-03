@@ -189,6 +189,15 @@ function returnToSessions() {
   document.getElementById("app-content").style.display = "none";
   document.getElementById("session-screen").style.display = "flex";
 }
+// wire up the paste-handler as soon as the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const chatInput = document.getElementById('chatInput');
+  if (!chatInput) {
+    console.error('❌ chatInput element not found');
+    return;
+  }
+  chatInput.addEventListener('paste', handlePasteImage);
+});
 
 function setupChatListener(sessionId) {
   const chatPanel = document.getElementById('chat-panel');

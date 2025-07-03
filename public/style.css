@@ -305,3 +305,23 @@ label[for="player-name"] {
   background: #fff;
   border-bottom: 2px solid #007bff;
 }
+
+.tab {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9rem;
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+  cursor: pointer;
+  flex: none;             /* don’t stretch */
+}
+
+.tab.active {
+  background: #222;
+  border-bottom-color: transparent; /* "connect" with the panel below */
+}
+
+/* push the chat‐messages down so it doesn’t sit under the tabs */
+#chat-panel #chat-messages {
+  margin-top: 2.5rem;     /* match roughly your tab height + padding */
+}      

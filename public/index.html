@@ -80,11 +80,17 @@
 
 <div id="app-content" style="display: none;">
 
+<div id="main-tabs" style="display:flex; gap:1rem; margin-bottom:1rem;">
+  <button data-tab="char" class="tab active">Character</button>
+  <button data-tab="map" class="tab">Map & Images</button>
+</div>
+
 <div style="position: absolute; top: 10px; left: 10px; z-index: 1000; display: flex; gap: 10px;">
   <button id="rules-button" onclick="toggleRules()" type="button">📖 Rules</button>
   <button onclick="returnToSessions()">⬅️ Return to Sessions</button>
 </div>
 
+<div id="tab-char">
   <div id="main-container" style="flex: 3; overflow-y: auto; padding: 10px;">
 <div id="theme-toggle" style="display: flex; justify-content: flex-end; gap: 5px; margin-bottom: 10px;">
   <button onclick="setTheme('default')">🏠</button>
@@ -185,6 +191,12 @@
     <br/>
     <button onclick="clearData()" type="button">Clear</button>
   </form>
+ </div>
+</div>
+
+<div id="tab-map" style="display:none">
+  <h3>Map & Images</h3>
+  <!-- image viewer UI will go here -->
 </div>
 
 <div id="bottom-buttons" style="margin-top: 20px; text-align: center;"></div>

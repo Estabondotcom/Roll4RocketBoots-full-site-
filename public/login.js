@@ -291,7 +291,7 @@ function handlePasteImage(event) {
     const item = items[i];
     if (item.type.startsWith('image/')) {
       // **1)** Stop the browser from inserting the blob itself
-      event.preventDefault();
+      
 
       const file = item.getAsFile();
       console.log('🖼️ got image file', file);

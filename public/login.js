@@ -280,20 +280,30 @@ document.getElementById('chatInput').addEventListener('paste', function(event) {
     if (item.type.indexOf('image') !== -1) {
       const file = item.getAsFile();
       const storageRef = firebase.storage().ref().child(`chatImages/${Date.now()}_${file.name}`);
+
       storageRef.put(file).then(snapshot => {
-        snapshot.ref.getDownloadURL().then(url => {
-          const user = auth.currentUser;
-          const characterName = document.getElementById('player-name').value || user.email;
-          db.collection('sessions').doc(selectedSessionId).collection('chat').add({
-            characterName,
-            imageUrl: url,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          });
-console.log('Image message sent:', url);  
+        return snapshot.ref.getDownloadURL();
+      }).then(url => {
+        const user = auth.currentUser;
+        if (!user || !selectedSessionId) {
+          console.error("Missing user or session ID");
+          return;
+        }
+
+        const characterName = document.getElementById('player-name').value || user.email;
+        const color = "#ffffff"; // Optional: fetch user's saved color here if needed
+
+        return db.collection('sessions').doc(selectedSessionId).collection('chat').add({
+          characterName,
+          imageUrl: url,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          color
         });
+      }).then(() => {
+        console.log("📸 Image message sent!");
       }).catch(error => {
-        console.error('Image upload failed:', error);
-        alert('Failed to upload image.');
+        console.error('🔥 Failed to handle pasted image:', error);
+        alert('Failed to upload image to chat.');
       });
     }
   }

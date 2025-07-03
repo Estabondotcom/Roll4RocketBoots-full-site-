@@ -324,3 +324,16 @@ label[for="player-name"] {
   grid-column: 1 / -1;
   margin: 0;
 }
+@media (max-width: 768px) {
+  #app-content {
+    flex-direction: column;
+    height: auto;
+  }
+
+  #main-container,
+  #chat-panel {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+  }
+}

@@ -152,7 +152,7 @@ function loadSessionsForUser(uid) {
 
 function createSession() {
   const user = auth.currentUser;
-  if (!user) return alert("You must be logged in to create a session.");
+  if (!user) return alert("You must be logged in to create a session!");
 
   const sessionName = document.getElementById("newSessionName").value.trim();
   const invitedEmails = document.getElementById("inviteEmails").value.split(",").map(e => e.trim()).filter(e => e);

@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap');
 
 body {
@@ -15,12 +14,9 @@ h1 {
   padding: 10px 15px;
   background-color: #00e5ff;
   box-shadow: 4px 4px #000;
-  padding: 10px;
-  border-radius: 0;
   font-size: 3.1em;
-  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-  color: #ff00ff;
   text-shadow: 2px 2px 0 #000;
+  color: #ff00ff;
   margin-bottom: 20px;
 }
 
@@ -148,10 +144,12 @@ textarea {
   display: none;
   position: fixed;
   z-index: 10;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
   overflow: auto;
-  background-color: rgba(0,0,0,0.7);
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 .modal-content {
@@ -181,23 +179,19 @@ textarea {
   background-color: rgba(144, 238, 144, 0.7);
   padding: 20px;
   border-radius: 12px;
-  max-width: 900px;
-  margin: 0 auto;
+  flex: 3;
+  overflow-y: auto;
+  min-width: 0;
 }
 
-label, h2 {
+label,
+h2 {
   background-color: rgba(255, 255, 0, 0.7);
   padding: 4px 8px;
   border-radius: 6px;
   display: inline-block;
 }
 
-  font-size: 1.5em;
-  background-color: rgba(255, 255, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-block;
-}
 label[for="player-name"] {
   font-size: 1.5em;
   background-color: rgba(255, 255, 0, 0.7);
@@ -208,7 +202,6 @@ label[for="player-name"] {
   margin-right: 10px;
 }
 
-
 .section-label {
   font-size: 2em;
   font-family: 'Bungee', cursive;
@@ -218,7 +211,6 @@ label[for="player-name"] {
   display: inline-block;
   margin: 6px 0;
 }
-
 
 #player-name {
   font-family: monospace;
@@ -232,9 +224,6 @@ label[for="player-name"] {
   box-shadow: inset 2px 2px #888;
 }
 
-
-
-
 .add-button {
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
@@ -247,6 +236,7 @@ label[for="player-name"] {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .condition-input {
   width: 250px;
   font-size: 16px;
@@ -272,7 +262,8 @@ label[for="player-name"] {
   align-items: center;
 }
 
-.exp-section, .luck-section {
+.exp-section,
+.luck-section {
   display: grid;
   grid-template-columns: auto auto auto;
   grid-template-rows: auto auto;
@@ -281,7 +272,8 @@ label[for="player-name"] {
   justify-items: center;
 }
 
-.exp-label, .luck-label {
+.exp-label,
+.luck-label {
   grid-column: 2 / 3;
   font-weight: bold;
   font-size: 1.2em;
@@ -295,12 +287,15 @@ label[for="player-name"] {
   grid-column: 1 / -1;
   margin: 0;
 }
+
 #main-tabs {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   background: black;
-  padding: 5px;
+  padding: 4px 8px;
+  height: 40px;
   border-top: 2px solid #555;
   border-bottom: 2px solid #555;
 }
@@ -317,17 +312,12 @@ label[for="player-name"] {
 #main-tabs .tab.active {
   background: yellow;
 }
+
 #app-content {
   display: flex;
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
-}
-
-#main-container {
-  flex: 3;
-  overflow-y: auto;
-  padding: 10px;
 }
 
 #chat-panel {
@@ -336,4 +326,20 @@ label[for="player-name"] {
   flex-direction: column;
   border-left: 2px solid #555;
   overflow: hidden;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  #app-content {
+    flex-direction: column;
+  }
+
+  #chat-panel {
+    border-left: none;
+    border-top: 2px solid #555;
+  }
+
+  #main-container {
+    max-width: 100%;
+  }
 }

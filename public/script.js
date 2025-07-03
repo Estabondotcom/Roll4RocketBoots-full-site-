@@ -586,3 +586,18 @@ document.addEventListener('DOMContentLoaded', () => {
     addCondition();
   }
 });
+
+// after your DOMContentLoaded or at bottom of script.js
+document.querySelectorAll('#main-tabs .tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // mark active tab
+    document.querySelectorAll('#main-tabs .tab')
+      .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // show/hide panels
+    const which = btn.dataset.tab;  // "char" or "map"
+    document.getElementById('tab-char').style.display = (which === 'char' ? '' : 'none');
+    document.getElementById('tab-map' ).style.display = (which === 'map'  ? '' : 'none');
+  });
+});

@@ -227,7 +227,7 @@ function setupChatListener(sessionId) {
 function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const message = input.innerText.trim();
-  if (!message || !selectedSessionId || !auth.currentUser) return alert('no text.');
+  if (!message || !selectedSessionId || !auth.currentUser) return alert('no text!');
   const user = auth.currentUser;
   const characterName = document.getElementById('player-name').value || user.email;
   db.collection("users").doc(user.uid).get().then(doc => {

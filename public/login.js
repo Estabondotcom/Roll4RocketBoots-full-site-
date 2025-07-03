@@ -289,6 +289,7 @@ document.getElementById('chatInput').addEventListener('paste', function(event) {
             imageUrl: url,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
           });
+console.log('Image message sent:', url);  
         });
       }).catch(error => {
         console.error('Image upload failed:', error);

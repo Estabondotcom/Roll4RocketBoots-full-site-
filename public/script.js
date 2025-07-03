@@ -586,3 +586,13 @@ document.addEventListener('DOMContentLoaded', () => {
     addCondition();
   }
 });
+document.getElementById("tab-character").addEventListener("click", () => {
+  document.getElementById("character-sheet").style.display = "block";
+  document.getElementById("map-viewer").style.display = "none";
+});
+
+document.getElementById("tab-map").addEventListener("click", () => {
+  document.getElementById("character-sheet").style.display = "none";
+  document.getElementById("map-viewer").style.display = "block";
+});
+

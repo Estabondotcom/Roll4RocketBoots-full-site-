@@ -1,8 +1,6 @@
 let selectedSessionId = null;
 let currentUserRole = null;
 
-const db = firebase.firestore();
-const storage = firebase.storage();
 
 function selectSession(sessionId) {
   selectedSessionId = sessionId;

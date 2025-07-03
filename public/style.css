@@ -295,47 +295,45 @@ label[for="player-name"] {
   grid-column: 1 / -1;
   margin: 0;
 }
-.tab {
-  padding: 0.5rem 1rem;
-  background: #eee;
-  border: 1px solid #ccc;
-  cursor: pointer;
-}
-.tab.active {
-  background: #fff;
-  border-bottom: 2px solid #007bff;
-}
-
-.tab {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.9rem;
-  background: #444;
-  color: #fff;
-  border: 1px solid #666;
-  cursor: pointer;
-  flex: none;             /* don’t stretch */
+#main-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  background: black;
+  padding: 5px;
+  border-top: 2px solid #555;
+  border-bottom: 2px solid #555;
 }
 
-.tab.active {
-  background: #222;
-  border-bottom-color: transparent; /* "connect" with the panel below */
-}
-
-/* push the chat‐messages down so it doesn’t sit under the tabs */
-#chat-panel #chat-messages {
-  margin-top: 2.5rem;     /* match roughly your tab height + padding */
-   
-}      
 #main-tabs .tab {
-  background: #333;
-  color: white;
+  background: #00d8ff;
+  color: black;
   border: none;
-  padding: 5px 10px;
-  cursor: pointer;
+  padding: 4px 8px;
+  font-weight: bold;
+  font-family: 'Press Start 2P', monospace;
 }
 
 #main-tabs .tab.active {
-  background: #666;
-  font-weight: bold;
+  background: yellow;
+}
+#app-content {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
 }
 
+#main-container {
+  flex: 3;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+#chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #555;
+  overflow: hidden;
+}

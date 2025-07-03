@@ -274,38 +274,47 @@ function rollD6(count) {
   });
 }
 
-document.getElementById('chatInput').addEventListener('paste', function(event) {
+function handlePasteImage(event) {
+  console.log('📋 paste event fired!', event);
   const items = (event.clipboardData || event.originalEvent.clipboardData).items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    if (item.type.indexOf('image') !== -1) {
+    if (item.type.startsWith('image/')) {
       const file = item.getAsFile();
-      const storageRef = storage.ref().child(`chatImages/${Date.now()}_${file.name}`);
+      console.log('🖼️ got image file', file);
 
-      storageRef.put(file).then(snapshot => {
-        return snapshot.ref.getDownloadURL();
-      }).then(url => {
-        const user = auth.currentUser;
-        if (!user || !selectedSessionId) {
-          console.error("Missing user or session ID");
-          return;
-        }
-
-        const characterName = document.getElementById('player-name').value || user.email;
-        const color = "#ffffff"; // Optional: fetch user's saved color here if needed
-
-        return db.collection('sessions').doc(selectedSessionId).collection('chat').add({
-          characterName,
-          imageUrl: url,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-          color
+      // upload to storage…
+      const path = `chatImages/${Date.now()}_${file.name}`;
+      const storageRef = storage.ref(path);
+      storageRef.put(file)
+        .then(snap => snap.ref.getDownloadURL())
+        .then(url => {
+          console.log('✅ got download URL', url);
+          const user = auth.currentUser;
+          if (!user || !selectedSessionId) {
+            console.warn('🔒 no user or session, aborting message send');
+            return;
+          }
+          const characterName = document.getElementById('player-name').value || user.email;
+          return db.collection('sessions')
+                   .doc(selectedSessionId)
+                   .collection('chat')
+                   .add({
+                     characterName,
+                     imageUrl: url,
+                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                     color: "#ffffff"
+                   });
+        })
+        .then(() => console.log('📸 image message sent to Firestore!'))
+        .catch(err => {
+          console.error('🔥 upload or Firestore write failed', err);
+          alert('Failed to upload image.');
         });
-      }).then(() => {
-        console.log("📸 Image message sent!");
-      }).catch(error => {
-        console.error('🔥 Failed to handle pasted image:', error);
-        alert('Failed to upload image to chat.');
-      });
+
+      // prevent the default "insert image blob" behavior
+      event.preventDefault();
+      return;  // only handle the first image
     }
   }
-});
+}

@@ -295,3 +295,13 @@ label[for="player-name"] {
   grid-column: 1 / -1;
   margin: 0;
 }
+.tab {
+  padding: 0.5rem 1rem;
+  background: #eee;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.tab.active {
+  background: #fff;
+  border-bottom: 2px solid #007bff;
+}

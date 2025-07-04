@@ -19,13 +19,15 @@
     }
 
     #chat-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background-color: #222;
-  color: white;
-  overflow: hidden;
-}
+      flex-basis: 20%;
+      max-width: 20%;
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #222;
+      color: white;
+      border-left: 2px solid #555;
+    }
 
     #chat-messages {
       flex: 1;
@@ -82,11 +84,8 @@
   <button id="rules-button" onclick="toggleRules()" type="button">📖 Rules</button>
   <button onclick="returnToSessions()">⬅️ Return to Sessions</button>
 </div>
-<div id="main-views" style="flex: 3; max-width: 75%; display: flex; flex-direction: column; height: 100vh;">
 
-
-  <div id="main-container" style="flex: 1; overflow-y: auto; display: block;">
-
+  <div id="main-container" style="flex: 3; overflow-y: auto; padding: 10px;">
 <div id="theme-toggle" style="display: flex; justify-content: flex-end; gap: 5px; margin-bottom: 10px;">
   <button onclick="setTheme('default')">🏠</button>
   <button onclick="setTheme('dark')">🌙</button>
@@ -187,48 +186,30 @@
     <button onclick="clearData()" type="button">Clear</button>
   </form>
 </div>
- <div id="show-and-tell-panel" style="flex: 1; overflow-y: auto; display: none; background-color: #000;">
-
-    <h2 style="color: white;">🖼️ Show & Tell Panel</h2>
-    <img src="https://via.placeholder.com/800x600" style="max-width: 100%; height: auto; border: 4px solid #00e5ff;" />
-    <!-- You can add more image/map logic here later -->
-  </div>
-</div>
 
 <div id="bottom-buttons" style="margin-top: 20px; text-align: center;"></div>
-<!-- Right Side: Chat Column -->
-<div id="chat-column" style="flex: 1; max-width: 25%; display: flex; flex-direction: column; height: 100vh; background-color: #111; border-left: 2px solid #000;">
-
-  <!-- Chat Top Buttons -->
-  <div id="chat-toolbar">
-    <button id="characterBtn">Character</button>
-    <button id="showTellBtn">Show and Tell</button>
-  </div>
-
-  <!-- Chat Panel -->
-  <div id="chat-panel">
-    <div id="chat-messages" style="flex: 3; overflow-y: auto; padding: 0px; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;"></div>
-
-    <div style="margin-top: 5px; display: flex; gap: 2px; flex-wrap: wrap;">
-      <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(1)">1🎲</button>
-      <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(2)">2🎲</button>
-      <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(3)">3🎲</button>
-      <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(4)">4🎲</button>
-      <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(5)">5🎲</button>
-    </div>
-
+  <!-- Right Side: Chat Panel -->
+  <div id="chat-panel" style="flex: 1; display: none; flex-direction: column; height: 100vh; background-color: #222; color: white; border-left: 2px solid #555; overflow: hidden;">
+    <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 10px; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;"></div>
+<div style="margin-top: 5px; display: flex; gap: 2px; flex-wrap: wrap;">
+  <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(1)">1🎲</button>
+  <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(2)">2🎲</button>
+  <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(3)">3🎲</button>
+  <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(4)">4🎲</button>
+  <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(5)">5🎲</button>
+</div>
     <div id="chatInput" contenteditable="true" style="border: 1px solid gray; padding: 5px; height: 60px; overflow-y: auto;"></div>
 
-    <button onclick="sendChatMessage()">Send</button>
-    
-    <div style="margin-top: 10px;">
-      <label for="chatColorPicker">Chat Name Color:</label>
-      <input type="color" id="chatColorPicker" value="#ffffff" onchange="saveChatColor()" />
+
+      <button onclick="sendChatMessage()">Send</button><div style="margin-top: 10px;">
+  <label for="chatColorPicker">Chat Name Color:</label>
+  <input type="color" id="chatColorPicker" value="#ffffff" onchange="saveChatColor()" />
+</div>
+
     </div>
   </div>
+
 </div>
-</div>
-  </div>
 <!-- Your Existing Inline Scripts -->
 <script>
 function downloadCharacter() {

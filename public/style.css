@@ -314,3 +314,6 @@ label[for="player-name"] {
   color: white;
   overflow: hidden;
 }
+#chat-toolbar {
+  flex-shrink: 0;
+}

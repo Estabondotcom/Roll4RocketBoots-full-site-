@@ -315,3 +315,12 @@ label[for="player-name"] {
 #chat-toolbar {
   flex-shrink: 0;
 }
+#main-views {
+  flex: 3;
+  max-width: 75%;
+}
+
+#chat-column {
+  flex: 1;
+  max-width: 25%;
+}

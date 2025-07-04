@@ -181,7 +181,7 @@ textarea {
   background-color: rgba(144, 238, 144, 0.7);
   padding: 20px;
   border-radius: 12px;
-  max-width: 900px;
+  max-width: 75%;
   margin: 0 auto;
 }
 

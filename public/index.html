@@ -4,14 +4,13 @@
   <title>Roll for Rocket Boots! - Character Sheet</title>
   <link href="style-default.css" rel="stylesheet"/>
 <style>
-  
-#app-content {
-  display: flex;
-  flex-direction: row;
-  height: 100vh;
-  overflow: hidden;
-}
-  
+    #app-content {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+    }
+
     #main-container {
       flex-basis: 75%;
       max-width: 75%;
@@ -19,21 +18,13 @@
       padding: 10px;
     }
 
-  #main-views {
-  flex: 3; /* 75% */
+    #chat-panel {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-}
-
-#chat-column {
-  flex: 1; /* 25% */
-  max-width: 25%;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #111;
-  border-left: 2px solid #000;
+  background-color: #222;
+  color: white;
+  overflow: hidden;
 }
 
     #chat-messages {

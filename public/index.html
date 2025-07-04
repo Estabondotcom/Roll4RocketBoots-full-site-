@@ -2,91 +2,86 @@
 <html>
 <head>
   <title>Roll for Rocket Boots! - Character Sheet</title>
-  <link rel="stylesheet" href="style.css" />
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-
+  <link href="style-default.css" rel="stylesheet"/>
+<style>
     #app-content {
       display: flex;
       flex-direction: row;
-      width: 100%;
       height: 100vh;
+      overflow: hidden;
     }
 
     #main-container {
-      flex: 0 0 70%;
-      overflow: auto;
+      flex-basis: 75%;
+      max-width: 75%;
+      overflow-y: auto;
       padding: 10px;
-      background: #f0f0f0;
-    }
-
-    #side-panel {
-      flex: 0 0 25%;
-      display: flex;
-      flex-direction: column;
-      background: #222;
-      color: white;
-    }
-
-    #tab-switcher {
-      display: flex;
-      justify-content: space-around;
-      background: #444;
-      padding: 8px;
-      border-bottom: 2px solid #333;
-    }
-
-    #tab-switcher button {
-      background: #00d8ff;
-      border: none;
-      padding: 6px 12px;
-      font-weight: bold;
-      font-family: 'Press Start 2P', cursive;
-      cursor: pointer;
-    }
-
-    #tab-switcher button.active {
-      background: yellow;
     }
 
     #chat-panel {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
+      flex-basis: 20%;
+      max-width: 20%;
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #222;
+      color: white;
       border-left: 2px solid #555;
     }
 
-    #chatInput {
-      height: 60px;
+    #chat-messages {
+      flex: 1;
       overflow-y: auto;
-      border: 1px solid gray;
-      padding: 5px;
-      margin-top: 5px;
-      background-color: white;
-      color: black;
-    }
-
-    #chatInput:focus {
-      outline: none;
-    }
-
-    #chat-controls {
       padding: 10px;
+    }
+
+    #chat-input-area {
+      padding: 10px;
+      border-top: 1px solid #555;
     }
   </style>
 </head>
 <body>
+<div id="login-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #222; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000;">
+  <h2>Welcome to Roll for Rocket Boots!</h2>
 
-<!-- App container -->
-<div id="app-content">
-  <!-- Left: Main content area (Character Sheet / Map Viewer) -->
-  <  <button id="rules-button" onclick="toggleRules()" type="button">📖 Rules</button>
+  <input type="email" id="authEmail" placeholder="Email">
+  <input type="password" id="authPassword" placeholder="Password">
+
+  <div style="margin-top: 10px;">
+    <button onclick="login()">Log In</button>
+    <button onclick="signup()">Sign Up</button>
+  </div>
+
+  <div id="loginError" style="color: red; margin-top: 10px;"></div>
+</div></div>
+<div id="session-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #333; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000;">
+  <h2>Select a Game Session</h2>
+
+
+  <div id="session-list"></div>
+
+  <button onclick="showCreateSessionScreen()">+ Create New Session</button>
+
+<button onclick="logout()">🚪 Log Out</button>
+
+  <div id="sessionError" style="color: red; margin-top: 10px;"></div>
+</div>
+<div id="create-session-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #444; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000;">
+  <h2>Create a New Game Session</h2>
+  <input type="text" id="newSessionName" placeholder="Session Name">
+  <textarea id="inviteEmails" placeholder="Invite emails (comma-separated)"></textarea>
+  <button onclick="createSession()">Create Session</button>
+  <button onclick="cancelCreateSession()">Cancel</button>
+  <div id="createSessionError" style="color: red; margin-top: 10px;"></div>
+</div>
+
+<div id="userStatus"></div>
+
+<div id="app-content" style="display: none;">
+
+<div style="position: absolute; top: 10px; left: 10px; z-index: 1000; display: flex; gap: 10px;">
+  <button id="rules-button" onclick="toggleRules()" type="button">📖 Rules</button>
   <button onclick="returnToSessions()">⬅️ Return to Sessions</button>
 </div>
 
@@ -192,16 +187,9 @@
   </form>
 </div>
 
-  <!-- Right: Side panel (Tabs + Chat) -->
-  <div id="side-panel">
-    <!-- Tab buttons -->
-    <div id="tab-switcher">
-      <button id="tab-character" class="active" onclick="switchTab('character')">Character</button>
-      <button id="tab-map" onclick="switchTab('map')">Map & Images</button>
-    </div>
-
-    <!-- Chat panel -->
-    <div id="chat-panel" style="flex: 1; display: none; flex-direction: column; height: 100vh; background-color: #222; color: white; border-left: 2px solid #555; overflow: hidden;">
+<div id="bottom-buttons" style="margin-top: 20px; text-align: center;"></div>
+  <!-- Right Side: Chat Panel -->
+  <div id="chat-panel" style="flex: 1; display: none; flex-direction: column; height: 100vh; background-color: #222; color: white; border-left: 2px solid #555; overflow: hidden;">
     <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 10px; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;"></div>
 <div style="margin-top: 5px; display: flex; gap: 2px; flex-wrap: wrap;">
   <button style="padding: 2px 6px; font-size: 12px;" onclick="rollD6(1)">1🎲</button>
@@ -219,18 +207,51 @@
 </div>
 
     </div>
-        </div>
-      </div>
-    </div>
   </div>
+
+</div>
+<!-- Your Existing Inline Scripts -->
+<script>
+function downloadCharacter() {
+  const characterData = {
+    name: document.getElementById("player-name")?.value || "",
+    exp: document.getElementById("exp-value")?.textContent || 0,
+    luck: document.getElementById("luck-value")?.textContent || 1,
+    skills: Array.from(document.querySelectorAll('.skill-input')).map(input => input.value),
+    items: Array.from(document.querySelectorAll('.item-input')).map(input => input.value)
+  };
+
+  const blob = new Blob([JSON.stringify(characterData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "character.json";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function addCondition() {
+  const container = document.getElementById("conditions-container");
+  const div = document.createElement("div");
+  div.className = "condition-entry";
+  div.innerHTML = '<input type="text" class="condition-input" maxlength="20" placeholder="Enter condition">' +
+                  '<button class="delete-button" onclick="this.parentElement.remove()">❌</button>';
+  container.appendChild(div);
+}
+</script>
+
+
 </div>
 
-<!-- Firebase & Scripts -->
+<!-- Firebase SDKs FIRST -->
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
 
+<!-- THEN initialize Firebase -->
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyCvjcNDhsFrbsc-U3Osp1Xqb-e9MyGfgEI",
@@ -248,17 +269,9 @@
   const storage = firebase.storage();
 </script>
 
+<!-- ✅ NOW load your logic files AFTER Firebase is ready -->
 <script src="login.js"></script>
 <script src="script.js"></script>
-
-<script>
-  function switchTab(tabName) {
-    document.getElementById('tab-character').classList.remove('active');
-    document.getElementById('tab-map').classList.remove('active');
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-    // Toggle display logic of content can go here
-  }
-</script>
-
 </body>
-</html>
+
+      </html>

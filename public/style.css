@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap');
 
 body {
@@ -176,7 +177,13 @@ textarea {
   cursor: pointer;
 }
 
-
+#main-container {
+  background-color: rgba(144, 238, 144, 0.7);
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+}
 
 label, h2 {
   background-color: rgba(255, 255, 0, 0.7);
@@ -287,108 +294,4 @@ label[for="player-name"] {
 .luck-section h2 {
   grid-column: 1 / -1;
   margin: 0;
-}
-
-/* Layout for fixed side-by-side content */
-
-
-
-
-
-
-/* Tabs fixed above chat */
-#tab-container {
-  position: fixed;
-  right: 10px;
-  top: 10px;
-  width: 25%;
-  display: flex;
-  justify-content: space-around;
-  background: #222;
-  padding: 8px;
-  z-index: 1000;
-}
-
-.tab-button {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 10px;
-  background: #00e5ff;
-  border: 2px solid #000;
-  padding: 6px 8px;
-  cursor: pointer;
-}
-
-.tab-button:hover {
-  background: yellow;
-}
-
-#viewer-container {
-  width: 70%;
-  overflow: auto;
-  padding: 15px;
-  background: #fffbe6;
-  border: 2px solid #000;
-}
-
-#app-content {
-  display: flex;
-  flex-direction: row;
-  height: 100vh;
-  overflow: hidden;
-  gap: 10px;
-  box-sizing: border-box;
-  padding: 0 10px 10px 10px;
-}
-
-/* Tab Switcher above chat */
-#tab-switcher {
-  position: fixed;
-  right: 10px;
-  top: 10px;
-  width: 25%;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 8px;
-  background: #222;
-  z-index: 1000;
-}
-
-#tab-switcher button {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  padding: 6px 8px;
-  background: #00e5ff;
-  border: 2px solid #000;
-  cursor: pointer;
-}
-
-#tab-switcher button:hover {
-  background: yellow;
-}
-
-/* Main container with both scrollbars */
-#main-container {
-  width: 70%;
-  overflow-y: auto;
-  overflow-x: auto;
-  background-color: rgba(144, 238, 144, 0.7);
-  padding: 20px;
-  border-radius: 12px;
-  border: 2px solid #000;
-  box-sizing: border-box;
-}
-
-/* Chat container with only vertical scroll */
-#chat-panel {
-  width: 25%;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background-color: #f0f0ff;
-  border: 2px solid #000;
-  padding: 10px;
-  box-sizing: border-box;
-  margin-top: 60px; /* to clear tab buttons above */
 }

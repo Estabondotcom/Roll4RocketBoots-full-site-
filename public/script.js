@@ -586,19 +586,4 @@ document.addEventListener('DOMContentLoaded', () => {
     addCondition();
   }
 });
-<script>
-  const characterBtn = document.getElementById('characterBtn');
-  const showTellBtn = document.getElementById('showTellBtn');
-  const charSheet = document.getElementById('main-container');
-  const showAndTell = document.getElementById('show-and-tell-panel');
 
-  characterBtn.addEventListener('click', () => {
-    charSheet.style.display = 'block';
-    showAndTell.style.display = 'none';
-  });
-
-  showTellBtn.addEventListener('click', () => {
-    charSheet.style.display = 'none';
-    showAndTell.style.display = 'block';
-  });
-</script>

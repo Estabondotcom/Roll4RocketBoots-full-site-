@@ -82,8 +82,9 @@
   <button id="rules-button" onclick="toggleRules()" type="button">📖 Rules</button>
   <button onclick="returnToSessions()">⬅️ Return to Sessions</button>
 </div>
-<div id="main-views" style="flex: 3; display: flex; flex-direction: column;">
-  <div id="main-container" style="flex: 1; overflow-y: auto; padding: 10px;">
+<div id="main-views" style="flex-basis: 75%; max-width: 75%; height: 100vh; overflow: hidden; position: relative;">
+  <div id="main-container" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 10px; background-color: rgba(144, 238, 144, 0.7);">
+
 <div id="theme-toggle" style="display: flex; justify-content: flex-end; gap: 5px; margin-bottom: 10px;">
   <button onclick="setTheme('default')">🏠</button>
   <button onclick="setTheme('dark')">🌙</button>
@@ -184,7 +185,7 @@
     <button onclick="clearData()" type="button">Clear</button>
   </form>
 </div>
-  <div id="show-and-tell-panel" style="flex: 1; display: none; overflow-y: auto; padding: 10px; background-color: #000;">
+  <div id="show-and-tell-panel" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; overflow-y: auto; padding: 10px; background-color: #000;">
     <h2 style="color: white;">🖼️ Show & Tell Panel</h2>
     <img src="https://via.placeholder.com/800x600" style="max-width: 100%; height: auto; border: 4px solid #00e5ff;" />
     <!-- You can add more image/map logic here later -->

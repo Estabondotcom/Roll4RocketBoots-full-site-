@@ -589,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function toggleCharacterPanel() {
   document.getElementById("character-panel").style.display = "block";
+  document.getElementById("main-container").style.display = "block";
   document.getElementById("show-panel").style.display = "none";
 
 }

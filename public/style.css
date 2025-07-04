@@ -181,8 +181,7 @@ textarea {
   background-color: rgba(144, 238, 144, 0.7);
   padding: 20px;
   border-radius: 12px;
-  max-width: 75%;
-  margin: 0 auto;
+   margin: 0 auto;
 }
 
 label, h2 {
@@ -297,8 +296,7 @@ label[for="player-name"] {
 }
 
 #chat-column {
-  flex-basis: 25%;
-  max-width: 25%;
+
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -307,7 +305,7 @@ label[for="player-name"] {
 }
 
 #chat-panel {
-  flex: 6;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background-color: #222;

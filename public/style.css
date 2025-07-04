@@ -296,21 +296,21 @@ label[for="player-name"] {
   margin: 0;
 }
 
-#chat-toolbar {
+#chat-column {
+  flex-basis: 25%;
+  max-width: 25%;
   display: flex;
-  justify-content: space-evenly;
-  background-color: #00d8ff;
-  padding: 6px;
-  border-bottom: 2px solid #000;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #111;
+  border-left: 2px solid #000;
 }
 
-#chat-toolbar button {
+#chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   background-color: #222;
-  color: #00d8ff;
-  border: 2px solid #000;
-  padding: 4px 8px;
-  font-size: 14px;
-  font-family: 'Press Start 2P', monospace;
-  cursor: pointer;
-  width: 45%;
+  color: white;
+  overflow: hidden;
 }

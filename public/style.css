@@ -307,7 +307,7 @@ label[for="player-name"] {
 }
 
 #chat-panel {
-  flex: 3;
+  flex: 6;
   display: flex;
   flex-direction: column;
   background-color: #222;

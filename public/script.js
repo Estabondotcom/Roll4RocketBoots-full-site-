@@ -586,4 +586,3 @@ document.addEventListener('DOMContentLoaded', () => {
     addCondition();
   }
 });
-

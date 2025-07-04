@@ -295,3 +295,8 @@ label[for="player-name"] {
   grid-column: 1 / -1;
   margin: 0;
 }
+#show-panel {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}

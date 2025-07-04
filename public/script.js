@@ -586,3 +586,14 @@ document.addEventListener('DOMContentLoaded', () => {
     addCondition();
   }
 });
+
+function toggleCharacterPanel() {
+  document.getElementById("character-panel").style.display = "block";
+  document.getElementById("show-panel").style.display = "none";
+}
+
+function toggleShowAndTell() {
+  document.getElementById("character-panel").style.display = "none";
+  document.getElementById("show-panel").style.display = "block";
+}
+

@@ -105,6 +105,7 @@
     </div>
   </div>
 
+<div id="character-panel">
   <form id="char-form">
     <div style="margin-bottom: 10px;">
       <button onclick="downloadCharacter()" type="button">💾 Save</button>
@@ -188,6 +189,13 @@
 </div>
 
 <div id="bottom-buttons" style="margin-top: 20px; text-align: center;"></div>
+  </div>
+  <div id="show-panel" style="display: none;">
+  <h2>📸 Show & Tell</h2>
+  <p style="font-size: 16px;">You can drag images here or paste from clipboard to display them to the group.</p>
+  <div id="image-display-area" style="border: 2px dashed #888; padding: 10px; min-height: 300px; background-color: #111;"></div>
+</div>
+
   <!-- Right Side: Chat Panel -->
   <div id="chat-panel" style="flex: 1; display: none; flex-direction: column; height: 100vh; background-color: #222; color: white; border-left: 2px solid #555; overflow: hidden;">
     <div id="chat-controls" style="display: flex; justify-content: space-around; padding: 5px; background-color: #111; border-bottom: 2px solid #555;">

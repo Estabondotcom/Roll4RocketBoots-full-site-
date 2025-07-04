@@ -295,3 +295,26 @@ label[for="player-name"] {
   grid-column: 1 / -1;
   margin: 0;
 }
+
+#chat-toolbar {
+  display: flex;
+  justify-content: space-around;
+  padding: 6px;
+  background-color: #333;
+  border-bottom: 1px solid #444;
+}
+
+#chat-toolbar button {
+  background-color: #00d8ff;
+  color: #000;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#chat-toolbar button:hover {
+  background-color: #00bcd4;
+}
+

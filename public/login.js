@@ -77,6 +77,7 @@ function saveCharacterToFirestore() {
 
   const characterName = prompt("Enter a name for this character:");
   if (!characterName) return alert("Character not saved (no name given).");
+  
 
   const characterData = {
     name: document.getElementById("player-name").value || "",
@@ -91,7 +92,12 @@ function saveCharacterToFirestore() {
     .catch((error) => {
       console.error("Error saving character:", error);
       alert("Failed to save character.");
-    });
+      const sessionId = localStorage.getItem("currentSessionId");
+if (sessionId) {
+  db.collection("sessions").doc(sessionId)
+    .collection("characters").doc(characterName)
+    .set(characterData);
+ });
 }
 
 function loadCharacterFromFirestore() {
@@ -123,6 +129,11 @@ function loadCharacterFromFirestore() {
     .catch((error) => {
       console.error("Error loading characters:", error);
       alert("Failed to load characters.");
+      const sessionId = localStorage.getItem("currentSessionId");
+if (sessionId) {
+  db.collection("sessions").doc(sessionId)
+    .collection("characters").doc(characterName)
+    .set(characterData);
     });
 }
 

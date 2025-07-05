@@ -604,5 +604,31 @@ function toggleShowAndTell() {
 function openGMTools() {
   alert("🛠️ GM Tools coming soon!");
 }
+function toggleGMTools() {
+  const panel = document.getElementById("gm-tools-panel");
+  panel.style.display = (panel.style.display === "none" || !panel.style.display) ? "block" : "none";
+}
+
+function openGMTools() {
+  document.getElementById("gm-tools-panel").style.display = "block";
+}
+
+function saveGMNotes() {
+  const notes = document.getElementById("gm-notes").value;
+  localStorage.setItem("gmNotes", notes);
+  alert("GM notes saved!");
+}
+
+function loadGMNotes() {
+  const notes = localStorage.getItem("gmNotes");
+  if (notes) {
+    document.getElementById("gm-notes").value = notes;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadGMNotes();
+});
+
 
 

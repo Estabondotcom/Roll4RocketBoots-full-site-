@@ -690,6 +690,7 @@ function loadGMImages() {
 
       const btnGroup = document.createElement("div");
       btnGroup.style = "margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;";
+      
 
       const toDisplay = document.createElement("button");
       toDisplay.textContent = "➡️ Display";
@@ -702,6 +703,16 @@ function loadGMImages() {
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "❌ Delete";
       deleteBtn.onclick = () => deleteGMImage(sessionId, docId, name, wrapper);
+    
+      [toDisplay, toChat, deleteBtn].forEach(btn => {
+  btn.style.padding = "2px 6px";
+  btn.style.fontSize = "12px";
+  btn.style.borderRadius = "4px";
+  btn.style.backgroundColor = "#333";
+  btn.style.color = "#fff";
+  btn.style.border = "1px solid #666";
+  btn.style.cursor = "pointer";
+});
 
       btnGroup.appendChild(toDisplay);
       btnGroup.appendChild(toChat);

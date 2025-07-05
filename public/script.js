@@ -829,32 +829,40 @@ function toggleGMMode() {
 }
 
 
+let gmTabsUnsubscribe = null;
+
 function loadGMCharacterTabs() {
   const sessionId = localStorage.getItem("currentSessionId");
+  console.log("📡 Loading character tabs for session:", sessionId);
   if (!sessionId) return;
 
-  // Unsubscribe previous listener if one exists
   if (gmTabsUnsubscribe) gmTabsUnsubscribe();
 
   const container = document.getElementById("gm-character-tabs");
   container.innerHTML = "<p>Loading character tabs...</p>";
 
-  // Live listener on character docs in this session
   gmTabsUnsubscribe = db.collection("sessions").doc(sessionId).collection("characters")
     .onSnapshot(snapshot => {
+      console.log("📥 Got snapshot with", snapshot.size, "characters");
+
       container.innerHTML = "";
+
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No characters found in this session.</p>";
+        return;
+      }
+
       snapshot.forEach(doc => {
         const charId = doc.id;
+        console.log("🧍 Found character:", charId);
 
         const button = document.createElement("button");
         button.textContent = charId;
         button.onclick = () => viewGMCharacterLive(sessionId, charId);
         container.appendChild(button);
       });
-
-      if (snapshot.empty) {
-        container.innerHTML = "<p>No characters found in this session.</p>";
-      }
+    }, (error) => {
+      console.error("🔥 Error loading character tabs:", error);
     });
 }
 

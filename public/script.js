@@ -736,5 +736,27 @@ function closeGMImageModal() {
   document.getElementById("gm-image-gallery-modal").style.display = "none";
 }
 
+function deleteGMImage(sessionId, docId, fileName, wrapper) {
+  if (!confirm(`Delete image "${fileName}"?`)) return;
+
+  const storagePath = `sessions/${sessionId}/gmimages/${fileName}`;
+  const storageRef = firebase.storage().ref(storagePath);
+
+  // Delete from Storage
+  storageRef.delete()
+    .then(() => {
+      // Then delete Firestore doc
+      return db.collection("sessions").doc(sessionId).collection("gmimages").doc(docId).delete();
+    })
+    .then(() => {
+      wrapper.remove();
+      alert(`Deleted "${fileName}"`);
+    })
+    .catch((error) => {
+      console.error("❌ Delete failed:", error);
+      alert("Failed to delete image.");
+    });
+}
+
 
 

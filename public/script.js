@@ -824,6 +824,7 @@ function toggleGMMode() {
     characterPanel.style.display = "block";
     gmPanel.style.display = "none";
     gmButton.textContent = "GM Mode";
+    maincontainer.style.display = "block";
   }
 }
 

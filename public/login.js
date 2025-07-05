@@ -4,6 +4,8 @@ let currentUserRole = null;
 
 function selectSession(sessionId) {
   selectedSessionId = sessionId;
+  localStorage.setItem("currentSessionId", sessionId);
+
 
   db.collection("sessions").doc(sessionId).get().then((doc) => {
     const data = doc.data();

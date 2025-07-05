@@ -140,11 +140,6 @@ function loadCharacterFromFirestore() {
     .catch((error) => {
       console.error("Error loading characters:", error);
       alert("Failed to load characters.");
-      const sessionId = localStorage.getItem("currentSessionId");
-if (sessionId) {
-  db.collection("sessions").doc(sessionId)
-    .collection("characters").doc(characterName)
-    .set(characterData);
     });
 }
 

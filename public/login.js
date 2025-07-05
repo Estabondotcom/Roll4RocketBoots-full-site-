@@ -12,9 +12,11 @@ function selectSession(sessionId) {
     if (user.uid === data.creatorUid) {
       console.log("You are the GM for this session.");
       currentUserRole = "gm";
+      document.getElementById("gm-tools-button").style.display = "inline-block";
     } else {
       console.log("You are a player in this session.");
       currentUserRole = "player";
+      document.getElementById("gm-tools-button").style.display = "none";
     }
 
     document.getElementById("session-screen").style.display = "none";

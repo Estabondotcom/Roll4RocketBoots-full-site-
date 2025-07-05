@@ -657,6 +657,8 @@ function uploadGMImage() {
             name: file.name,
             url: downloadURL,
             uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+              }).then(() => {
+              loadGMImages(); // 🔁 Refresh image list in modal
           });
       });
     }

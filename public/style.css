@@ -295,5 +295,17 @@ label[for="player-name"] {
   grid-column: 1 / -1;
   margin: 0;
 }
+.center-label {
+  display: block;
+  text-align: center;
+  font-size: 1.8em;
+  margin-bottom: 10px;
+  font-family: 'Bungee', cursive;
+  color: #fff;
+  background-color: #444;
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: 2px 2px 4px #000;
+}
 
 

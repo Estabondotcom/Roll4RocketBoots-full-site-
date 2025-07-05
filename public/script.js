@@ -725,6 +725,14 @@ function pushToChat(imageUrl, label) {
     });
   });
 }
+function openGMImageModal() {
+  document.getElementById("gm-image-gallery-modal").style.display = "flex";
+  loadGMImages();
+}
+
+function closeGMImageModal() {
+  document.getElementById("gm-image-gallery-modal").style.display = "none";
+}
 
 
 

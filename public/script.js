@@ -804,15 +804,27 @@ function clearchat() {
     alert("Failed to clear chat.");
   });
 }
-function toggleGMMode() {
-  document.getElementById("character-panel").style.display = "none";
-  document.getElementById("main-container").style.display = "none";
-  document.getElementById("show-panel").style.display = "none";
-  document.getElementById("gm-mode-panel").style.display = "block";
+let gmModeActive = false;
 
-  loadGMCharacterTabs();
+function toggleGMMode() {
+  gmModeActive = !gmModeActive;
+
+  const characterPanel = document.getElementById("character-panel");
+  const gmPanel = document.getElementById("gm-mode-panel");
+  const gmButton = document.getElementById("gm-mode-toggle");
+
+  if (gmModeActive) {
+    characterPanel.style.display = "none";
+    gmPanel.style.display = "block";
+    gmButton.textContent = "Exit GM Mode";
+    loadGMCharacterTabs();
+  } else {
+    characterPanel.style.display = "block";
+    gmPanel.style.display = "none";
+    gmButton.textContent = "GM Mode";
+  }
 }
-let gmTabsUnsubscribe = null;
+
 
 function loadGMCharacterTabs() {
   const sessionId = localStorage.getItem("currentSessionId");

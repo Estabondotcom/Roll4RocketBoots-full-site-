@@ -806,7 +806,7 @@ function clearchat() {
 }
 function toggleGMMode() {
   document.getElementById("character-panel").style.display = "none";
-  document.getElementById("main-container").style.display = "block";
+  document.getElementById("main-container").style.display = "none";
   document.getElementById("show-panel").style.display = "none";
   document.getElementById("gm-mode-panel").style.display = "block";
 

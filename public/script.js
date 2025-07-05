@@ -601,5 +601,8 @@ function toggleShowAndTell() {
 
   
 }
+function openGMTools() {
+  alert("🛠️ GM Tools coming soon!");
+}
 
 

@@ -778,6 +778,32 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
       alert("Failed to delete image.");
     });
 }
+function cleardisplay() {
+  const display = document.getElementById("image-display-area");
+  if (display) display.innerHTML = "";
+}
+function clearchat() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) {
+    alert("No session selected.");
+    return;
+  }
+
+  const chatRef = db.collection("sessions").doc(sessionId).collection("chat");
+
+  chatRef.get().then(snapshot => {
+    const batch = db.batch();
+    snapshot.forEach(doc => batch.delete(doc.ref));
+    return batch.commit();
+  }).then(() => {
+    const chatMessages = document.getElementById("chat-messages");
+    if (chatMessages) chatMessages.innerHTML = "";
+    console.log("Chat cleared.");
+  }).catch(err => {
+    console.error("Error clearing chat:", err);
+    alert("Failed to clear chat.");
+  });
+}
 
 
 

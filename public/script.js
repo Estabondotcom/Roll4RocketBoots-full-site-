@@ -662,6 +662,69 @@ function uploadGMImage() {
     }
   );
 }
+function loadGMImages() {
+  const gallery = document.getElementById("image-list");
+  gallery.innerHTML = "<p>Loading...</p>";
+
+  db.collection("sessions").doc(selectedSessionId).collection("gm_uploads").get().then(snapshot => {
+    gallery.innerHTML = "";
+    snapshot.forEach(doc => {
+      const { name, url } = doc.data();
+      const wrapper = document.createElement("div");
+      wrapper.style = "display: flex; flex-direction: column; align-items: center; border: 1px solid #555; padding: 5px; background: #111;";
+
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = name;
+      img.style = "width: 100px; height: auto; margin-bottom: 5px;";
+
+      const label = document.createElement("div");
+      label.textContent = name;
+      label.style = "font-size: 12px; color: white;";
+
+      const btnGroup = document.createElement("div");
+      btnGroup.style = "margin-top: 5px; display: flex; gap: 5px;";
+      
+      const toDisplay = document.createElement("button");
+      toDisplay.textContent = "➡️ Display";
+      toDisplay.onclick = () => pushToDisplayArea(url);
+
+      const toChat = document.createElement("button");
+      toChat.textContent = "💬 Chat";
+      toChat.onclick = () => pushToChat(url, name);
+
+      btnGroup.appendChild(toDisplay);
+      btnGroup.appendChild(toChat);
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(label);
+      wrapper.appendChild(btnGroup);
+      gallery.appendChild(wrapper);
+    });
+  });
+}
+
+function pushToDisplayArea(imageUrl) {
+  const container = document.getElementById("image-display-area");
+  const img = document.createElement("img");
+  img.src = imageUrl;
+  img.style = "max-width: 100%; margin-top: 10px;";
+  container.appendChild(img);
+}
+
+function pushToChat(imageUrl, label) {
+  const user = auth.currentUser;
+  const characterName = document.getElementById("player-name").value || user.email;
+  db.collection("users").doc(user.uid).get().then(doc => {
+    const color = doc.data()?.displayNameColor || "#ffffff";
+    return db.collection("sessions").doc(selectedSessionId).collection("chat").add({
+      characterName,
+      imageUrl,
+      color,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+}
 
 
 

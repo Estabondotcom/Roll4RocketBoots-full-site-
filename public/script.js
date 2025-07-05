@@ -812,9 +812,10 @@ function toggleGMMode() {
   const characterPanel = document.getElementById("character-panel");
   const gmPanel = document.getElementById("gm-mode-panel");
   const gmButton = document.getElementById("gm-mode-toggle");
+  const maincontainer = document.getElementById("main-container");
 
   if (gmModeActive) {
-    main-container.style.display = "none";
+    maincontainer.style.display = "none";
     characterPanel.style.display = "none";
     gmPanel.style.display = "block";
     gmButton.textContent = "Exit GM Mode";

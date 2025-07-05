@@ -598,7 +598,7 @@ function toggleShowAndTell() {
   document.getElementById("character-panel").style.display = "none";
   document.getElementById("main-container").style.display = "none";
   document.getElementById("show-panel").style.display = "block";
-  document.getElementById("image-display-area").style.display = "block";
+
   
 }
 

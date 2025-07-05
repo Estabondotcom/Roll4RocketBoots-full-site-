@@ -77,7 +77,6 @@ function saveCharacterToFirestore() {
 
   const characterName = prompt("Enter a name for this character:");
   if (!characterName) return alert("Character not saved (no name given).");
-  
 
   const characterData = {
     name: document.getElementById("player-name").value || "",
@@ -87,17 +86,29 @@ function saveCharacterToFirestore() {
     items: Array.from(document.querySelectorAll('.item-input')).map(input => input.value)
   };
 
-  db.collection("users").doc(user.uid).collection("characters").doc(characterName).set(characterData)
-    .then(() => alert("Character '" + characterName + "' saved to Firestore!"))
+  const sessionId = localStorage.getItem("currentSessionId");
+  const promises = [];
+
+  if (sessionId) {
+    promises.push(
+      db.collection("sessions").doc(sessionId)
+        .collection("characters").doc(characterName)
+        .set(characterData)
+    );
+  }
+
+  promises.push(
+    db.collection("users").doc(user.uid)
+      .collection("characters").doc(characterName)
+      .set(characterData)
+  );
+
+  Promise.all(promises)
+    .then(() => alert(`Character '${characterName}' saved to Firestore!`))
     .catch((error) => {
       console.error("Error saving character:", error);
       alert("Failed to save character.");
-      const sessionId = localStorage.getItem("currentSessionId");
-if (sessionId) {
-  db.collection("sessions").doc(sessionId)
-    .collection("characters").doc(characterName)
-    .set(characterData);
- });
+    });
 }
 
 function loadCharacterFromFirestore() {

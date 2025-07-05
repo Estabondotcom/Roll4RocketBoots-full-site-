@@ -309,4 +309,14 @@ label[for="player-name"] {
   box-shadow: 2px 2px 4px #000;
   z-index: 5;
 }
+#gm-tools-button {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  padding: 6px 12px;
+  background-color: #00e5ff;
+  border: 2px solid #000;
+  box-shadow: 2px 2px #000;
+  color: black;
+  cursor: pointer;
+}
 

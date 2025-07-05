@@ -812,25 +812,37 @@ function toggleGMMode() {
 
   loadGMCharacterTabs();
 }
+let gmTabsUnsubscribe = null;
+
 function loadGMCharacterTabs() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return;
 
+  // Unsubscribe previous listener if one exists
+  if (gmTabsUnsubscribe) gmTabsUnsubscribe();
+
   const container = document.getElementById("gm-character-tabs");
-  container.innerHTML = "";
+  container.innerHTML = "<p>Loading character tabs...</p>";
 
-  db.collection("sessions").doc(sessionId).collection("characters").get().then(snapshot => {
-    snapshot.forEach(doc => {
-      const charId = doc.id;
+  // Live listener on character docs in this session
+  gmTabsUnsubscribe = db.collection("sessions").doc(sessionId).collection("characters")
+    .onSnapshot(snapshot => {
+      container.innerHTML = "";
+      snapshot.forEach(doc => {
+        const charId = doc.id;
 
-      const button = document.createElement("button");
-      button.textContent = charId;
-      button.onclick = () => viewGMCharacterLive(sessionId, charId);
-      container.appendChild(button);
+        const button = document.createElement("button");
+        button.textContent = charId;
+        button.onclick = () => viewGMCharacterLive(sessionId, charId);
+        container.appendChild(button);
+      });
+
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No characters found in this session.</p>";
+      }
     });
-  });
 }
-let gmUnsubscribe = null;
+
 
 function viewGMCharacterLive(sessionId, charId) {
   if (gmUnsubscribe) gmUnsubscribe(); // clear previous listener

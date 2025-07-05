@@ -256,10 +256,6 @@
   <hr style="margin: 10px 0;">
 <button onclick="openGMImageModal()">🖼️ View Uploaded Images</button>
     <div style="margin-top: 15px;">
-  <h4>📤 Upload Image to Session</h4>
-  <input type="file" id="gm-image-upload" accept="image/*" />
-  <button onclick="uploadGMImage()">Upload</button>
-  <div id="upload-status" style="margin-top: 5px; color: lightgreen;"></div>
 </div>
   
 </div>
@@ -268,6 +264,10 @@
   <div style="background:#222; padding:20px; max-width:90%; max-height:90%; overflow:auto; border:2px solid #555; position:relative;">
     <span onclick="closeGMImageModal()" style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:20px; color:white;">❌</span>
     <h2 style="color:white;">📁 GM Uploaded Images</h2>
+     <h4>📤 Upload Image to Session</h4>
+  <input type="file" id="gm-image-upload" accept="image/*" />
+  <button onclick="uploadGMImage()">Upload</button>
+  <div id="upload-status" style="margin-top: 5px; color: lightgreen;"></div>
     <div id="image-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
   </div>
 </div>

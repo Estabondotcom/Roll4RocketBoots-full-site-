@@ -666,7 +666,7 @@ function loadGMImages() {
   const gallery = document.getElementById("image-list");
   gallery.innerHTML = "<p>Loading...</p>";
 
-  db.collection("sessions").doc(selectedSessionId).collection("gm_uploads").get().then(snapshot => {
+  db.collection("sessions").doc(selectedSessionId).collection("gmimages").get().then(snapshot => {
     gallery.innerHTML = "";
     snapshot.forEach(doc => {
       const { name, url } = doc.data();

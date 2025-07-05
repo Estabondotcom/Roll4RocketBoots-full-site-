@@ -631,7 +631,7 @@ function uploadGMImage() {
     return;
   }
 
-  const storageRef = firebase.storage().ref(`sessions/${sessionId}/gm_uploads/${file.name}`);
+  const storageRef = firebase.storage().ref(`sessions/${sessionId}/gmimages/${file.name}`);
   const uploadTask = storageRef.put(file);
 
   status.textContent = "Uploading...";

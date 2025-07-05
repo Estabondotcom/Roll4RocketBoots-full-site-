@@ -668,10 +668,14 @@ function loadGMImages() {
   const gallery = document.getElementById("image-list");
   gallery.innerHTML = "<p>Loading...</p>";
 
-  db.collection("sessions").doc(selectedSessionId).collection("gmimages").get().then(snapshot => {
+  const sessionId = localStorage.getItem("currentSessionId");
+
+  db.collection("sessions").doc(sessionId).collection("gmimages").get().then(snapshot => {
     gallery.innerHTML = "";
     snapshot.forEach(doc => {
       const { name, url } = doc.data();
+      const docId = doc.id;
+
       const wrapper = document.createElement("div");
       wrapper.style = "display: flex; flex-direction: column; align-items: center; border: 1px solid #555; padding: 5px; background: #111;";
 
@@ -685,8 +689,8 @@ function loadGMImages() {
       label.style = "font-size: 12px; color: white;";
 
       const btnGroup = document.createElement("div");
-      btnGroup.style = "margin-top: 5px; display: flex; gap: 5px;";
-      
+      btnGroup.style = "margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;";
+
       const toDisplay = document.createElement("button");
       toDisplay.textContent = "➡️ Display";
       toDisplay.onclick = () => pushToDisplayArea(url);
@@ -695,8 +699,13 @@ function loadGMImages() {
       toChat.textContent = "💬 Chat";
       toChat.onclick = () => pushToChat(url, name);
 
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "❌ Delete";
+      deleteBtn.onclick = () => deleteGMImage(sessionId, docId, name, wrapper);
+
       btnGroup.appendChild(toDisplay);
       btnGroup.appendChild(toChat);
+      btnGroup.appendChild(deleteBtn);
 
       wrapper.appendChild(img);
       wrapper.appendChild(label);
@@ -705,6 +714,7 @@ function loadGMImages() {
     });
   });
 }
+
 
 function pushToDisplayArea(imageUrl) {
   const container = document.getElementById("image-display-area");

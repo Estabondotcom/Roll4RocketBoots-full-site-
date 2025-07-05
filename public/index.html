@@ -254,10 +254,7 @@
     <button onclick="toggleGMTools()" style="background: red; color: white;">X</button>
   </div>
   <hr style="margin: 10px 0;">
-    <div id="gm-image-gallery" style="margin-top: 20px;">
-  <h3>📁 Uploaded Images</h3>
-  <div id="image-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
-</div>
+<button onclick="openGMImageModal()">🖼️ View Uploaded Images</button>
     <div style="margin-top: 15px;">
   <h4>📤 Upload Image to Session</h4>
   <input type="file" id="gm-image-upload" accept="image/*" />
@@ -266,6 +263,15 @@
 </div>
   
 </div>
+  <!-- GM Image Gallery Modal -->
+<div id="gm-image-gallery-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.8); z-index:3000; justify-content:center; align-items:center;">
+  <div style="background:#222; padding:20px; max-width:90%; max-height:90%; overflow:auto; border:2px solid #555; position:relative;">
+    <span onclick="closeGMImageModal()" style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:20px; color:white;">❌</span>
+    <h2 style="color:white;">📁 GM Uploaded Images</h2>
+    <div id="image-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
+  </div>
+</div>
+
 
 <!-- Your Existing Inline Scripts -->
 <script>

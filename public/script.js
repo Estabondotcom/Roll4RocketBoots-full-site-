@@ -652,7 +652,7 @@ function uploadGMImage() {
         firebase.firestore()
           .collection("sessions")
           .doc(sessionId)
-          .collection("gmImages")
+          .collection("gmimages")
           .add({
             name: file.name,
             url: downloadURL,

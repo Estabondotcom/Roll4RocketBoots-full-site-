@@ -804,6 +804,61 @@ function clearchat() {
     alert("Failed to clear chat.");
   });
 }
+function toggleGMMode() {
+  document.getElementById("character-panel").style.display = "none";
+  document.getElementById("main-container").style.display = "block";
+  document.getElementById("show-panel").style.display = "none";
+  document.getElementById("gm-mode-panel").style.display = "block";
+
+  loadGMCharacterTabs();
+}
+function loadGMCharacterTabs() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) return;
+
+  const container = document.getElementById("gm-character-tabs");
+  container.innerHTML = "";
+
+  db.collection("sessions").doc(sessionId).collection("characters").get().then(snapshot => {
+    snapshot.forEach(doc => {
+      const charId = doc.id;
+
+      const button = document.createElement("button");
+      button.textContent = charId;
+      button.onclick = () => viewGMCharacterLive(sessionId, charId);
+      container.appendChild(button);
+    });
+  });
+}
+let gmUnsubscribe = null;
+
+function viewGMCharacterLive(sessionId, charId) {
+  if (gmUnsubscribe) gmUnsubscribe(); // clear previous listener
+
+  const display = document.getElementById("gm-character-display");
+  display.innerHTML = "<p>Loading...</p>";
+
+  gmUnsubscribe = db.collection("sessions").doc(sessionId)
+    .collection("characters").doc(charId)
+    .onSnapshot(doc => {
+      const data = doc.data();
+      if (!data) {
+        display.innerHTML = "<p>No data found.</p>";
+        return;
+      }
+
+      display.innerHTML = `
+        <h3>${data.name || charId}</h3>
+        <p><strong>Exp:</strong> ${data.exp}</p>
+        <p><strong>Luck:</strong> ${data.luck}</p>
+        <p><strong>Wounds:</strong> ${(data.wounds || []).map(w => w ? '❤️' : '🖤').join(' ')}</p>
+        <p><strong>Skills:</strong><br>${(data.skills || []).map(s => `• ${s.name} (${s.levels?.filter(l => l).length + 1}🎲)`).join("<br>")}</p>
+        <p><strong>Items:</strong><br>${(data.items || []).map(i => `• ${i}`).join("<br>")}</p>
+        <p><strong>Conditions:</strong><br>${(data.conditions || []).map(c => `• ${c.name}`).join("<br>")}</p>
+      `;
+    });
+}
+
 
 
 

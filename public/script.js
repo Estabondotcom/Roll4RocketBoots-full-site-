@@ -693,15 +693,15 @@ function loadGMImages() {
       
 
       const toDisplay = document.createElement("button");
-      toDisplay.textContent = "➡️ Display";
+      toDisplay.textContent = "display";
       toDisplay.onclick = () => pushToDisplayArea(url);
 
       const toChat = document.createElement("button");
-      toChat.textContent = "💬 Chat";
+      toChat.textContent = "Chat";
       toChat.onclick = () => pushToChat(url, name);
 
       const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "❌ Delete";
+      deleteBtn.textContent = "❌";
       deleteBtn.onclick = () => deleteGMImage(sessionId, docId, name, wrapper);
     
       [toDisplay, toChat, deleteBtn].forEach(btn => {

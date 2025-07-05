@@ -1,3 +1,5 @@
+let gmUnsubscribe = null;
+
 function createSkillInput(value = "", levels = [true, false, false, false]) {
   const container = document.createElement('div');
   container.className = 'input-wrapper';

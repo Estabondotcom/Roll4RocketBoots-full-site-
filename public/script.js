@@ -613,22 +613,55 @@ function openGMTools() {
   document.getElementById("gm-tools-panel").style.display = "block";
 }
 
-function saveGMNotes() {
-  const notes = document.getElementById("gm-notes").value;
-  localStorage.setItem("gmNotes", notes);
-  alert("GM notes saved!");
-}
+function uploadGMImage() {
+  const fileInput = document.getElementById("gm-image-upload");
+  const file = fileInput.files[0];
+  const status = document.getElementById("upload-status");
 
-function loadGMNotes() {
-  const notes = localStorage.getItem("gmNotes");
-  if (notes) {
-    document.getElementById("gm-notes").value = notes;
+  if (!file) {
+    status.textContent = "Please select a file first.";
+    return;
   }
-}
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadGMNotes();
-});
+  const user = firebase.auth().currentUser;
+  const sessionId = localStorage.getItem("currentSessionId"); // already used in your app
+
+  if (!user || !sessionId) {
+    status.textContent = "User or session not found.";
+    return;
+  }
+
+  const storageRef = firebase.storage().ref(`sessions/${sessionId}/gm_uploads/${file.name}`);
+  const uploadTask = storageRef.put(file);
+
+  status.textContent = "Uploading...";
+
+  uploadTask.on(
+    "state_changed",
+    null,
+    (error) => {
+      console.error("Upload failed:", error);
+      status.textContent = "Upload failed.";
+    },
+    () => {
+      uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+        status.textContent = "✅ Upload complete!";
+        console.log("File available at", downloadURL);
+
+        // Optionally store the URL in Firestore for later use
+        firebase.firestore()
+          .collection("sessions")
+          .doc(sessionId)
+          .collection("gmImages")
+          .add({
+            name: file.name,
+            url: downloadURL,
+            uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+      });
+    }
+  );
+}
 
 
 

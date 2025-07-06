@@ -424,19 +424,33 @@ function loadGMImages() {
   });
 }
 
-
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
-  const container = document.getElementById("image-display-area");
-
-  const oldImage = container.querySelector("img");
-  if (oldImage) oldImage.remove();
+  const container = document.getElementById("zoom-content");
+  container.innerHTML = "";
 
   const img = document.createElement("img");
   img.src = imageUrl;
-  img.style = "max-width: 100%; margin-top: 10px;";
+  img.style = "max-width: none"; // Prevent auto scaling
+  img.style.position = "absolute"; // allow panning
   img.draggable = false;
-  container.appendChild(img);
 
+  img.onload = () => {
+    const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
+    const scaleX = containerBox.width / img.naturalWidth;
+    const scaleY = containerBox.height / img.naturalHeight;
+    const initialScale = Math.min(scaleX, scaleY);
+
+    // Set zoomLevel + pan to center the image
+    const zoomContent = document.getElementById("zoom-content");
+    zoomLevel = initialScale;
+
+    panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
+    panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
+
+    applyTransform(); // this should exist already in your zoom logic
+  };
+
+  container.appendChild(img);
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {
@@ -449,6 +463,7 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     }
   }
 }
+
 
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;

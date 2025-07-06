@@ -172,12 +172,6 @@ function toggleWound(index) {
   }
 }
 
-  const itemInputs = document.querySelectorAll('.item-input');
-  const items = [];
-  itemInputs.forEach(input => {
-    if (input.value.trim() !== "") items.push(input.value.trim());
-  });
-
 function toggleRules() {
   const modal = document.getElementById('rules-modal');
   if (modal.style.display === "block") {

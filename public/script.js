@@ -693,10 +693,12 @@ window.addEventListener("DOMContentLoaded", () => {
   let startX = 0;
   let startY = 0;
 
-  function applyTransform() {
-    zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-    zoomContent.style.transformOrigin = "0 0";
-  }
+ function applyTransform() {
+  const zoomContent = document.getElementById("zoom-content");
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
+}
+
 
   applyTransform();
 

@@ -859,7 +859,10 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 
-  zoomContainer.addEventListener("mousedown", (e) => {
+ zoomContainer.addEventListener("mousedown", (e) => {
+  // ✅ Ignore mousedown if dragging an emoji
+  if (e.target.classList.contains("draggable-emoji")) return;
+
   isPanning = true;
   startX = e.clientX - panX;
   startY = e.clientY - panY;

@@ -282,7 +282,7 @@ db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().th
     localStorage.removeItem("gmDisplayImage"); // 🔥 prevent reloading deleted image
   }
 });
-
+}
 
 function toggleCharacterPanel() {
   document.getElementById("character-panel").style.display = "block";

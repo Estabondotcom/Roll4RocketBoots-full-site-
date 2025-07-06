@@ -423,3 +423,27 @@ function handlePasteImage(event) {
     }
   }
 }
+function setupAutoSaveListeners() {
+  const triggerSave = () => {
+    // Don't autosave until name is chosen
+    if (localStorage.getItem("autoSaveCharacterName")) {
+      saveCharacterToFirestore(true);
+    }
+  };
+
+  // Listen to most form elements
+  const elements = document.querySelectorAll(
+    '#player-name, #exp-value, #luck-value, .skill-input, .item-input, .condition-input, .skill-level, .wounds button'
+  );
+
+  elements.forEach(el => {
+    el.addEventListener("input", triggerSave);
+    el.addEventListener("change", triggerSave);
+    el.addEventListener("click", triggerSave);
+  });
+
+  // When new elements are added (like a new skill/item), rebind listeners
+  const observer = new MutationObserver(() => setupAutoSaveListeners());
+  observer.observe(document.getElementById("char-form"), { childList: true, subtree: true });
+}
+

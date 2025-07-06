@@ -152,60 +152,6 @@ function adjustExp(amount) {
   expSpan.textContent = current;
 }
 
-function saveData() {
-  const name = document.getElementById('char-name').value;
-  const exp = parseInt(document.getElementById('exp-value').textContent);
-
-  const skillInputs = document.querySelectorAll('.input-wrapper .skill-input');
-  const skills = [];
-  skillInputs.forEach(input => {
-    const container = input.parentElement;
-    const checkboxes = container.querySelectorAll('.skill-level');
-    const levels = Array.from(checkboxes).map(cb => cb.checked);
-    if (input.value.trim() !== "") {
-      skills.push({ name: input.value.trim(), levels });
-    }
-  });
-
-  const itemInputs = document.querySelectorAll('.item-input');
-  const items = [];
-  itemInputs.forEach(input => {
-    if (input.value.trim() !== "") items.push(input.value.trim());
-  });
-
-  const data = {name, exp, skills, items,
-  conditions: Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({ name: wrapper.querySelector('.skill-input').value, levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked) }))
-};
-  localStorage.setItem('rfrbCharacter', JSON.stringify(data));
-  alert('Character saved!');
-  
-  // ✅ Hide autosave hint after first save
-  if (!localStorage.getItem('autosaveInitialized')) {
-    localStorage.setItem('autosaveInitialized', 'true');
-    const hint = document.getElementById('autosave-hint');
-    if (hint) hint.style.display = 'none';
-  }
-}
-
-function loadData() {
-  const data = JSON.parse(localStorage.getItem('rfrbCharacter'));
-  if (!data) return alert('No saved character!');
-
-  document.getElementById('char-name').value = data.name;
-  document.getElementById('exp-value').textContent = data.exp || 0;
-
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
-  data.skills.forEach(skill => addSkill(skill.name, skill.levels));
-if (data.conditions) data.conditions.forEach(condition => addCondition(condition.name, condition.levels));
-
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
-  data.items.forEach(item => addItem(item));
-
-  alert('Character loaded!');
-}
-
 function clearData() {
   localStorage.removeItem('rfrbCharacter');
   document.getElementById('char-form').reset();

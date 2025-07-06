@@ -421,7 +421,10 @@ function loadGMImages() {
 
 function pushToDisplayArea(imageUrl) {
   const container = document.getElementById("image-display-area");
-  container.innerHTML = ""; // optional: clear old image
+
+  // ✅ Only remove previous image, not emojis
+  const oldImage = container.querySelector("img");
+  if (oldImage) oldImage.remove();
 
   const img = document.createElement("img");
   img.src = imageUrl;
@@ -429,10 +432,8 @@ function pushToDisplayArea(imageUrl) {
   img.draggable = false;
   container.appendChild(img);
 
-  // 🧠 Save locally
   localStorage.setItem("gmDisplayImage", imageUrl);
 
-  // ✅ Save to Firestore for all players to see
   const sessionId = localStorage.getItem("currentSessionId");
   if (sessionId) {
     db.collection("sessions").doc(sessionId).update({
@@ -441,8 +442,6 @@ function pushToDisplayArea(imageUrl) {
     });
   }
 }
-
-
 
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;

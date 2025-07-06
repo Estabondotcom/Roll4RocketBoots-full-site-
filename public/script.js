@@ -734,6 +734,7 @@ function pushToDisplayArea(imageUrl) {
   const img = document.createElement("img");
   img.src = imageUrl;
   img.style = "max-width: 100%; margin-top: 10px;";
+  img.draggable = false;
   container.appendChild(img);
 }
 

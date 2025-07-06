@@ -61,6 +61,9 @@ function signup() {
 
 function logout() {
   auth.signOut().then(() => alert("Logged out successfully!"));
+  localStorage.removeItem("autoSaveCharacterName");
+localStorage.removeItem("autoSaveInitialized");
+
 }
 
 auth.onAuthStateChanged((user) => {
@@ -135,10 +138,10 @@ function saveCharacterToFirestore() {
   .then(() => {
     alert(`Character '${characterName}' saved to Firestore!`);
 
-    // Store the name so autosaves can use it
+    // ✅ Store the name for autosave use
     localStorage.setItem("autoSaveCharacterName", characterName);
 
-    // Only set up listeners once
+    // ✅ Activate autosave listeners if not already set
     if (!localStorage.getItem("autoSaveInitialized")) {
       setupAutoSaveListeners();
       localStorage.setItem("autoSaveInitialized", "true");
@@ -149,6 +152,7 @@ function saveCharacterToFirestore() {
     console.error("Error saving character:", error);
     alert("Failed to save character.");
   });
+
 }
 
 

@@ -833,38 +833,66 @@ function toggleGMMode() {
 
 let gmTabsUnsubscribe = null;
 
-function loadGMCharacterTabs() {
+let gmPanelUnsubscribes = [];
+
+function loadAllGMCharacterPanels() {
   const sessionId = localStorage.getItem("currentSessionId");
-  console.log("📡 Loading character tabs for session:", sessionId);
   if (!sessionId) return;
 
-  if (gmTabsUnsubscribe) gmTabsUnsubscribe();
+  // Clear any previous listeners
+  gmPanelUnsubscribes.forEach(unsub => unsub());
+  gmPanelUnsubscribes = [];
 
-  const container = document.getElementById("gm-character-tabs");
-  container.innerHTML = "<p>Loading character tabs...</p>";
+  const container = document.getElementById("gm-character-panels");
+  container.innerHTML = "<p>Loading characters...</p>";
 
-  gmTabsUnsubscribe = db.collection("sessions").doc(sessionId).collection("characters")
+  db.collection("sessions").doc(sessionId).collection("characters")
     .onSnapshot(snapshot => {
-      console.log("📥 Got snapshot with", snapshot.size, "characters");
-
       container.innerHTML = "";
-
-      if (snapshot.empty) {
-        container.innerHTML = "<p>No characters found in this session.</p>";
-        return;
-      }
 
       snapshot.forEach(doc => {
         const charId = doc.id;
-        console.log("🧍 Found character:", charId);
+        const panel = document.createElement("div");
+        panel.id = `char-${charId}`;
+        panel.style = "min-width: 250px; max-width: 300px; background: #111; color: white; border: 2px solid #555; padding: 10px;";
 
-        const button = document.createElement("button");
-        button.textContent = charId;
-        button.onclick = () => viewGMCharacterLive(sessionId, charId);
-        container.appendChild(button);
+        panel.innerHTML = `<h3>${charId}</h3><p>Loading...</p>`;
+        container.appendChild(panel);
+
+        const unsub = db.collection("sessions").doc(sessionId).collection("characters").doc(charId)
+          .onSnapshot(docSnap => {
+            const data = docSnap.data();
+            if (!data) return;
+
+            const wounds = (data.wounds || []).map(active => active ? "❤️" : "🖤").join(" ");
+            const skills = (data.skills || []).map(s => {
+              const name = typeof s === 'string' ? s : s.name;
+              const dice = typeof s === 'object' && Array.isArray(s.levels)
+                ? s.levels.filter(l => l).length + 1
+                : 2;
+              return `• ${name} (${dice}🎲)`;
+            }).join("<br>");
+
+            const conditions = (data.conditions || []).map(c => `• ${c.name || c}`).join("<br>");
+            const items = (data.items || []).map(i => `• ${i}`).join("<br>");
+
+            panel.innerHTML = `
+              <h3>${data.name || charId}</h3>
+              <p><strong>EXP:</strong> ${data.exp}</p>
+              <p><strong>LUCK:</strong> ${data.luck}</p>
+              <p><strong>WOUNDS:</strong> ${wounds}</p>
+              <p><strong>SKILLS:</strong><br>${skills}</p>
+              <p><strong>ITEMS:</strong><br>${items || "."}</p>
+              <p><strong>CONDITIONS:</strong><br>${conditions || "."}</p>
+            `;
+          });
+
+        gmPanelUnsubscribes.push(unsub);
       });
-    }, (error) => {
-      console.error("🔥 Error loading character tabs:", error);
+
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No characters found.</p>";
+      }
     });
 }
 

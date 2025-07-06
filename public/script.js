@@ -490,6 +490,14 @@ function cleardisplay() {
   const display = document.getElementById("image-display-area");
   if (display) display.innerHTML = "";
   localStorage.removeItem("gmDisplayImage");
+
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (sessionId) {
+    db.collection("sessions").doc(sessionId).update({
+      currentDisplayImage: firebase.firestore.FieldValue.delete(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
 }
 
 function clearchat() {

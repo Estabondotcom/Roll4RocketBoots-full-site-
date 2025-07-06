@@ -8,6 +8,13 @@ function selectSession(sessionId) {
   selectedSessionId = sessionId;
   currentSessionId = sessionId; 
   localStorage.setItem("currentSessionId", sessionId);
+    // Load current display image immediately
+  db.collection("sessions").doc(sessionId).get().then(doc => {
+    const data = doc.data();
+    if (data?.currentDisplayImage) {
+      pushToDisplayArea(data.currentDisplayImage);
+    }
+  });
   
   db.collection("sessions").doc(sessionId).get().then((doc) => {
     const data = doc.data();

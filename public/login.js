@@ -29,6 +29,7 @@ function selectSession(sessionId) {
     if (document.getElementById('items-container').children.length === 0) addItem();
 
     setupChatListener(sessionId);
+    listenForEmojis();
   }).catch((error) => {
     console.error("Error loading session info:", error);
     alert("Failed to load session info.");

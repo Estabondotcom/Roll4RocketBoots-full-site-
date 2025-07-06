@@ -261,19 +261,6 @@ function addCondition(value = "") {
 }
 
 // === Auto-Save and Load ===
-function saveFormState() {
-    const elements = document.querySelectorAll("input, textarea, select");
-    const data = {};
-    elements.forEach(el => {
-        if (el.type === "checkbox") {
-            data[el.id] = el.checked;
-        } else {
-            data[el.id] = el.value;
-        }
-    });
-    data["theme"] = document.getElementById("theme-link")?.getAttribute("href");
-    localStorage.setItem("formState", JSON.stringify(data));
-}
 
 function loadFormState() {
   const saved = localStorage.getItem("formState");

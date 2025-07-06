@@ -745,17 +745,18 @@ function spawnEmoji(symbol) {
   const display = document.getElementById("image-display-area");
   const emoji = document.createElement("div");
 
+  // 🔁 Define ID before using it
+  const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   emoji.className = "draggable-emoji";
   emoji.textContent = symbol;
   emoji.style.left = "100px";
   emoji.style.top = "100px";
-  emoji.dataset.id = id;
+  emoji.dataset.id = id; // ✅ now 'id' is defined above
 
   display.appendChild(emoji);
   makeDraggable(emoji);
 
   // Save to Firestore
-  const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   db.collection("sessions").doc(currentSessionId)
     .collection("emojis").doc(id).set({
       symbol,

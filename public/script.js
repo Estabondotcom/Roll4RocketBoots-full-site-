@@ -413,6 +413,31 @@ function saveFormState() {
     data["theme"] = document.getElementById("theme-link")?.getAttribute("href");
     localStorage.setItem("formState", JSON.stringify(data));
 }
+function loadFormState() {
+  const saved = localStorage.getItem("formState");
+  if (!saved) return;
+  const data = JSON.parse(saved);
+  Object.keys(data).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (el.type === "checkbox") {
+        el.checked = data[id];
+      } else if (el.type === "file") {
+        // ❌ Skip setting file inputs like image upload
+        return;
+      } else {
+        el.value = data[id];
+      }
+    }
+  });
+
+  if (data["theme"]) {
+    const themeLink = document.getElementById("theme-link");
+    if (themeLink) {
+      themeLink.setAttribute("href", data["theme"]);
+    }
+  }
+}
 
 function saveFormState() {
   const elements = document.querySelectorAll("input, textarea, select");

@@ -727,7 +727,7 @@ function spawnEmoji(symbol) {
   emoji.style.left = "100px";
   emoji.style.top = "100px";
   emoji.dataset.id = id; // ✅ now 'id' is defined above
-
+  display.appendChild(emoji);
   makeDraggable(emoji);
 
   // Save to Firestore

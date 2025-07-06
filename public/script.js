@@ -77,72 +77,74 @@ function addItem(value = "") {
 
 function saveData() {
   const name = document.getElementById('char-name').value;
+  const exp = parseInt(document.getElementById('exp-value').textContent);
+  const luck = parseInt(document.getElementById('luck-value').textContent);
+  const woundButtons = document.querySelectorAll('.wounds button');
+  const wounds = Array.from(woundButtons).map(button => button.classList.contains('active'));
 
-  const skillInputs = document.querySelectorAll('.input-wrapper .skill-input');
-  const skills = [];
-  skillInputs.forEach(input => {
+  const skills = Array.from(document.querySelectorAll('.input-wrapper .skill-input')).map(input => {
     const container = input.parentElement;
-    const checkboxes = container.querySelectorAll('.skill-level');
-    const levels = Array.from(checkboxes).map(cb => cb.checked);
-    if (input.value.trim() !== "") {
-      skills.push({ name: input.value.trim(), levels });
-    }
-  });
+    const levels = Array.from(container.querySelectorAll('.skill-level')).map(cb => cb.checked);
+    return { name: input.value.trim(), levels };
+  }).filter(s => s.name !== "");
 
-  const itemInputs = document.querySelectorAll('.item-input');
-  const items = [];
-  itemInputs.forEach(input => {
-    if (input.value.trim() !== "") items.push(input.value.trim());
-  });
+  const items = Array.from(document.querySelectorAll('.item-input')).map(input => input.value.trim()).filter(Boolean);
 
-  const data = {name, skills, items,
-  conditions: Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({ name: wrapper.querySelector('.skill-input').value, levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked) }))
-};
+  const conditions = Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({
+    name: wrapper.querySelector('.skill-input').value,
+    levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked)
+  }));
+
+  const data = { name, exp, luck, wounds, skills, items, conditions };
   localStorage.setItem('rfrbCharacter', JSON.stringify(data));
   alert('Character saved!');
 }
 
-function loadData() {
+
+ffunction loadData() {
   const data = JSON.parse(localStorage.getItem('rfrbCharacter'));
   if (!data) return alert('No saved character!');
 
   document.getElementById('char-name').value = data.name;
+  document.getElementById('exp-value').textContent = data.exp ?? 0;
+  document.getElementById('luck-value').textContent = data.luck ?? 1;
+
+  document.querySelectorAll('.wounds button').forEach((btn, i) => {
+    if (data.wounds && data.wounds[i]) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
 
   const skillContainer = document.getElementById('skills-container');
   skillContainer.innerHTML = '';
   data.skills.forEach(skill => addSkill(skill.name, skill.levels));
-if (data.conditions) data.conditions.forEach(condition => addCondition(condition.name, condition.levels));
 
   const itemContainer = document.getElementById('items-container');
   itemContainer.innerHTML = '';
   data.items.forEach(item => addItem(item));
 
-  alert('Character loaded!');
+  const condContainer = document.getElementById('conditions-container');
+  condContainer.innerHTML = '';
+  if (data.conditions) data.conditions.forEach(condition => addCondition(condition.name, condition.levels));
+
+  alert("Character loaded!");
 }
 
 function clearData() {
   localStorage.removeItem('rfrbCharacter');
   document.getElementById('char-form').reset();
+  document.getElementById('exp-value').textContent = '0';
+  document.getElementById('luck-value').textContent = '1';
 
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
+  document.querySelectorAll('.wounds button').forEach(btn => btn.classList.remove('active'));
+
+  document.getElementById('skills-container').innerHTML = '';
   addSkill('Do anything');
 
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
+  document.getElementById('items-container').innerHTML = '';
+  document.getElementById('conditions-container').innerHTML = '';
 
   alert('Character cleared.');
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('skills-container').children.length === 0) {
-    addSkill('Do anything');
-  }
-  if (document.getElementById('items-container').children.length === 0) {
-
-  }
-});
-
 
 function adjustExp(amount) {
   const expSpan = document.getElementById('exp-value');
@@ -152,22 +154,6 @@ function adjustExp(amount) {
   expSpan.textContent = current;
 }
 
-function clearData() {
-  localStorage.removeItem('rfrbCharacter');
-  document.getElementById('char-form').reset();
-  document.getElementById('exp-value').textContent = '0';
-
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
-  addSkill('Do anything');
-
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
-
-  alert('Character cleared.');
-}
-
-
 function adjustLuck(amount) {
   const luckSpan = document.getElementById('luck-value');
   let current = parseInt(luckSpan.textContent);
@@ -175,22 +161,6 @@ function adjustLuck(amount) {
   if (current < 0) current = 0;
   luckSpan.textContent = current;
 }
-
-function saveData() {
-  const name = document.getElementById('char-name').value;
-  const exp = parseInt(document.getElementById('exp-value').textContent);
-  const luck = parseInt(document.getElementById('luck-value').textContent);
-
-  const skillInputs = document.querySelectorAll('.input-wrapper .skill-input');
-  const skills = [];
-  skillInputs.forEach(input => {
-    const container = input.parentElement;
-    const checkboxes = container.querySelectorAll('.skill-level');
-    const levels = Array.from(checkboxes).map(cb => cb.checked);
-    if (input.value.trim() !== "") {
-      skills.push({ name: input.value.trim(), levels });
-    }
-  });
 
   const itemInputs = document.querySelectorAll('.item-input');
   const items = [];
@@ -205,42 +175,6 @@ function saveData() {
   alert('Character saved!');
 }
 
-function loadData() {
-  const data = JSON.parse(localStorage.getItem('rfrbCharacter'));
-  if (!data) return alert('No saved character!');
-
-  document.getElementById('char-name').value = data.name;
-  document.getElementById('exp-value').textContent = data.exp ?? 0;
-  document.getElementById('luck-value').textContent = data.luck ?? 1;
-
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
-  data.skills.forEach(skill => addSkill(skill.name, skill.levels));
-if (data.conditions) data.conditions.forEach(condition => addCondition(condition.name, condition.levels));
-
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
-  data.items.forEach(item => addItem(item));
-
-  alert('Character loaded!');
-}
-
-function clearData() {
-  localStorage.removeItem('rfrbCharacter');
-  document.getElementById('char-form').reset();
-  document.getElementById('exp-value').textContent = '0';
-  document.getElementById('luck-value').textContent = '1';
-
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
-  addSkill('Do anything');
-
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
-
-  alert('Character cleared.');
-}
-
 function toggleWound(index) {
   const woundButtons = document.querySelectorAll('.wounds button');
   if (woundButtons[index]) {
@@ -248,84 +182,11 @@ function toggleWound(index) {
   }
 }
 
-function saveData() {
-  const name = document.getElementById('char-name').value;
-  const exp = parseInt(document.getElementById('exp-value').textContent);
-  const luck = parseInt(document.getElementById('luck-value').textContent);
-  const woundButtons = document.querySelectorAll('.wounds button');
-  const wounds = Array.from(woundButtons).map(button => button.classList.contains('active'));
-
-  const skillInputs = document.querySelectorAll('.input-wrapper .skill-input');
-  const skills = [];
-  skillInputs.forEach(input => {
-    const container = input.parentElement;
-    const checkboxes = container.querySelectorAll('.skill-level');
-    const levels = Array.from(checkboxes).map(cb => cb.checked);
-    if (input.value.trim() !== "") {
-      skills.push({ name: input.value.trim(), levels });
-    }
-  });
-
   const itemInputs = document.querySelectorAll('.item-input');
   const items = [];
   itemInputs.forEach(input => {
     if (input.value.trim() !== "") items.push(input.value.trim());
   });
-
-  const data = {name, exp, luck, wounds, skills, items,
-  conditions: Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({ name: wrapper.querySelector('.skill-input').value, levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked) }))
-};
-  localStorage.setItem('rfrbCharacter', JSON.stringify(data));
-  alert('Character saved!');
-}
-
-function loadData() {
-  const data = JSON.parse(localStorage.getItem('rfrbCharacter'));
-  if (!data) return alert('No saved character!');
-
-  document.getElementById('char-name').value = data.name;
-  document.getElementById('exp-value').textContent = data.exp ?? 0;
-  document.getElementById('luck-value').textContent = data.luck ?? 1;
-
-  const woundButtons = document.querySelectorAll('.wounds button');
-  if (data.wounds) {
-    data.wounds.forEach((isActive, i) => {
-      if (woundButtons[i]) {
-        woundButtons[i].classList.toggle('active', isActive);
-      }
-    });
-  }
-
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
-  data.skills.forEach(skill => addSkill(skill.name, skill.levels));
-if (data.conditions) data.conditions.forEach(condition => addCondition(condition.name, condition.levels));
-
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
-  data.items.forEach(item => addItem(item));
-
-  alert('Character loaded!');
-}
-
-function clearData() {
-  localStorage.removeItem('rfrbCharacter');
-  document.getElementById('char-form').reset();
-  document.getElementById('exp-value').textContent = '0';
-  document.getElementById('luck-value').textContent = '1';
-
-  const woundButtons = document.querySelectorAll('.wounds button');
-  woundButtons.forEach(button => button.classList.remove('active'));
-
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
-  addSkill('Do anything');
-
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
-
-  alert('Character cleared.');
-}
 
 function toggleRules() {
   const modal = document.getElementById('rules-modal');

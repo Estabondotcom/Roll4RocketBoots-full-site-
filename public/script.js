@@ -731,11 +731,15 @@ function loadGMImages() {
 
 function pushToDisplayArea(imageUrl) {
   const container = document.getElementById("image-display-area");
+  container.innerHTML = ""; // optional: clear old image
   const img = document.createElement("img");
   img.src = imageUrl;
   img.style = "max-width: 100%; margin-top: 10px;";
   img.draggable = false;
   container.appendChild(img);
+
+  // 🧠 Save to localStorage
+  localStorage.setItem("gmDisplayImage", imageUrl);
 }
 
 function pushToChat(imageUrl, label) {

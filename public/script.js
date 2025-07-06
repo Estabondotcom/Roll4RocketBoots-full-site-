@@ -717,6 +717,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 function spawnEmoji(symbol) {
+  console.log("Spawning emoji:", id, symbol);
   const display = document.getElementById("image-display-area");
 
   // ✅ Generate unique ID first

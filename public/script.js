@@ -951,15 +951,6 @@ function makeDraggable(el) {
   }
 };
 
-
-      // Optional: update Firestore in real-time
-      const id = el.dataset.id;
-      if (id) {
-        db.collection("sessions").doc(currentSessionId)
-          .collection("emojis").doc(id).update({ x, y });
-      }
-    };
-
     document.onmouseup = () => {
       document.onmousemove = null;
       document.onmouseup = null;

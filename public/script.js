@@ -449,12 +449,6 @@ function uploadCharacter(event) {
   reader.readAsText(file);
 }
 
-
-
-
-
-
-
 function addCondition(name = '', levels = [false, false, false]) {
   const container = document.getElementById('conditions-container');
 
@@ -517,8 +511,6 @@ function addCondition(value = "") {
                    <button class="delete-button" type="button" onclick="this.parentElement.remove()">❌</button>`;
   container.appendChild(div);
 }
-
-
 
 // === Auto-Save and Load ===
 function saveFormState() {
@@ -586,6 +578,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (document.getElementById('conditions-container').children.length === 0) {
     addCondition();
+  }
+    // ✅ Restore display image
+  const savedImageUrl = localStorage.getItem("gmDisplayImage");
+  if (savedImageUrl) {
+    pushToDisplayArea(savedImageUrl);
   }
 });
 

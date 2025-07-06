@@ -8,8 +8,7 @@ function selectSession(sessionId) {
   selectedSessionId = sessionId;
   currentSessionId = sessionId; 
   localStorage.setItem("currentSessionId", sessionId);
-
-
+  
   db.collection("sessions").doc(sessionId).get().then((doc) => {
     const data = doc.data();
     const user = auth.currentUser;
@@ -33,9 +32,12 @@ function selectSession(sessionId) {
 
     setupChatListener(sessionId);
     listenForEmojis();
+    listenForDisplayImageUpdates();
+    
   }).catch((error) => {
     console.error("Error loading session info:", error);
     alert("Failed to load session info.");
+    
   });
 }
 
@@ -279,6 +281,17 @@ function loadSessionsForUser(uid) {
       document.getElementById("sessionError").textContent = sessionListDiv.innerHTML ? "" : "You're not invited to any sessions.";
       document.getElementById("session-screen").style.display = "flex";
     });
+}
+function listenForDisplayImageUpdates() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) return;
+
+  db.collection("sessions").doc(sessionId).onSnapshot(doc => {
+    const data = doc.data();
+    if (data?.currentDisplayImage) {
+      pushToDisplayArea(data.currentDisplayImage);
+    }
+  });
 }
 
 function createSession() {

@@ -74,6 +74,11 @@ auth.onAuthStateChanged((user) => {
   if (user) loadSessionsForUser(user.uid);
 });
 
+function showCreateSessionScreen() {
+  document.getElementById("session-screen").style.display = "none";
+  document.getElementById("create-session-screen").style.display = "flex";
+}
+
 function saveCharacterToFirestore() {
   const user = auth.currentUser;
   if (!user) return alert("You must be logged in to save.");

@@ -947,11 +947,26 @@ window.addEventListener("DOMContentLoaded", () => {
   applyTransform();
 
   zoomContainer.addEventListener("wheel", (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    zoomLevel = Math.min(Math.max(zoomLevel + delta, 0.5), 2); // Clamp between 0.5 and 2
-    applyTransform();
-  });
+  e.preventDefault();
+
+  const rect = zoomContainer.getBoundingClientRect();
+  const offsetX = e.clientX - rect.left;
+  const offsetY = e.clientY - rect.top;
+
+  const zoomFactor = 0.1;
+  const scaleChange = e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
+
+  // New zoom level clamped
+  const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.5), 2);
+
+  // Calculate the zoom focus point adjustment
+  panX = offsetX - (offsetX - panX) * (newZoomLevel / zoomLevel);
+  panY = offsetY - (offsetY - panY) * (newZoomLevel / zoomLevel);
+
+  zoomLevel = newZoomLevel;
+  applyTransform();
+});
+
 
   zoomContainer.addEventListener("mousedown", (e) => {
     isPanning = true;

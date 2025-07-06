@@ -419,10 +419,9 @@ function loadGMImages() {
 }
 
 
-function pushToDisplayArea(imageUrl) {
+function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("image-display-area");
 
-  // ✅ Only remove previous image, not emojis
   const oldImage = container.querySelector("img");
   if (oldImage) oldImage.remove();
 
@@ -434,12 +433,14 @@ function pushToDisplayArea(imageUrl) {
 
   localStorage.setItem("gmDisplayImage", imageUrl);
 
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (sessionId) {
-    db.collection("sessions").doc(sessionId).update({
-      currentDisplayImage: imageUrl,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+  if (updateFirestore) {
+    const sessionId = localStorage.getItem("currentSessionId");
+    if (sessionId) {
+      db.collection("sessions").doc(sessionId).update({
+        currentDisplayImage: imageUrl,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
   }
 }
 

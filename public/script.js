@@ -101,7 +101,7 @@ function saveData() {
 }
 
 
-ffunction loadData() {
+function loadData() {
   const data = JSON.parse(localStorage.getItem('rfrbCharacter'));
   if (!data) return alert('No saved character!');
 

@@ -181,43 +181,6 @@ function toggleRules() {
   }
 }
 
-function addCondition(name = '', levels = [false, false, false]) {
-  const container = document.getElementById('conditions-container');
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'input-wrapper';
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'skill-input';
-  input.placeholder = 'New condition...';
-  input.value = name;
-  input.maxLength = 20;
-  wrapper.appendChild(input);
-
-  const checkboxes = document.createElement('div');
-  checkboxes.className = 'skill-levels';
-
-  for (let i = 0; i < 3; i++) {
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'skill-level';
-    checkbox.checked = levels[i];
-    checkboxes.appendChild(checkbox);
-  }
-
-  wrapper.appendChild(checkboxes);
-
-  const button = document.createElement('button');
-  button.className = 'remove-button';
-  button.innerHTML = '❌';
-  button.onclick = () => wrapper.remove();
-  wrapper.appendChild(button);
-
-  container.appendChild(wrapper);
-}
-
-
 function setTheme(theme) {
   const link = document.querySelector('link[rel="stylesheet"]');
   if (theme === 'dark') {

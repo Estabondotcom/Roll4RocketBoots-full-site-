@@ -969,21 +969,24 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
   zoomContainer.addEventListener("mousedown", (e) => {
-    isPanning = true;
-    startX = e.clientX - panX;
-    startY = e.clientY - panY;
-  });
+  isPanning = true;
+  startX = e.clientX - panX;
+  startY = e.clientY - panY;
+  zoomContainer.style.cursor = "grabbing";
+});
 
-  document.addEventListener("mousemove", (e) => {
-    if (!isPanning) return;
-    panX = e.clientX - startX;
-    panY = e.clientY - startY;
-    applyTransform();
-  });
+document.addEventListener("mousemove", (e) => {
+  if (!isPanning) return;
+  panX = e.clientX - startX;
+  panY = e.clientY - startY;
+  applyTransform();
+});
 
-  document.addEventListener("mouseup", () => {
-    isPanning = false;
-  });
+document.addEventListener("mouseup", () => {
+  isPanning = false;
+  zoomContainer.style.cursor = "grab";
+});
+
 
   window.addEventListener("beforeunload", () => {
     localStorage.setItem("zoomLevel", zoomLevel);

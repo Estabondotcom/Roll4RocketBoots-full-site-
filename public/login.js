@@ -6,6 +6,7 @@ let currentSessionId = null;
 
 function selectSession(sessionId) {
   selectedSessionId = sessionId;
+  currentSessionId = sessionId; 
   localStorage.setItem("currentSessionId", sessionId);
 
 

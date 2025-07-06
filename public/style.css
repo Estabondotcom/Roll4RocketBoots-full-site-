@@ -332,4 +332,8 @@ label[for="player-name"] {
   left: 0;
   will-change: transform;
 }
+#zoom-container {
+  user-select: none;
+  -webkit-user-drag: none;
+}
 

@@ -131,12 +131,24 @@ function saveCharacterToFirestore() {
       .set(characterData)
   );
 
-  Promise.all(promises)
-    .then(() => alert(`Character '${characterName}' saved to Firestore!`))
-    .catch((error) => {
-      console.error("Error saving character:", error);
-      alert("Failed to save character.");
-    });
+ Promise.all(promises)
+  .then(() => {
+    alert(`Character '${characterName}' saved to Firestore!`);
+
+    // Store the name so autosaves can use it
+    localStorage.setItem("autoSaveCharacterName", characterName);
+
+    // Only set up listeners once
+    if (!localStorage.getItem("autoSaveInitialized")) {
+      setupAutoSaveListeners();
+      localStorage.setItem("autoSaveInitialized", "true");
+      console.log("✅ Autosave listeners activated.");
+    }
+  })
+  .catch((error) => {
+    console.error("Error saving character:", error);
+    alert("Failed to save character.");
+  });
 }
 
 

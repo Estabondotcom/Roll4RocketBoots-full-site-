@@ -295,8 +295,23 @@ function listenForDisplayImageUpdates() {
 
   db.collection("sessions").doc(sessionId).onSnapshot(doc => {
     const data = doc.data();
+    const container = document.getElementById("image-display-area");
+
     if (data?.currentDisplayImage) {
-      pushToDisplayArea(data.currentDisplayImage);
+      // 🧠 Remove only previous image, keep emojis
+      const oldImage = container.querySelector("img");
+      if (oldImage?.src !== data.currentDisplayImage) {
+        if (oldImage) oldImage.remove();
+        const img = document.createElement("img");
+        img.src = data.currentDisplayImage;
+        img.style = "max-width: 100%; margin-top: 10px;";
+        img.draggable = false;
+        container.appendChild(img);
+      }
+    } else {
+      // ✅ Image was deleted — remove it
+      const oldImage = container.querySelector("img");
+      if (oldImage) oldImage.remove();
     }
   });
 }

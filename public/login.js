@@ -151,6 +151,8 @@ function saveCharacterToFirestore() {
       setupAutoSaveListeners();
       localStorage.setItem("autoSaveInitialized", "true");
       console.log("✅ Autosave listeners activated.");
+      const hint = document.getElementById("autosave-hint");
+  if (hint) hint.style.display = "none";
     }
   })
   .catch((error) => {

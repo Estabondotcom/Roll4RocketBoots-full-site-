@@ -906,6 +906,7 @@ function spawnEmoji(symbol) {
   emoji.textContent = symbol;
   emoji.style.left = "100px";
   emoji.style.top = "100px";
+  emoji.dataset.id = id;
 
   display.appendChild(emoji);
   makeDraggable(emoji);

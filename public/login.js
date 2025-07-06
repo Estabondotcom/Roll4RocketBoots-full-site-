@@ -550,15 +550,17 @@ function setupAutoSaveListeners() {
   const observer = new MutationObserver(() => setupAutoSaveListeners());
   observer.observe(document.getElementById("char-form"), { childList: true, subtree: true });
 }
-function listenForEmojis(){
-   console.log("Emoji change detected", change.type, change.doc.data());
+function listenForEmojis() {
   const display = document.getElementById("image-display-area");
+
   db.collection("sessions").doc(currentSessionId).collection("emojis")
     .onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
+        console.log("Emoji change:", change.type, change.doc.data());  // ✅ inside the loop
         const { id, symbol, x, y } = change.doc.data();
 
         if (change.type === "added") {
+          if (document.querySelector(`[data-id="${id}"]`)) return;
           const emoji = document.createElement("div");
           emoji.className = "draggable-emoji";
           emoji.textContent = symbol;
@@ -584,5 +586,3 @@ function listenForEmojis(){
       });
     });
 }
-
-

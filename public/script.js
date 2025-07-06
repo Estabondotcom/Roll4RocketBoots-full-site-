@@ -509,20 +509,32 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
     });
 }
 function cleardisplay() {
-  const display = document.getElementById("image-display-area");
-  if (display) display.innerHTML = "";
+  const zoomContent = document.getElementById("zoom-content");
+  if (zoomContent) {
+    // ✅ Remove the image only (not emojis if they're separate)
+    const img = zoomContent.querySelector("img");
+    if (img) img.remove();
+  }
+
+  // ✅ Reset zoom/pan if you want
+  zoomLevel = 1;
+  panX = 0;
+  panY = 0;
+  applyTransform();
+
+  // ✅ Clear local image record
   localStorage.removeItem("gmDisplayImage");
 
+  // ✅ Remove from Firestore
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return;
 
-  // ❌ Clear current image from Firestore
   db.collection("sessions").doc(sessionId).update({
     currentDisplayImage: firebase.firestore.FieldValue.delete(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  // 🧹 Delete all emojis from Firestore
+  // ✅ Also remove emojis (already in your version)
   db.collection("sessions").doc(sessionId).collection("emojis").get()
     .then(snapshot => {
       const batch = db.batch();
@@ -536,6 +548,7 @@ function cleardisplay() {
       console.error("❌ Failed to clear emojis:", err);
     });
 }
+
 
 
 function clearchat() {

@@ -922,7 +922,67 @@ function viewGMCharacterLive(sessionId, charId) {
         <p><strong>Conditions:</strong><br>${(data.conditions || []).map(c => `• ${c.name}`).join("<br>")}</p>
       `;
     });
+let zoomLevel = 1;
+let panX = 0;
+let panY = 0;
+let isPanning = false;
+let startX = 0;
+let startY = 0;
+
+let zoomContainer, zoomContent;
+
+function applyTransform() {
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
 }
+
+window.addEventListener("DOMContentLoaded", () => {
+  // Select elements *after* DOM has loaded
+  zoomContainer = document.getElementById("zoom-container");
+  zoomContent = document.getElementById("zoom-content");
+
+  // Restore saved state
+  zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
+  panX = parseFloat(localStorage.getItem("panX")) || 0;
+  panY = parseFloat(localStorage.getItem("panY")) || 0;
+  applyTransform();
+
+  // Add zoom
+  zoomContainer.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    zoomLevel = Math.min(Math.max(zoomLevel + delta, 0.5), 2); // Clamp between 0.5x and 2x
+    applyTransform();
+  });
+
+  // Start panning
+  zoomContainer.addEventListener("mousedown", (e) => {
+    isPanning = true;
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+  });
+
+  // Move while panning
+  document.addEventListener("mousemove", (e) => {
+    if (!isPanning) return;
+    panX = e.clientX - startX;
+    panY = e.clientY - startY;
+    applyTransform();
+  });
+
+  // Stop panning
+  document.addEventListener("mouseup", () => {
+    isPanning = false;
+  });
+});
+
+// Save view on exit
+window.addEventListener("beforeunload", () => {
+  localStorage.setItem("zoomLevel", zoomLevel);
+  localStorage.setItem("panX", panX);
+  localStorage.setItem("panY", panY);
+});
+
 
 
 

@@ -414,27 +414,21 @@ function saveFormState() {
     localStorage.setItem("formState", JSON.stringify(data));
 }
 
-function loadFormState() {
-    const saved = localStorage.getItem("formState");
-    if (!saved) return;
-    const data = JSON.parse(saved);
-    Object.keys(data).forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            if (el.type === "checkbox") {
-                el.checked = data[id];
-            } else {
-                el.value = data[id];
-            }
-        }
-    });
-    if (data["theme"]) {
-        const themeLink = document.getElementById("theme-link");
-        if (themeLink) {
-            themeLink.setAttribute("href", data["theme"]);
-        }
+function saveFormState() {
+  const elements = document.querySelectorAll("input, textarea, select");
+  const data = {};
+  elements.forEach(el => {
+    if (el.type === "file") return; // ❌ Skip file inputs
+    if (el.type === "checkbox") {
+      data[el.id] = el.checked;
+    } else {
+      data[el.id] = el.value;
     }
+  });
+  data["theme"] = document.getElementById("theme-link")?.getAttribute("href");
+  localStorage.setItem("formState", JSON.stringify(data));
 }
+
 
 window.addEventListener("load", () => {
     loadFormState();

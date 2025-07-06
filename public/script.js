@@ -261,6 +261,7 @@ window.addEventListener("load", () => {
         });
     });
 });
+
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('skills-container').children.length === 0) {
     addSkill('Do anything');
@@ -283,6 +284,7 @@ db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().th
   }
 });
 }
+});
 
 function toggleCharacterPanel() {
   document.getElementById("character-panel").style.display = "block";

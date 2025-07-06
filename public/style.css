@@ -336,4 +336,12 @@ label[for="player-name"] {
   user-select: none;
   -webkit-user-drag: none;
 }
+.draggable-emoji {
+  position: absolute;
+  font-size: 2rem;
+  cursor: grab;
+  user-select: none;
+  z-index: 10;
+}
+
 

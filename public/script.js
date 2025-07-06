@@ -717,21 +717,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 function spawnEmoji(symbol) {
-  console.log("Spawning emoji:", id, symbol);
-  const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const display = document.getElementById("image-display-area");
-  const emoji = document.createElement("div");
-  emoji.className = "draggable-emoji";
-  emoji.textContent = symbol;
-  emoji.dataset.id = id;
-  emoji.style.left = "100px";
-  emoji.style.top = "100px";
-  makeDraggable(emoji);
 
-  // ✅ Append to DOM immediately
-  display.appendChild(emoji);
+  // ✅ Declare ID first
+  const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-  // ✅ Sync to Firestore (so others get it)
+  // ✅ Add to Firestore (triggers listener)
   db.collection("sessions").doc(currentSessionId)
     .collection("emojis").doc(id).set({
       symbol,
@@ -740,7 +731,18 @@ function spawnEmoji(symbol) {
       id,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+  // ✅ Optionally display immediately (if desired)
+  const emoji = document.createElement("div");
+  emoji.className = "draggable-emoji";
+  emoji.textContent = symbol;
+  emoji.dataset.id = id;
+  emoji.style.left = "100px";
+  emoji.style.top = "100px";
+  makeDraggable(emoji);
+  display.appendChild(emoji);
 }
+
 function makeDraggable(el) {
   let startX, startY, initialLeft, initialTop;
 

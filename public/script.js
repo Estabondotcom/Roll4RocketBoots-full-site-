@@ -126,7 +126,7 @@ function loadData() {
   itemContainer.innerHTML = '';
   data.items?.forEach(item => addItem(item));
 
-  data.conditions?.forEach(condition => addCondition(condition.name, condition.levels));
+  if (data.conditions) data.conditions.forEach(name => addCondition(name));;
 
   alert('Character loaded!');
 }

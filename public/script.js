@@ -821,7 +821,7 @@ function toggleGMMode() {
     characterPanel.style.display = "none";
     gmPanel.style.display = "block";
     gmButton.textContent = "Exit GM Mode";
-    loadGMCharacterTabs();
+    loadAllGMCharacterPanels();
   } else {
     characterPanel.style.display = "block";
     gmPanel.style.display = "none";

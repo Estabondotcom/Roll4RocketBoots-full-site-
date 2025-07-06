@@ -550,7 +550,9 @@ function setupAutoSaveListeners() {
   const observer = new MutationObserver(() => setupAutoSaveListeners());
   observer.observe(document.getElementById("char-form"), { childList: true, subtree: true });
 }
-function listenForEmojis() {
+function listenForEmojis()
+  console.log("Emoji change detected", change.type, change.doc.data());
+ {
   const display = document.getElementById("image-display-area");
   db.collection("sessions").doc(currentSessionId).collection("emojis")
     .onSnapshot(snapshot => {

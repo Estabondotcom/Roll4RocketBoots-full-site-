@@ -164,9 +164,6 @@ function adjustLuck(amount) {
   if (current < 0) current = 0;
   luckSpan.textContent = current;
 }
-  const data = {name, exp, luck, skills, items,
-  conditions: Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({ name: wrapper.querySelector('.skill-input').value, levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked) }))
-};
  
 function toggleWound(index) {
   const woundButtons = document.querySelectorAll('.wounds button');

@@ -736,9 +736,6 @@ document.addEventListener("mouseup", () => {
     localStorage.setItem("panY", panY);
   });
 });
-window.addSkill = addSkill;
-window.addItem = addItem;
-window.addCondition = addCondition;
 
 document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("autoSaveInitialized")) {
@@ -817,3 +814,7 @@ function makeDraggable(el) {
     };
   };
 }
+window.addSkill = addSkill;
+window.addItem = addItem;
+window.addCondition = addCondition;
+window.pushToDisplayArea = pushToDisplayArea;

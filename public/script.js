@@ -549,8 +549,6 @@ function cleardisplay() {
     });
 }
 
-
-
 function clearchat() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) {

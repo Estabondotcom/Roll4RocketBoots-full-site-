@@ -171,10 +171,7 @@ function adjustLuck(amount) {
   const data = {name, exp, luck, skills, items,
   conditions: Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({ name: wrapper.querySelector('.skill-input').value, levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked) }))
 };
-  localStorage.setItem('rfrbCharacter', JSON.stringify(data));
-  alert('Character saved!');
-}
-
+ 
 function toggleWound(index) {
   const woundButtons = document.querySelectorAll('.wounds button');
   if (woundButtons[index]) {

@@ -440,14 +440,18 @@ function handlePasteImage(event) {
   }
 }
 function setupAutoSaveListeners() {
+  let debounceTimer;
+
   const triggerSave = () => {
-    // Don't autosave until name is chosen
-    if (localStorage.getItem("autoSaveCharacterName")) {
+    if (!localStorage.getItem("autoSaveCharacterName")) return;
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
       saveCharacterToFirestore(true);
-    }
+      console.log("💾 Autosave triggered");
+    }, 500); // Wait 500ms after last input before saving
   };
 
-  // Listen to most form elements
   const elements = document.querySelectorAll(
     '#player-name, #exp-value, #luck-value, .skill-input, .item-input, .condition-input, .skill-level, .wounds button'
   );
@@ -458,7 +462,7 @@ function setupAutoSaveListeners() {
     el.addEventListener("click", triggerSave);
   });
 
-  // When new elements are added (like a new skill/item), rebind listeners
+  // Re-attach for newly added elements
   const observer = new MutationObserver(() => setupAutoSaveListeners());
   observer.observe(document.getElementById("char-form"), { childList: true, subtree: true });
 }

@@ -161,13 +161,6 @@ function adjustLuck(amount) {
   if (current < 0) current = 0;
   luckSpan.textContent = current;
 }
-
-  const itemInputs = document.querySelectorAll('.item-input');
-  const items = [];
-  itemInputs.forEach(input => {
-    if (input.value.trim() !== "") items.push(input.value.trim());
-  });
-
   const data = {name, exp, luck, skills, items,
   conditions: Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({ name: wrapper.querySelector('.skill-input').value, levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked) }))
 };
@@ -177,6 +170,7 @@ function toggleWound(index) {
   if (woundButtons[index]) {
     woundButtons[index].classList.toggle('active');
   }
+}
 
   const itemInputs = document.querySelectorAll('.item-input');
   const items = [];
@@ -245,15 +239,6 @@ function setTheme(theme) {
   } else {
     link.href = 'style-default.css';
   }
-}
-
-function addCondition(value = "") {
-  const container = document.getElementById('conditions-container');
-  const div = document.createElement('div');
-  div.className = "input-wrapper";
-  div.innerHTML = `<input type="text" class="condition-input" placeholder="Condition..." value="${value}" maxlength="20">
-                   <button class="delete-button" type="button" onclick="this.parentElement.remove()">❌</button>`;
-  container.appendChild(div);
 }
 
 // === Auto-Save and Load ===

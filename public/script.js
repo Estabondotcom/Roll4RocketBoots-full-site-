@@ -922,7 +922,7 @@ function viewGMCharacterLive(sessionId, charId) {
         <p><strong>Conditions:</strong><br>${(data.conditions || []).map(c => `• ${c.name}`).join("<br>")}</p>
       `;
     });
-}
+
 window.addEventListener("DOMContentLoaded", () => {
   const zoomContainer = document.getElementById("zoom-container");
   const zoomContent = document.getElementById("zoom-content");
@@ -976,7 +976,7 @@ window.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("panY", panY);
   });
 });
-}
+
 
   window.addSkill = addSkill;
 window.addItem = addItem;

@@ -105,29 +105,32 @@ function loadData() {
   const data = JSON.parse(localStorage.getItem('rfrbCharacter'));
   if (!data) return alert('No saved character!');
 
-  document.getElementById('char-name').value = data.name;
+  document.getElementById('char-name').value = data.name || "";
   document.getElementById('exp-value').textContent = data.exp ?? 0;
   document.getElementById('luck-value').textContent = data.luck ?? 1;
 
-  document.querySelectorAll('.wounds button').forEach((btn, i) => {
-    if (data.wounds && data.wounds[i]) btn.classList.add('active');
-    else btn.classList.remove('active');
-  });
+  const woundButtons = document.querySelectorAll('.wounds button');
+  if (data.wounds) {
+    data.wounds.forEach((isActive, i) => {
+      if (woundButtons[i]) {
+        woundButtons[i].classList.toggle('active', isActive);
+      }
+    });
+  }
 
   const skillContainer = document.getElementById('skills-container');
   skillContainer.innerHTML = '';
-  data.skills.forEach(skill => addSkill(skill.name, skill.levels));
+  data.skills?.forEach(skill => addSkill(skill.name, skill.levels));
 
   const itemContainer = document.getElementById('items-container');
   itemContainer.innerHTML = '';
-  data.items.forEach(item => addItem(item));
+  data.items?.forEach(item => addItem(item));
 
-  const condContainer = document.getElementById('conditions-container');
-  condContainer.innerHTML = '';
-  if (data.conditions) data.conditions.forEach(condition => addCondition(condition.name, condition.levels));
+  data.conditions?.forEach(condition => addCondition(condition.name, condition.levels));
 
-  alert("Character loaded!");
+  alert('Character loaded!');
 }
+
 
 function clearData() {
   localStorage.removeItem('rfrbCharacter');

@@ -785,7 +785,9 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
 function cleardisplay() {
   const display = document.getElementById("image-display-area");
   if (display) display.innerHTML = "";
+  localStorage.removeItem("gmDisplayImage");
 }
+
 function clearchat() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) {

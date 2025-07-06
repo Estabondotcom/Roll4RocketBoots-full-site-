@@ -718,18 +718,22 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 function spawnEmoji(symbol) {
   const display = document.getElementById("image-display-area");
-   const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const emoji = document.createElement("div");
 
+  // ✅ Generate unique ID first
+  const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+  const emoji = document.createElement("div");
   emoji.className = "draggable-emoji";
   emoji.textContent = symbol;
+  emoji.dataset.id = id;
   emoji.style.left = "100px";
   emoji.style.top = "100px";
-  emoji.dataset.id = id; // ✅ now 'id' is defined above
-  display.appendChild(emoji);
   makeDraggable(emoji);
 
-  // Save to Firestore
+  // ✅ Append to DOM immediately
+  display.appendChild(emoji);
+
+  // ✅ Sync to Firestore (so others get it)
   db.collection("sessions").doc(currentSessionId)
     .collection("emojis").doc(id).set({
       symbol,

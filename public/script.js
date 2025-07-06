@@ -895,6 +895,58 @@ document.addEventListener("DOMContentLoaded", () => {
     if (hint) hint.style.display = "none";
   }
 });
+function spawnEmoji(symbol) {
+  const display = document.getElementById("image-display-area");
+  const emoji = document.createElement("div");
+
+  emoji.className = "draggable-emoji";
+  emoji.textContent = symbol;
+  emoji.style.left = "100px";
+  emoji.style.top = "100px";
+
+  display.appendChild(emoji);
+  makeDraggable(emoji);
+
+  // Save to Firestore
+  const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  db.collection("sessions").doc(currentSessionId)
+    .collection("emojis").doc(id).set({
+      symbol,
+      x: 100,
+      y: 100,
+      id,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
+function makeDraggable(el) {
+  let offsetX, offsetY;
+
+  el.onmousedown = function (e) {
+    e.preventDefault();
+    offsetX = e.clientX - el.offsetLeft;
+    offsetY = e.clientY - el.offsetTop;
+
+    document.onmousemove = function (e) {
+      const x = e.clientX - offsetX;
+      const y = e.clientY - offsetY;
+      el.style.left = x + "px";
+      el.style.top = y + "px";
+
+      // Optional: update Firestore in real-time
+      const id = el.dataset.id;
+      if (id) {
+        db.collection("sessions").doc(currentSessionId)
+          .collection("emojis").doc(id).update({ x, y });
+      }
+    };
+
+    document.onmouseup = () => {
+      document.onmousemove = null;
+      document.onmouseup = null;
+    };
+  };
+}
+
 
 
 

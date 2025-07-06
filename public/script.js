@@ -413,6 +413,7 @@ function saveFormState() {
     data["theme"] = document.getElementById("theme-link")?.getAttribute("href");
     localStorage.setItem("formState", JSON.stringify(data));
 }
+
 function loadFormState() {
   const saved = localStorage.getItem("formState");
   if (!saved) return;

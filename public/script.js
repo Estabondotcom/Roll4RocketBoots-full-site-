@@ -922,34 +922,42 @@ function spawnEmoji(symbol) {
     });
 }
 function makeDraggable(el) {
-  let offsetX, offsetY;
+  let startX, startY, initialLeft, initialTop;
 
   el.onmousedown = function (e) {
     e.preventDefault();
-    offsetX = e.clientX - el.offsetLeft;
-    offsetY = e.clientY - el.offsetTop;
+
+    const zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
+    const zoomContent = document.getElementById("zoom-content");
+    const rect = zoomContent.getBoundingClientRect();
+
+    // Mouse position in zoomed space
+    startX = (e.clientX - rect.left) / zoomLevel;
+    startY = (e.clientY - rect.top) / zoomLevel;
+
+    // Current emoji position
+    initialLeft = parseFloat(el.style.left) || 0;
+    initialTop = parseFloat(el.style.top) || 0;
 
     document.onmousemove = function (e) {
-  const zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
-  const panX = parseFloat(localStorage.getItem("panX")) || 0;
-  const panY = parseFloat(localStorage.getItem("panY")) || 0;
+      const currentX = (e.clientX - rect.left) / zoomLevel;
+      const currentY = (e.clientY - rect.top) / zoomLevel;
 
-  // Get position relative to the zoom container
-  const zoomContent = document.getElementById("zoom-content");
-  const rect = zoomContent.getBoundingClientRect();
-  
-  const x = (e.clientX - rect.left - offsetX) / zoomLevel;
-  const y = (e.clientY - rect.top - offsetY) / zoomLevel;
+      const dx = currentX - startX;
+      const dy = currentY - startY;
 
-  el.style.left = x + "px";
-  el.style.top = y + "px";
+      const newX = initialLeft + dx;
+      const newY = initialTop + dy;
 
-  const id = el.dataset.id;
-  if (id) {
-    db.collection("sessions").doc(currentSessionId)
-      .collection("emojis").doc(id).update({ x, y });
-  }
-};
+      el.style.left = newX + "px";
+      el.style.top = newY + "px";
+
+      const id = el.dataset.id;
+      if (id) {
+        db.collection("sessions").doc(currentSessionId)
+          .collection("emojis").doc(id).update({ x: newX, y: newY });
+      }
+    };
 
     document.onmouseup = () => {
       document.onmousemove = null;
@@ -957,6 +965,8 @@ function makeDraggable(el) {
     };
   };
 }
+
+
 
 
 

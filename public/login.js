@@ -1,5 +1,7 @@
 let selectedSessionId = null;
 let currentUserRole = null;
+let currentSessionId = null;
+
 
 
 function selectSession(sessionId) {

@@ -78,12 +78,40 @@ function saveCharacterToFirestore() {
   const characterName = prompt("Enter a name for this character:");
   if (!characterName) return alert("Character not saved (no name given).");
 
+  // Build skills array with levels
+  const skills = Array.from(document.querySelectorAll('.skill-input')).map(input => {
+    const container = input.closest('.input-wrapper');
+    const checkboxes = container.querySelectorAll('.skill-level');
+    const levels = Array.from(checkboxes).map(cb => cb.checked);
+    return {
+      name: input.value,
+      levels
+    };
+  });
+
+  // Build conditions array
+  const conditions = Array.from(document.querySelectorAll('.condition-input')).map(input => ({
+    name: input.value
+  }));
+
+  // Build items array
+  const items = Array.from(document.querySelectorAll('.item-input')).map(input => input.value);
+
+  // Build wounds array (if implemented)
+  const wounds = Array.from(document.querySelectorAll('.wounds button')).map(btn =>
+    btn.classList.contains('active')
+  );
+
+  // Collect character data
   const characterData = {
     name: document.getElementById("player-name").value || "",
-    exp: document.getElementById("exp-value").textContent || 0,
-    luck: document.getElementById("luck-value").textContent || 1,
-    skills: Array.from(document.querySelectorAll('.skill-input')).map(input => input.value),
-    items: Array.from(document.querySelectorAll('.item-input')).map(input => input.value)
+    exp: parseInt(document.getElementById("exp-value").textContent) || 0,
+    luck: parseInt(document.getElementById("luck-value").textContent) || 1,
+    skills,
+    items,
+    conditions,
+    wounds,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   const sessionId = localStorage.getItem("currentSessionId");
@@ -110,6 +138,7 @@ function saveCharacterToFirestore() {
       alert("Failed to save character.");
     });
 }
+
 
 function loadCharacterFromFirestore() {
   const user = auth.currentUser;

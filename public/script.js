@@ -422,15 +422,27 @@ function loadGMImages() {
 function pushToDisplayArea(imageUrl) {
   const container = document.getElementById("image-display-area");
   container.innerHTML = ""; // optional: clear old image
+
   const img = document.createElement("img");
   img.src = imageUrl;
   img.style = "max-width: 100%; margin-top: 10px;";
   img.draggable = false;
   container.appendChild(img);
 
-  // 🧠 Save to localStorage
+  // 🧠 Save locally
   localStorage.setItem("gmDisplayImage", imageUrl);
+
+  // ✅ Save to Firestore for all players to see
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (sessionId) {
+    db.collection("sessions").doc(sessionId).update({
+      currentDisplayImage: imageUrl,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
 }
+
+
 
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;

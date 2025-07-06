@@ -266,23 +266,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('skills-container').children.length === 0) {
     addSkill('Do anything');
   }
-  // You could also auto-start with a blank condition and item if you want:
   if (document.getElementById('items-container').children.length === 0) {
     addItem();
   }
   if (document.getElementById('conditions-container').children.length === 0) {
     addCondition();
   }
-const savedImageUrl = localStorage.getItem("gmDisplayImage");
 
-// 🔒 Only restore if Firestore still has a valid image
-db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().then(doc => {
-  if (doc.exists && doc.data()?.currentDisplayImage) {
-    pushToDisplayArea(doc.data().currentDisplayImage, false); // use Firestore as truth
-  } else {
-    localStorage.removeItem("gmDisplayImage"); // 🔥 prevent reloading deleted image
-  }
-});
+  const savedImageUrl = localStorage.getItem("gmDisplayImage");
+
+  // 🔒 Only restore if Firestore still has a valid image
+  db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().then(doc => {
+    if (doc.exists && doc.data()?.currentDisplayImage) {
+      pushToDisplayArea(doc.data().currentDisplayImage, false);
+    } else {
+      localStorage.removeItem("gmDisplayImage");
+    }
+  });
+}); 
 
 function toggleCharacterPanel() {
   document.getElementById("character-panel").style.display = "block";

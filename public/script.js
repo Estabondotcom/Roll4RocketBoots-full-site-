@@ -284,7 +284,7 @@ db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().th
   }
 });
 });
-
+});
 function toggleCharacterPanel() {
   document.getElementById("character-panel").style.display = "block";
   document.getElementById("main-container").style.display = "block";

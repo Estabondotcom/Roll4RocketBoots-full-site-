@@ -718,11 +718,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 function spawnEmoji(symbol) {
   console.log("Spawning emoji:", id, symbol);
-  const display = document.getElementById("image-display-area");
-
-  // ✅ Generate unique ID first
   const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
+  const display = document.getElementById("image-display-area");
   const emoji = document.createElement("div");
   emoji.className = "draggable-emoji";
   emoji.textContent = symbol;

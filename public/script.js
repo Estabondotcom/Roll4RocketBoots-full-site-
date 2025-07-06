@@ -180,7 +180,6 @@ function toggleWound(index) {
   if (woundButtons[index]) {
     woundButtons[index].classList.toggle('active');
   }
-}
 
   const itemInputs = document.querySelectorAll('.item-input');
   const items = [];

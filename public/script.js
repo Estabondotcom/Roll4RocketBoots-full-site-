@@ -178,6 +178,13 @@ function saveData() {
 };
   localStorage.setItem('rfrbCharacter', JSON.stringify(data));
   alert('Character saved!');
+  
+  // ✅ Hide autosave hint after first save
+  if (!localStorage.getItem('autosaveInitialized')) {
+    localStorage.setItem('autosaveInitialized', 'true');
+    const hint = document.getElementById('autosave-hint');
+    if (hint) hint.style.display = 'none';
+  }
 }
 
 function loadData() {

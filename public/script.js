@@ -930,10 +930,27 @@ function makeDraggable(el) {
     offsetY = e.clientY - el.offsetTop;
 
     document.onmousemove = function (e) {
-      const x = e.clientX - offsetX;
-      const y = e.clientY - offsetY;
-      el.style.left = x + "px";
-      el.style.top = y + "px";
+  const zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
+  const panX = parseFloat(localStorage.getItem("panX")) || 0;
+  const panY = parseFloat(localStorage.getItem("panY")) || 0;
+
+  // Get position relative to the zoom container
+  const zoomContent = document.getElementById("zoom-content");
+  const rect = zoomContent.getBoundingClientRect();
+  
+  const x = (e.clientX - rect.left - offsetX) / zoomLevel;
+  const y = (e.clientY - rect.top - offsetY) / zoomLevel;
+
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+
+  const id = el.dataset.id;
+  if (id) {
+    db.collection("sessions").doc(currentSessionId)
+      .collection("emojis").doc(id).update({ x, y });
+  }
+};
+
 
       // Optional: update Firestore in real-time
       const id = el.dataset.id;

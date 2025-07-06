@@ -272,12 +272,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('conditions-container').children.length === 0) {
     addCondition();
   }
-    // ✅ Restore display image
-  const savedImageUrl = localStorage.getItem("gmDisplayImage");
-  if (savedImageUrl) {
-    pushToDisplayArea(savedImageUrl);
+const savedImageUrl = localStorage.getItem("gmDisplayImage");
+
+// 🔒 Only restore if Firestore still has a valid image
+db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().then(doc => {
+  if (doc.exists && doc.data()?.currentDisplayImage) {
+    pushToDisplayArea(doc.data().currentDisplayImage, false); // use Firestore as truth
+  } else {
+    localStorage.removeItem("gmDisplayImage"); // 🔥 prevent reloading deleted image
   }
 });
+
 
 function toggleCharacterPanel() {
   document.getElementById("character-panel").style.display = "block";

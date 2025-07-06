@@ -815,4 +815,3 @@ function makeDraggable(el) {
     };
   };
 }
-}

@@ -885,11 +885,17 @@ document.addEventListener("mouseup", () => {
     localStorage.setItem("panY", panY);
   });
 });
-
-
-  window.addSkill = addSkill;
+window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (localStorage.getItem("autoSaveInitialized")) {
+    const hint = document.getElementById("autosave-hint");
+    if (hint) hint.style.display = "none";
+  }
+});
+
 
 
 

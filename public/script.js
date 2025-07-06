@@ -983,6 +983,9 @@ window.addEventListener("beforeunload", () => {
   localStorage.setItem("panY", panY);
 });
 
+  window.addSkill = addSkill;
+window.addItem = addItem;
+window.addCondition = addCondition;
 
 
 

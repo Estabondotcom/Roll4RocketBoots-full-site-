@@ -493,13 +493,29 @@ function cleardisplay() {
   localStorage.removeItem("gmDisplayImage");
 
   const sessionId = localStorage.getItem("currentSessionId");
-  if (sessionId) {
-    db.collection("sessions").doc(sessionId).update({
-      currentDisplayImage: firebase.firestore.FieldValue.delete(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  if (!sessionId) return;
+
+  // ❌ Clear current image from Firestore
+  db.collection("sessions").doc(sessionId).update({
+    currentDisplayImage: firebase.firestore.FieldValue.delete(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // 🧹 Delete all emojis from Firestore
+  db.collection("sessions").doc(sessionId).collection("emojis").get()
+    .then(snapshot => {
+      const batch = db.batch();
+      snapshot.forEach(doc => batch.delete(doc.ref));
+      return batch.commit();
+    })
+    .then(() => {
+      console.log("✅ Emojis cleared from Firestore");
+    })
+    .catch(err => {
+      console.error("❌ Failed to clear emojis:", err);
     });
-  }
 }
+
 
 function clearchat() {
   const sessionId = localStorage.getItem("currentSessionId");

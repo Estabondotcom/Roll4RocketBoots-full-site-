@@ -350,17 +350,17 @@ function listenForDisplayImageUpdates() {
       });
     });
 
-  // Watch display image itself
+ // Watch display image itself
 db.collection("sessions").doc(sessionId).onSnapshot(doc => {
   const data = doc.data();
   const newImage = data?.currentDisplayImage || null;
 
-  if (!newImage && latestDisplayImage) {
-    // ✅ The GM cleared the image
-    const container = document.getElementById("zoom-content");
-    const img = container.querySelector("img");
-    if (img) img.remove();
+  const container = document.getElementById("zoom-content");
+  const existingImg = container.querySelector("img");
 
+  if (!newImage && existingImg) {
+    // ✅ The GM cleared the image
+    existingImg.remove();
     zoomLevel = 1;
     panX = 0;
     panY = 0;

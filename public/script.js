@@ -836,15 +836,12 @@ function makeDraggable(el) {
   el.onmousedown = function (e) {
     e.preventDefault();
 
-    const zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
-    const zoomContent = document.getElementById("zoom-content");
-    const rect = zoomContent.getBoundingClientRect();
+    const rect = document.getElementById("zoom-content").getBoundingClientRect();
 
-    // Mouse position in zoomed space
+    // Use live global zoomLevel, not localStorage
     startX = (e.clientX - rect.left) / zoomLevel;
     startY = (e.clientY - rect.top) / zoomLevel;
 
-    // Current emoji position
     initialLeft = parseFloat(el.style.left) || 0;
     initialTop = parseFloat(el.style.top) || 0;
 
@@ -874,6 +871,7 @@ function makeDraggable(el) {
     };
   };
 }
+
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;

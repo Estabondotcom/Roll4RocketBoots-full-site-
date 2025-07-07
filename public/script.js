@@ -778,8 +778,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (hint) hint.style.display = "none";
   }
 });
+
 function spawnEmoji(symbol) {
-  console.log("🐣 Spawning emoji at:", offsetX, offsetY, "Zoom:", zoom);
   const display = document.getElementById("zoom-content");
   if (!display) {
     console.warn("⚠️ zoom-content not found when trying to spawn emoji");
@@ -787,17 +787,27 @@ function spawnEmoji(symbol) {
   }
 
   const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-  // Get container dimensions to center the spawn position
   const container = document.getElementById("zoom-container");
   const rect = container.getBoundingClientRect();
 
-  // Use current zoom and pan
   const zoom = zoomLevel || 1;
   const offsetX = (rect.width / 2 - panX) / zoom;
   const offsetY = (rect.height / 2 - panY) / zoom;
 
-  // Add to Firestore (triggers listener)
+  // ✅ Spawn emoji element
+  const emoji = document.createElement("div");
+  emoji.className = "draggable-emoji";
+  emoji.textContent = symbol;
+  emoji.dataset.id = id;
+  emoji.style.left = `${offsetX}px`;
+  emoji.style.top = `${offsetY}px`;
+
+  // ✅ Set size relative to zoom
+  emoji.style.fontSize = `${Math.max(16, 48 / zoom)}px`; // 48px at zoom 1, scales down
+  makeDraggable(emoji);
+  display.appendChild(emoji);
+
+  // ✅ Firestore write (will sync across clients)
   db.collection("sessions").doc(currentSessionId)
     .collection("emojis").doc(id).set({
       symbol,
@@ -806,18 +816,7 @@ function spawnEmoji(symbol) {
       id,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-
-  // Optional immediate spawn
-  const emoji = document.createElement("div");
-  emoji.className = "draggable-emoji";
-  emoji.textContent = symbol;
-  emoji.dataset.id = id;
-  emoji.style.left = `${offsetX}px`;
-  emoji.style.top = `${offsetY}px`;
-  makeDraggable(emoji);
-  display.appendChild(emoji);
 }
-
 
 function makeDraggable(el) {
   let startX, startY, initialLeft, initialTop;

@@ -244,8 +244,6 @@ function silentAutoSaveCharacter() {
     .set(characterData);
 }
 
-
-
 function loadCharacterFromFirestore() {
   const user = auth.currentUser;
   if (!user) return alert("You must be logged in to load.");
@@ -269,17 +267,23 @@ function loadCharacterFromFirestore() {
           (data.skills || []).forEach(skill => addSkill(skill));
           document.getElementById("items-container").innerHTML = "";
           (data.items || []).forEach(item => addItem(item));
-          alert("Character '" + selectedName + "' loaded!");
           document.getElementById("conditions-container").innerHTML = "";
-         (data.conditions || []).forEach(cond => {
-         addCondition(typeof cond === 'string' ? cond : cond.name);
+          (data.conditions || []).forEach(cond => {
+            addCondition(typeof cond === 'string' ? cond : cond.name);
+          });
+          alert("Character '" + selectedName + "' loaded!");
+        }) // ✅ close inner .then()
+        .catch((error) => {
+          console.error("Error loading character:", error);
+          alert("Failed to load character.");
         });
-     }) 
+    }) // ✅ close outer .then()
     .catch((error) => {
-      console.error("Error loading characters:", error);
+      console.error("Error loading characters list:", error);
       alert("Failed to load characters.");
     });
 }
+
 
 function loadSessionsForUser(uid) {
   const userEmail = auth.currentUser.email;

@@ -111,8 +111,9 @@ function saveCharacterToFirestore() {
   });
 
   // Build conditions array
-  const conditions = Array.from(document.querySelectorAll('.condition-input')).map(input => ({
-    name: input.value
+ const conditions = Array.from(document.querySelectorAll('.condition-input'))
+  .map(input => input.value.trim())
+  .filter(Boolean);
   }));
 
   // Build items array

@@ -791,8 +791,19 @@ function spawnEmoji(symbol) {
   const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   // ✅ Use current pan and zoom to find visible center in image space
-  const offsetX = (rect.width / 2 - panX) / zoomLevel;
-  const offsetY = (rect.height / 2 - panY) / zoomLevel;
+let offsetX = (rect.width / 2 - panX) / zoom;
+let offsetY = (rect.height / 2 - panY) / zoom;
+
+// Clamp to visible area based on zoom-content's current size
+const zoomContent = document.getElementById("zoom-content");
+const bounds = zoomContent.getBoundingClientRect();
+
+// Define max X/Y based on current scaled size
+const maxX = bounds.width / zoom - 40; // 40px margin to stay in bounds
+const maxY = bounds.height / zoom - 40;
+
+offsetX = Math.max(0, Math.min(offsetX, maxX));
+offsetY = Math.max(0, Math.min(offsetY, maxY));
   console.log("🐣 Spawning emoji at:", offsetX, offsetY, "Zoom:", zoomLevel);
 
   // ✅ Create emoji element

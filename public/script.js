@@ -791,8 +791,8 @@ function spawnEmoji(symbol) {
   const rect = container.getBoundingClientRect();
 
   const zoom = zoomLevel || 1;
-  const offsetX = (rect.width / 2 - panX) / zoom;
-  const offsetY = (rect.height / 2 - panY) / zoom;
+ const offsetX = rect.width / 2 / zoom - panX / zoom;
+const offsetY = rect.height / 2 / zoom - panY / zoom;
   console.log("🐣 Spawning emoji at:", offsetX, offsetY, "Zoom:", zoom);
 
   // ✅ Spawn emoji element

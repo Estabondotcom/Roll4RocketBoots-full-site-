@@ -837,18 +837,17 @@ function makeDraggable(el) {
     e.preventDefault();
 
     const rect = document.getElementById("zoom-content").getBoundingClientRect();
+    const zoom = zoomLevel || 1;
 
-    // Use live global zoomLevel, not localStorage
-    startX = (e.clientX - rect.left) / zoomLevel;
-    startY = (e.clientY - rect.top) / zoomLevel;
+    startX = (e.clientX - rect.left) / zoom;
+    startY = (e.clientY - rect.top) / zoom;
 
     initialLeft = parseFloat(el.style.left) || 0;
     initialTop = parseFloat(el.style.top) || 0;
 
     document.onmousemove = function (e) {
-      const currentX = (e.clientX - rect.left) / zoomLevel;
-      const currentY = (e.clientY - rect.top) / zoomLevel;
-
+      const currentX = (e.clientX - rect.left) / zoom;
+      const currentY = (e.clientY - rect.top) / zoom;
       const dx = currentX - startX;
       const dy = currentY - startY;
 
@@ -858,6 +857,7 @@ function makeDraggable(el) {
       el.style.left = newX + "px";
       el.style.top = newY + "px";
 
+      // Live update position in Firestore
       const id = el.dataset.id;
       if (id) {
         db.collection("sessions").doc(currentSessionId)
@@ -865,9 +865,28 @@ function makeDraggable(el) {
       }
     };
 
-    document.onmouseup = () => {
+    document.onmouseup = function (e) {
       document.onmousemove = null;
       document.onmouseup = null;
+
+      // Check if dropped into trashcan
+      const trash = document.getElementById("emoji-trashcan");
+      const trashRect = trash.getBoundingClientRect();
+      if (
+        e.clientX >= trashRect.left &&
+        e.clientX <= trashRect.right &&
+        e.clientY >= trashRect.top &&
+        e.clientY <= trashRect.bottom
+      ) {
+        const id = el.dataset.id;
+        if (id) {
+          db.collection("sessions").doc(currentSessionId)
+            .collection("emojis").doc(id).delete().then(() => {
+              console.log(`🗑️ Deleted emoji: ${id}`);
+              el.remove();
+            });
+        }
+      }
     };
   };
 }

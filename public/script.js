@@ -299,13 +299,6 @@ function toggleShowAndTell() {
   listenForDisplayImageUpdates(); // Now start listening
 }
 
-function toggleShowAndTell() {
-  document.getElementById("character-panel").style.display = "none";
-  document.getElementById("main-container").style.display = "none";
-  document.getElementById("show-panel").style.display = "block";
-
-  
-}
 function openGMTools() {
   alert("🛠️ GM Tools coming soon!");
 }

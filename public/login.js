@@ -4,7 +4,17 @@ let currentSessionId = null;
 let latestDisplayImage = null;
 let emojiUnsubscribe = null;
 
+// 🔼 Near top of login.js
+function preloadDisplayImage() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) return;
 
+  db.collection("sessions").doc(sessionId).get().then(doc => {
+    if (doc.exists && doc.data()?.currentDisplayImage) {
+      latestDisplayImage = doc.data().currentDisplayImage;
+    }
+  });
+}
 
 function selectSession(sessionId) {
   selectedSessionId = sessionId;
@@ -56,6 +66,8 @@ function login() {
 
   auth.signInWithEmailAndPassword(email, password)
     .then(() => alert("Login successful!"))
+    console.log("✅ Logged in");
+    preloadDisplayImage();
     .catch((error) => {
       console.error("Login Error:", error);
       document.getElementById("loginError").textContent = "Login failed: " + error.message;

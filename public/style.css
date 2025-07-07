@@ -344,7 +344,7 @@ label[for="player-name"] {
 }
 .draggable-emoji {
   position: absolute;
-  font-size: 400px; 
+  font-size: 48px; 
   cursor: grab;
   user-select: none;
   pointer-events: auto;

@@ -633,24 +633,33 @@ function listenForEmojis() {
     return;
   }
 
+ function listenForEmojis() {
+  const display = document.getElementById("zoom-content"); // ✅ correct container
+  if (!display) {
+    console.warn("⚠️ zoom-content not found");
+    return;
+  }
+
   db.collection("sessions").doc(currentSessionId).collection("emojis")
     .onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
         const { id, symbol, x, y } = change.doc.data();
 
         if (change.type === "added") {
-          const emoji = document.createElement("div");
-          emoji.className = "draggable-emoji";
-          emoji.textContent = symbol;
-          emoji.dataset.id = id;
-          emoji.style.left = x + "px";
-          emoji.style.top = y + "px";
-          makeDraggable(emoji);
-          display.appendChild(emoji);
+          if (!display.querySelector(`[data-id="${id}"]`)) {
+            const emoji = document.createElement("div");
+            emoji.className = "draggable-emoji";
+            emoji.textContent = symbol;
+            emoji.dataset.id = id;
+            emoji.style.left = x + "px";
+            emoji.style.top = y + "px";
+            makeDraggable(emoji);
+            display.appendChild(emoji);
+          }
         }
 
         if (change.type === "modified") {
-          const emoji = document.querySelector(`[data-id="${id}"]`);
+          const emoji = display.querySelector(`[data-id="${id}"]`);
           if (emoji) {
             emoji.style.left = x + "px";
             emoji.style.top = y + "px";
@@ -658,8 +667,9 @@ function listenForEmojis() {
         }
 
         if (change.type === "removed") {
-          const emoji = document.querySelector(`[data-id="${id}"]`);
+          const emoji = display.querySelector(`[data-id="${id}"]`);
           if (emoji) emoji.remove();
         }
       });
     });
+}

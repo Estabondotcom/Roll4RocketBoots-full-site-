@@ -779,7 +779,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 function spawnEmoji(symbol) {
-  const display = document.getElementById("image-display-area");
+  const display = document.getElementById("zoom-content");;
 
   // ✅ Declare ID first
   const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

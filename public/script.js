@@ -307,6 +307,7 @@ function toggleShowAndTell() {
 function openGMTools() {
   alert("🛠️ GM Tools coming soon!");
 }
+
 function toggleGMTools() {
   const panel = document.getElementById("gm-tools-panel");
   panel.style.display = (panel.style.display === "none" || !panel.style.display) ? "block" : "none";
@@ -367,6 +368,7 @@ function uploadGMImage() {
     }
   );
 }
+
 function loadGMImages() {
   const gallery = document.getElementById("image-list");
   gallery.innerHTML = "<p>Loading...</p>";
@@ -475,7 +477,6 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   }
 }
 
-
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;
   const characterName = document.getElementById("player-name").value || user.email;
@@ -489,6 +490,7 @@ function pushToChat(imageUrl, label) {
     });
   });
 }
+
 function openGMImageModal() {
   document.getElementById("gm-image-gallery-modal").style.display = "flex";
   loadGMImages();
@@ -500,10 +502,8 @@ function closeGMImageModal() {
 
 function deleteGMImage(sessionId, docId, fileName, wrapper) {
   if (!confirm(`Delete image "${fileName}"?`)) return;
-
   const storagePath = `sessions/${sessionId}/gmimages/${fileName}`;
   const storageRef = firebase.storage().ref(storagePath);
-
   // Delete from Storage
   storageRef.delete()
     .then(() => {
@@ -519,6 +519,7 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
       alert("Failed to delete image.");
     });
 }
+
 function cleardisplay() {
   const zoomContent = document.getElementById("zoom-content");
   if (zoomContent) {
@@ -606,7 +607,6 @@ function toggleGMMode() {
   }
 }
 
-
 let gmTabsUnsubscribe = null;
 
 let gmPanelUnsubscribes = [];
@@ -671,7 +671,6 @@ function loadAllGMCharacterPanels() {
       }
     });
 }
-
 
 function viewGMCharacterLive(sessionId, charId) {
   if (gmUnsubscribe) gmUnsubscribe(); // clear previous listener
@@ -828,8 +827,7 @@ db.collection("sessions").doc(currentSessionId)
     id,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
-
-
+}
 function makeDraggable(el) {
   let startX, startY, initialLeft, initialTop;
 
@@ -879,4 +877,3 @@ window.addItem = addItem;
 window.addCondition = addCondition;
 window.pushToDisplayArea = pushToDisplayArea;
 window.applyTransform = applyTransform;
-

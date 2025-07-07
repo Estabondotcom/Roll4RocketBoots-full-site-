@@ -64,14 +64,17 @@ function login() {
   const email = document.getElementById("authEmail").value;
   const password = document.getElementById("authPassword").value;
 
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => alert("Login successful!"))
+ auth.signInWithEmailAndPassword(email, password)
+  .then(() => {
+    alert("Login successful!");
     console.log("✅ Logged in");
     preloadDisplayImage();
-    .catch((error) => {
-      console.error("Login Error:", error);
-      document.getElementById("loginError").textContent = "Login failed: " + error.message;
-    });
+  })
+  .catch((error) => {
+    console.error("Login Error:", error);
+    document.getElementById("loginError").textContent = "Login failed: " + error.message;
+  });
+
 }
 
 function signup() {

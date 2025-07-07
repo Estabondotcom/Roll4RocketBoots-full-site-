@@ -779,6 +779,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 function spawnEmoji(symbol) {
+  console.log("🐣 Spawning emoji at:", offsetX, offsetY, "Zoom:", zoom);
   const display = document.getElementById("zoom-content");
   if (!display) {
     console.warn("⚠️ zoom-content not found when trying to spawn emoji");

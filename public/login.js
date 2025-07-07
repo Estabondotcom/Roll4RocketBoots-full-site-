@@ -114,8 +114,7 @@ function saveCharacterToFirestore() {
  const conditions = Array.from(document.querySelectorAll('.condition-input'))
   .map(input => input.value.trim())
   .filter(Boolean);
-  }));
-
+  
   // Build items array
   const items = Array.from(document.querySelectorAll('.item-input')).map(input => input.value);
 

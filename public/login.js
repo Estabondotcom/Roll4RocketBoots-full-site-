@@ -297,8 +297,12 @@ function listenForDisplayImageUpdates() {
     const data = doc.data();
     const container = document.getElementById("image-display-area");
 
+    if (!container) {
+      console.warn("⚠️ 'image-display-area' not found in DOM.");
+      return;
+    }
+
     if (data?.currentDisplayImage) {
-      // 🧠 Remove only previous image, keep emojis
       const oldImage = container.querySelector("img");
       if (oldImage?.src !== data.currentDisplayImage) {
         if (oldImage) oldImage.remove();
@@ -309,12 +313,12 @@ function listenForDisplayImageUpdates() {
         container.appendChild(img);
       }
     } else {
-      // ✅ Image was deleted — remove it
       const oldImage = container.querySelector("img");
       if (oldImage) oldImage.remove();
     }
   });
 }
+
 
 function createSession() {
   const user = auth.currentUser;

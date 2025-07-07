@@ -274,7 +274,7 @@ function loadCharacterFromFirestore() {
          (data.conditions || []).forEach(cond => {
          addCondition(typeof cond === 'string' ? cond : cond.name);
         });
-    })
+     }) 
     .catch((error) => {
       console.error("Error loading characters:", error);
       alert("Failed to load characters.");

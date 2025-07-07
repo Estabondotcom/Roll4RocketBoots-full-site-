@@ -567,15 +567,17 @@ function setupAutoSaveListeners() {
 }
 function listenForEmojis() {
   const display = document.getElementById("image-display-area");
+  if (!display) {
+    console.warn("⚠️ image-display-area not found");
+    return;
+  }
 
   db.collection("sessions").doc(currentSessionId).collection("emojis")
     .onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
-        console.log("Emoji change:", change.type, change.doc.data());  // ✅ inside the loop
         const { id, symbol, x, y } = change.doc.data();
 
         if (change.type === "added") {
-          if (document.querySelector(`[data-id="${id}"]`)) return;
           const emoji = document.createElement("div");
           emoji.className = "draggable-emoji";
           emoji.textContent = symbol;
@@ -600,4 +602,6 @@ function listenForEmojis() {
         }
       });
     });
+}
+
 }

@@ -802,7 +802,7 @@ function spawnEmoji(symbol) {
   emoji.dataset.id = id;
   emoji.style.left = `${offsetX}px`;
   emoji.style.top = `${offsetY}px`;
-  emoji.style.fontSize = `${Math.max(16, 48 / zoomLevel)}px`; // scale with zoom
+  emoji.style.fontSize = `${Math.max(16, 64 / zoomLevel)}px`; // scale with zoom
   makeDraggable(emoji);
   display.appendChild(emoji);
   console.log("📌 Appending emoji to zoom-content");

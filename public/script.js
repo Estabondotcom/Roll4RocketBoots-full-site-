@@ -285,11 +285,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 }); 
 
-function toggleCharacterPanel() {
-  document.getElementById("character-panel").style.display = "block";
-  document.getElementById("main-container").style.display = "block";
-  document.getElementById("show-panel").style.display = "none";
+function toggleShowAndTell() {
+  document.getElementById("character-panel").style.display = "none";
+  document.getElementById("main-container").style.display = "none";
+  document.getElementById("show-panel").style.display = "block";
 
+  // Only now insert the image and listen
+  const container = document.getElementById("zoom-content");
+  if (container && latestDisplayImage) {
+    pushToDisplayArea(latestDisplayImage, false);
+  }
+
+  listenForDisplayImageUpdates(); // Now start listening
 }
 
 function toggleShowAndTell() {

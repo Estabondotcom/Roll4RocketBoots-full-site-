@@ -78,6 +78,27 @@ function addItem(value = "") {
   const container = document.getElementById('items-container');
   container.appendChild(createItemInput(value));
 }
+function addCondition(value = "") {
+  const container = document.getElementById('conditions-container');
+  const div = document.createElement('div');
+  div.className = "input-wrapper";
+
+  const input = document.createElement('input');
+  input.type = "text";
+  input.className = "condition-input";
+  input.placeholder = "Enter condition";
+  input.maxLength = 20;
+  input.value = typeof value === 'object' ? value.name : value;
+
+  const delButton = document.createElement('button');
+  delButton.className = "delete-button";
+  delButton.textContent = "✕";
+  delButton.onclick = () => div.remove();
+
+  div.appendChild(input);
+  div.appendChild(delButton);
+  container.appendChild(div);
+}
 
 function saveData() {
   const name = document.getElementById('char-name').value;

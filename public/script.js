@@ -180,6 +180,7 @@ function adjustExp(amount) {
   current += amount;
   if (current < 0) current = 0;
   expSpan.textContent = current;
+  silentAutoSaveCharacter();
 }
 
 function adjustLuck(amount) {
@@ -188,6 +189,7 @@ function adjustLuck(amount) {
   current += amount;
   if (current < 0) current = 0;
   luckSpan.textContent = current;
+  silentAutoSaveCharacter();
 }
  
 function toggleWound(index) {

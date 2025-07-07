@@ -447,7 +447,7 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
     panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
 
-    applyTransform(); // this should exist already in your zoom logic
+
   };
 
   container.appendChild(img);
@@ -846,3 +846,5 @@ window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;
 window.pushToDisplayArea = pushToDisplayArea;
+window.applyTransform = applyTransform;
+

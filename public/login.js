@@ -376,7 +376,7 @@ db.collection("sessions").doc(sessionId).onSnapshot(doc => {
     pushToDisplayArea(newImage, false);
   }
 });
-
+}
 function createSession() {
   const user = auth.currentUser;
   if (!user) return alert("You must be logged in to create a session!");

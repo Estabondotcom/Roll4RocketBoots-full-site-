@@ -340,15 +340,16 @@ label[for="player-name"] {
   position: relative;
 }
 
+#zoom-content img {
+  z-index: 1;
+  position: absolute;
 }
+
 .draggable-emoji {
   position: absolute;
-  font-size: 48px; 
+  font-size: 48px;
   cursor: grab;
   user-select: none;
   pointer-events: auto;
   z-index: 10;
 }
-
-
-

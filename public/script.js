@@ -836,7 +836,8 @@ function makeDraggable(el) {
   el.onmousedown = function (e) {
     e.preventDefault();
 
-    const rect = document.getElementById("zoom-content").getBoundingClientRect();
+    const zoomContent = document.getElementById("zoom-content");
+    const rect = zoomContent.getBoundingClientRect();
     const zoom = zoomLevel || 1;
 
     startX = (e.clientX - rect.left) / zoom;
@@ -848,44 +849,26 @@ function makeDraggable(el) {
     document.onmousemove = function (e) {
       const currentX = (e.clientX - rect.left) / zoom;
       const currentY = (e.clientY - rect.top) / zoom;
+
       const dx = currentX - startX;
       const dy = currentY - startY;
 
-      const newX = initialLeft + dx;
-      const newY = initialTop + dy;
-
-      el.style.left = newX + "px";
-      el.style.top = newY + "px";
-
-      // Live update position in Firestore
-      const id = el.dataset.id;
-      if (id) {
-        db.collection("sessions").doc(currentSessionId)
-          .collection("emojis").doc(id).update({ x: newX, y: newY });
-      }
+      el.style.left = (initialLeft + dx) + "px";
+      el.style.top = (initialTop + dy) + "px";
     };
 
-    document.onmouseup = function (e) {
+    document.onmouseup = () => {
       document.onmousemove = null;
       document.onmouseup = null;
 
-      // Check if dropped into trashcan
-      const trash = document.getElementById("emoji-trashcan");
-      const trashRect = trash.getBoundingClientRect();
-      if (
-        e.clientX >= trashRect.left &&
-        e.clientX <= trashRect.right &&
-        e.clientY >= trashRect.top &&
-        e.clientY <= trashRect.bottom
-      ) {
-        const id = el.dataset.id;
-        if (id) {
-          db.collection("sessions").doc(currentSessionId)
-            .collection("emojis").doc(id).delete().then(() => {
-              console.log(`🗑️ Deleted emoji: ${id}`);
-              el.remove();
-            });
-        }
+      // ✅ Firestore write only when dropped
+      const id = el.dataset.id;
+      if (id && currentSessionId) {
+        const newX = parseFloat(el.style.left);
+        const newY = parseFloat(el.style.top);
+        db.collection("sessions").doc(currentSessionId)
+          .collection("emojis").doc(id)
+          .update({ x: newX, y: newY });
       }
     };
   };

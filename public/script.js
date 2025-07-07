@@ -724,7 +724,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const scaleChange = e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
 
   // New zoom level clamped
-  const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.5), 2);
+  const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.01), 4);
 
   // Calculate the zoom focus point adjustment
   panX = offsetX - (offsetX - panX) * (newZoomLevel / zoomLevel);

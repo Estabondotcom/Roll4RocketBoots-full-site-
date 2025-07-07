@@ -295,17 +295,19 @@ function listenForDisplayImageUpdates() {
 
   db.collection("sessions").doc(sessionId).onSnapshot(doc => {
     const data = doc.data();
-    const container = document.getElementById("image-display-area");
 
+    // ⏳ Wait until DOM has loaded
+    const container = document.getElementById("image-display-area");
     if (!container) {
       console.warn("⚠️ 'image-display-area' not found in DOM.");
       return;
     }
 
+    const existing = container.querySelector("img");
+
     if (data?.currentDisplayImage) {
-      const oldImage = container.querySelector("img");
-      if (oldImage?.src !== data.currentDisplayImage) {
-        if (oldImage) oldImage.remove();
+      if (!existing || existing.src !== data.currentDisplayImage) {
+        if (existing) existing.remove();
         const img = document.createElement("img");
         img.src = data.currentDisplayImage;
         img.style = "max-width: 100%; margin-top: 10px;";
@@ -313,12 +315,10 @@ function listenForDisplayImageUpdates() {
         container.appendChild(img);
       }
     } else {
-      const oldImage = container.querySelector("img");
-      if (oldImage) oldImage.remove();
+      if (existing) existing.remove();
     }
   });
 }
-
 
 function createSession() {
   const user = auth.currentUser;

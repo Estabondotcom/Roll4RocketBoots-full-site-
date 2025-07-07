@@ -348,6 +348,7 @@ label[for="player-name"] {
   cursor: grab;
   user-select: none;
   pointer-events: auto;
+  z-index: 10;
 }
 
 

@@ -814,6 +814,7 @@ emoji.dataset.id = id;
 emoji.style.left = `${clampedX}px`;
 emoji.style.top = `${clampedY}px`;
 emoji.style.fontSize = `${Math.max(16, 64 / zoomLevel)}px`;
+emoji.style.zIndex = "10";
 makeDraggable(emoji);
 display.appendChild(emoji);
 console.log("📌 Appending emoji to zoom-content");

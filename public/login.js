@@ -377,6 +377,7 @@ db.collection("sessions").doc(sessionId).onSnapshot(doc => {
   }
 });
 }
+
 function createSession() {
   const user = auth.currentUser;
   if (!user) return alert("You must be logged in to create a session!");

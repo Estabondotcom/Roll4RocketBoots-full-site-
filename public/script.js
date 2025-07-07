@@ -66,6 +66,10 @@ function createItemInput(value = "") {
 }
 
 function addSkill(value = "", levels = [true, false, false, false]) {
+  if (typeof value === 'object') {
+    levels = value.levels || [true, false, false, false];
+    value = value.name || "";
+  }
   const container = document.getElementById('skills-container');
   container.appendChild(createSkillInput(value, levels));
 }

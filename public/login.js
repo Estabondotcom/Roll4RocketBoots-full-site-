@@ -1,6 +1,8 @@
 let selectedSessionId = null;
 let currentUserRole = null;
 let currentSessionId = null;
+let latestDisplayImage = null;
+let emojiUnsubscribe = null;
 
 
 
@@ -290,35 +292,58 @@ function loadSessionsForUser(uid) {
     });
 }
 function listenForDisplayImageUpdates() {
+  const display = document.getElementById("zoom-content");
   const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) return;
+  if (!display || !sessionId) return;
 
+  // Cancel previous listener
+  if (emojiUnsubscribe) emojiUnsubscribe();
+
+  // Listen to emoji changes
+  emojiUnsubscribe = db.collection("sessions").doc(sessionId).collection("emojis")
+    .onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const data = change.doc.data();
+        const { id, symbol, x, y } = data;
+
+        if (change.type === "added") {
+          if (!display.querySelector(`[data-id="${id}"]`)) {
+            const emoji = document.createElement("div");
+            emoji.className = "draggable-emoji";
+            emoji.textContent = symbol;
+            emoji.dataset.id = id;
+            emoji.style.left = x + "px";
+            emoji.style.top = y + "px";
+            makeDraggable(emoji);
+            display.appendChild(emoji);
+          }
+        }
+
+        if (change.type === "modified") {
+          const emoji = display.querySelector(`[data-id="${id}"]`);
+          if (emoji) {
+            emoji.style.left = x + "px";
+            emoji.style.top = y + "px";
+          }
+        }
+
+        if (change.type === "removed") {
+          const emoji = display.querySelector(`[data-id="${id}"]`);
+          if (emoji) emoji.remove();
+        }
+      });
+    });
+
+  // Watch display image itself
   db.collection("sessions").doc(sessionId).onSnapshot(doc => {
-    const data = doc.data();
-
-    // ⏳ Wait until DOM has loaded
-    const container = document.getElementById("image-display-area");
-    if (!container) {
-      console.warn("⚠️ 'image-display-area' not found in DOM.");
-      return;
-    }
-
-    const existing = container.querySelector("img");
-
-    if (data?.currentDisplayImage) {
-      if (!existing || existing.src !== data.currentDisplayImage) {
-        if (existing) existing.remove();
-        const img = document.createElement("img");
-        img.src = data.currentDisplayImage;
-        img.style = "max-width: 100%; margin-top: 10px;";
-        img.draggable = false;
-        container.appendChild(img);
-      }
-    } else {
-      if (existing) existing.remove();
+    const newImage = doc.data()?.currentDisplayImage;
+    if (newImage && newImage !== latestDisplayImage) {
+      latestDisplayImage = newImage;
+      pushToDisplayArea(newImage, false);
     }
   });
 }
+
 
 function createSession() {
   const user = auth.currentUser;

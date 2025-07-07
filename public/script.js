@@ -711,9 +711,6 @@ window.addEventListener("DOMContentLoaded", () => {
   let startX = 0;
   let startY = 0;
 
-}
-
-
   applyTransform();
 
   zoomContainer.addEventListener("wheel", (e) => {

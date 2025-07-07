@@ -628,13 +628,6 @@ function setupAutoSaveListeners() {
   observer.observe(document.getElementById("char-form"), { childList: true, subtree: true });
 }
 function listenForEmojis() {
-  const display = document.getElementById("image-display-area");
-  if (!display) {
-    console.warn("⚠️ image-display-area not found");
-    return;
-  }
-
- function listenForEmojis() {
   const display = document.getElementById("zoom-content"); // ✅ correct container
   if (!display) {
     console.warn("⚠️ zoom-content not found");

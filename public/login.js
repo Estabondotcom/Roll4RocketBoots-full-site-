@@ -350,30 +350,32 @@ function listenForDisplayImageUpdates() {
       });
     });
 
-  // 👁️ Watch display image itself
-  db.collection("sessions").doc(sessionId).onSnapshot(doc => {
-    const newImage = doc.data()?.currentDisplayImage;
+  // Watch display image itself
+db.collection("sessions").doc(sessionId).onSnapshot(doc => {
+  const data = doc.data();
+  const newImage = data?.currentDisplayImage || null;
 
-    if (newImage && newImage !== latestDisplayImage) {
-      latestDisplayImage = newImage;
-      pushToDisplayArea(newImage, false);
-    }
+  if (!newImage && latestDisplayImage) {
+    // ✅ The GM cleared the image
+    const container = document.getElementById("zoom-content");
+    const img = container.querySelector("img");
+    if (img) img.remove();
 
-    if (!newImage && latestDisplayImage) {
-      // 🧹 GM cleared the image, remove from DOM
-      const img = display.querySelector("img");
-      if (img) img.remove();
+    zoomLevel = 1;
+    panX = 0;
+    panY = 0;
+    applyTransform();
 
-      zoomLevel = 1;
-      panX = 0;
-      panY = 0;
-      if (typeof applyTransform === "function") applyTransform();
+    localStorage.removeItem("gmDisplayImage");
+    latestDisplayImage = null;
+    console.log("🧼 Display image cleared by GM");
+  }
 
-      localStorage.removeItem("gmDisplayImage");
-      latestDisplayImage = null;
-    }
-  });
-}
+  if (newImage && newImage !== latestDisplayImage) {
+    latestDisplayImage = newImage;
+    pushToDisplayArea(newImage, false);
+  }
+});
 
 function createSession() {
   const user = auth.currentUser;

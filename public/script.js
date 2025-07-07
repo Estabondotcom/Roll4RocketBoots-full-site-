@@ -700,6 +700,13 @@ function viewGMCharacterLive(sessionId, charId) {
     });
 }
 
+  let zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
+  let panX = parseFloat(localStorage.getItem("panX")) || 0;
+  let panY = parseFloat(localStorage.getItem("panY")) || 0;
+  let isPanning = false;
+  let startX = 0;
+  let startY = 0;
+
 window.addEventListener("DOMContentLoaded", () => {
   const zoomContainer = document.getElementById("zoom-container");
   const zoomContent = document.getElementById("zoom-content");
@@ -708,13 +715,6 @@ window.addEventListener("DOMContentLoaded", () => {
     console.warn("❌ Zoom container or content not found.");
     return;
   }
-
-  let zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
-  let panX = parseFloat(localStorage.getItem("panX")) || 0;
-  let panY = parseFloat(localStorage.getItem("panY")) || 0;
-  let isPanning = false;
-  let startX = 0;
-  let startY = 0;
 
   function applyTransform() {
     zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;

@@ -424,6 +424,12 @@ function loadGMImages() {
   });
 }
 
+ function applyTransform() {
+  const zoomContent = document.getElementById("zoom-content");
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
+ }
+
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");
   container.innerHTML = "";
@@ -688,11 +694,6 @@ function viewGMCharacterLive(sessionId, charId) {
       `;
     });
 }
- function applyTransform() {
-  const zoomContent = document.getElementById("zoom-content");
-  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-  zoomContent.style.transformOrigin = "0 0";
- }
 
 window.addEventListener("DOMContentLoaded", () => {
   const zoomContainer = document.getElementById("zoom-container");

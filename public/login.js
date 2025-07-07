@@ -270,6 +270,9 @@ function loadCharacterFromFirestore() {
           document.getElementById("items-container").innerHTML = "";
           (data.items || []).forEach(item => addItem(item));
           alert("Character '" + selectedName + "' loaded!");
+          document.getElementById("conditions-container").innerHTML = "";
+         (data.conditions || []).forEach(cond => {
+         addCondition(typeof cond === 'string' ? cond : cond.name);
         });
     })
     .catch((error) => {

@@ -817,6 +817,7 @@ emoji.style.fontSize = `${Math.max(16, 64 / zoomLevel)}px`;
 makeDraggable(emoji);
 display.appendChild(emoji);
 console.log("📌 Appending emoji to zoom-content");
+console.log("🧭 Emoji z-index set to:", getComputedStyle(emoji).zIndex);
   
 // ✅ Save to Firestore
 db.collection("sessions").doc(currentSessionId)

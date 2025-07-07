@@ -647,6 +647,7 @@ function listenForEmojis() {
             emoji.dataset.id = id;
             emoji.style.left = x + "px";
             emoji.style.top = y + "px";
+            emoji.style.fontSize = `${Math.max(16, 64 / zoomLevel)}px`;
             makeDraggable(emoji);
             display.appendChild(emoji);
           }

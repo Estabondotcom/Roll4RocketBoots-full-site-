@@ -305,6 +305,7 @@ function loadSessionsForUser(uid) {
       document.getElementById("sessionError").textContent = sessionListDiv.innerHTML ? "" : "You're not invited to any sessions.";
       document.getElementById("session-screen").style.display = "flex";
     });
+  
 }
 function listenForDisplayImageUpdates() {
   const display = document.getElementById("zoom-content");
@@ -314,7 +315,7 @@ function listenForDisplayImageUpdates() {
   // Cancel previous listener
   if (emojiUnsubscribe) emojiUnsubscribe();
 
-  // Listen to emoji changes
+  // 🔁 Listen to emoji changes
   emojiUnsubscribe = db.collection("sessions").doc(sessionId).collection("emojis")
     .onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
@@ -349,16 +350,30 @@ function listenForDisplayImageUpdates() {
       });
     });
 
-  // Watch display image itself
+  // 👁️ Watch display image itself
   db.collection("sessions").doc(sessionId).onSnapshot(doc => {
     const newImage = doc.data()?.currentDisplayImage;
+
     if (newImage && newImage !== latestDisplayImage) {
       latestDisplayImage = newImage;
       pushToDisplayArea(newImage, false);
     }
+
+    if (!newImage && latestDisplayImage) {
+      // 🧹 GM cleared the image, remove from DOM
+      const img = display.querySelector("img");
+      if (img) img.remove();
+
+      zoomLevel = 1;
+      panX = 0;
+      panY = 0;
+      if (typeof applyTransform === "function") applyTransform();
+
+      localStorage.removeItem("gmDisplayImage");
+      latestDisplayImage = null;
+    }
   });
 }
-
 
 function createSession() {
   const user = auth.currentUser;

@@ -446,7 +446,7 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
 
     panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
     panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
-
+    window.applyTransform();
 
   };
 

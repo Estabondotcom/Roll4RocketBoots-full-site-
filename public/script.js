@@ -806,6 +806,7 @@ function spawnEmoji(symbol) {
   // ✅ Set size relative to zoom
   emoji.style.fontSize = `${Math.max(16, 48 / zoom)}px`; // 48px at zoom 1, scales down
   makeDraggable(emoji);
+  console.log("📌 Appending emoji to zoom-content");
   display.appendChild(emoji);
 
   // ✅ Firestore write (will sync across clients)

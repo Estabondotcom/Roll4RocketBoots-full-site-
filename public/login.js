@@ -604,5 +604,3 @@ function listenForEmojis() {
       });
     });
 }
-
-}

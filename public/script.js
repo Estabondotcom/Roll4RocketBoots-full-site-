@@ -711,52 +711,53 @@ window.addEventListener("DOMContentLoaded", () => {
   let startX = 0;
   let startY = 0;
 
+  function applyTransform() {
+    zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+    zoomContent.style.transformOrigin = "0 0";
+  }
+
+  window.applyTransform = applyTransform;
+
   applyTransform();
 
   zoomContainer.addEventListener("wheel", (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const rect = zoomContainer.getBoundingClientRect();
-  const offsetX = e.clientX - rect.left;
-  const offsetY = e.clientY - rect.top;
+    const rect = zoomContainer.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
 
-  const zoomFactor = 0.1;
-  const scaleChange = e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
+    const zoomFactor = 0.1;
+    const scaleChange = e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
 
-  // New zoom level clamped
-  const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.01), 4);
+    const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.01), 4);
 
-  // Calculate the zoom focus point adjustment
-  panX = offsetX - (offsetX - panX) * (newZoomLevel / zoomLevel);
-  panY = offsetY - (offsetY - panY) * (newZoomLevel / zoomLevel);
+    panX = offsetX - (offsetX - panX) * (newZoomLevel / zoomLevel);
+    panY = offsetY - (offsetY - panY) * (newZoomLevel / zoomLevel);
 
-  zoomLevel = newZoomLevel;
-  applyTransform();
-});
+    zoomLevel = newZoomLevel;
+    applyTransform();
+  });
 
+  zoomContainer.addEventListener("mousedown", (e) => {
+    if (e.target.classList.contains("draggable-emoji")) return;
+    isPanning = true;
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+    zoomContainer.style.cursor = "grabbing";
+  });
 
- zoomContainer.addEventListener("mousedown", (e) => {
-  // ✅ Ignore mousedown if dragging an emoji
-  if (e.target.classList.contains("draggable-emoji")) return;
+  document.addEventListener("mousemove", (e) => {
+    if (!isPanning) return;
+    panX = e.clientX - startX;
+    panY = e.clientY - startY;
+    applyTransform();
+  });
 
-  isPanning = true;
-  startX = e.clientX - panX;
-  startY = e.clientY - panY;
-  zoomContainer.style.cursor = "grabbing";
-});
-
-document.addEventListener("mousemove", (e) => {
-  if (!isPanning) return;
-  panX = e.clientX - startX;
-  panY = e.clientY - startY;
-  applyTransform();
-});
-
-document.addEventListener("mouseup", () => {
-  isPanning = false;
-  zoomContainer.style.cursor = "grab";
-});
-
+  document.addEventListener("mouseup", () => {
+    isPanning = false;
+    zoomContainer.style.cursor = "grab";
+  });
 
   window.addEventListener("beforeunload", () => {
     localStorage.setItem("zoomLevel", zoomLevel);
@@ -764,6 +765,7 @@ document.addEventListener("mouseup", () => {
     localStorage.setItem("panY", panY);
   });
 });
+
 
 document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("autoSaveInitialized")) {

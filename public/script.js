@@ -779,12 +779,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 function spawnEmoji(symbol) {
-  const display = document.getElementById("zoom-content");;
+  const display = document.getElementById("zoom-content"); // ✅ updated container
+  if (!display) {
+    console.warn("⚠️ zoom-content not found when trying to spawn emoji");
+    return;
+  }
 
-  // ✅ Declare ID first
   const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-  // ✅ Add to Firestore (triggers listener)
+  // ✅ Add to Firestore (triggers real-time listener)
   db.collection("sessions").doc(currentSessionId)
     .collection("emojis").doc(id).set({
       symbol,
@@ -794,7 +797,7 @@ function spawnEmoji(symbol) {
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-  // ✅ Optionally display immediately (if desired)
+  // ✅ Optionally render immediately
   const emoji = document.createElement("div");
   emoji.className = "draggable-emoji";
   emoji.textContent = symbol;
@@ -804,6 +807,7 @@ function spawnEmoji(symbol) {
   makeDraggable(emoji);
   display.appendChild(emoji);
 }
+
 
 function makeDraggable(el) {
   let startX, startY, initialLeft, initialTop;

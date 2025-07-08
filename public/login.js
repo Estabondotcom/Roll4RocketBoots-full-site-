@@ -349,6 +349,9 @@ function confirmCharacterLoad() {
     .catch((error) => {
       console.error("Error loading character:", error);
       alert("Failed to load character.");
+      window._lastSavedCharacterName = selectedName;
+localStorage.setItem("autoSaveCharacterName", selectedName);
+
     });
 }
 

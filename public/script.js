@@ -861,16 +861,17 @@ display.appendChild(emoji);
 console.log("📌 Appending emoji to zoom-content");
 console.log("🧭 Emoji z-index set to:", getComputedStyle(emoji).zIndex);
   
-// ✅ Save to Firestore
+// ✅ Save to Firestore with creatorUid
 db.collection("sessions").doc(currentSessionId)
   .collection("emojis").doc(id).set({
     symbol,
     x: clampedX,
     y: clampedY,
     id,
+    creatorUid: firebase.auth().currentUser.uid, // 👈 This is the important addition
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
-}
+
 function makeDraggable(el) {
   let startX, startY, initialLeft, initialTop;
 

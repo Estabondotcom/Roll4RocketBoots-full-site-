@@ -18,10 +18,8 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
     checkbox.className = 'skill-level';
     checkbox.dataset.level = i;
 
-    // Default to first one if none are set
     checkbox.checked = anyChecked ? levels[i - 1] : i === 1;
 
-    // Enforce single-selection behavior
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) {
         const all = checkboxes.querySelectorAll('.skill-level');
@@ -42,9 +40,7 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
   input.placeholder = 'New skill...';
   input.value = value;
   input.maxLength = 20;
-  
 
-  // 🎲 Dice roll button
   const rollButton = document.createElement('button');
   rollButton.type = 'button';
   rollButton.textContent = '🎲';
@@ -93,12 +89,11 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
 
   container.appendChild(checkboxes);
   container.appendChild(input);
-  container.appendChild(rollButton);   // ✅ Dice button
-  container.appendChild(deleteButton); // ✕ Delete
+  container.appendChild(rollButton);
+  container.appendChild(deleteButton);
 
   return container;
 }
-
 
 function addSkill(value = "", levels = [true, false, false, false]) {
   if (typeof value === 'object') {

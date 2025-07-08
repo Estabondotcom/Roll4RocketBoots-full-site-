@@ -42,7 +42,7 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
   input.placeholder = 'New skill...';
   input.value = value;
   input.maxLength = 20;
-  }
+  
 
   // 🎲 Dice roll button
   const rollButton = document.createElement('button');

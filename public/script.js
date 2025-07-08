@@ -7,6 +7,8 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
   const checkboxes = document.createElement('div');
   checkboxes.className = 'skill-levels';
 
+  let anyChecked = levels.includes(true);
+
   for (let i = 1; i <= 4; i++) {
     const label = document.createElement('label');
     label.className = 'level-label';
@@ -15,7 +17,19 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
     checkbox.type = 'checkbox';
     checkbox.className = 'skill-level';
     checkbox.dataset.level = i;
-    checkbox.checked = levels[i - 1];
+
+    // Default to first one if none are set
+    checkbox.checked = anyChecked ? levels[i - 1] : i === 1;
+
+    // Enforce single-selection behavior
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        const all = checkboxes.querySelectorAll('.skill-level');
+        all.forEach(cb => {
+          if (cb !== checkbox) cb.checked = false;
+        });
+      }
+    });
 
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode((i + 1) + "🎲"));

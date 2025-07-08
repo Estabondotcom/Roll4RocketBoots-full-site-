@@ -43,38 +43,57 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
   input.value = value;
   input.maxLength = 20;
 
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = '✕';
-  button.className = 'delete-button';
-  button.onclick = () => container.remove();
+  // 🎲 Dice roll button
+  const rollButton = document.createElement('button');
+  rollButton.type = 'button';
+  rollButton.textContent = '🎲';
+  rollButton.style.marginTop = '4px';
+  rollButton.onclick = () => {
+    const skillName = input.value.trim() || "Unnamed Skill";
+    const allChecks = checkboxes.querySelectorAll('.skill-level');
+    let diceCount = 0;
+    allChecks.forEach((cb, idx) => {
+      if (cb.checked) diceCount = idx + 2;
+    });
+
+    if (diceCount === 0) {
+      alert("No dice level selected.");
+      return;
+    }
+
+    const rolls = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
+    const total = rolls.reduce((a, b) => a + b, 0);
+    const characterName = document.getElementById("player-name").value || "Unknown";
+
+    const sessionId = localStorage.getItem("currentSessionId");
+    const user = firebase.auth().currentUser;
+
+    if (!sessionId || !user) {
+      alert("You must be logged in and in a session.");
+      return;
+    }
+
+    db.collection("users").doc(user.uid).get().then(doc => {
+      const color = doc.data()?.displayNameColor || "#ffffff";
+      db.collection("sessions").doc(sessionId).collection("chat").add({
+        characterName,
+        text: `${characterName}: ${skillName}: [${rolls.join(", ")}] = ${total}`,
+        color,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+  };
+
+  const deleteButton = document.createElement('button');
+  deleteButton.type = 'button';
+  deleteButton.textContent = '✕';
+  deleteButton.className = 'delete-button';
+  deleteButton.onclick = () => container.remove();
 
   container.appendChild(checkboxes);
   container.appendChild(input);
-  container.appendChild(button);
-
-  return container;
-}
-
-function createItemInput(value = "") {
-  const container = document.createElement('div');
-  container.className = 'input-wrapper';
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'item-input';
-  input.placeholder = 'Item...';
-  input.value = value;
-  input.maxLength = 20;
-
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = '✕';
-  button.className = 'delete-button';
-  button.onclick = () => container.remove();
-
-  container.appendChild(input);
-  container.appendChild(button);
+  container.appendChild(rollButton);   // ✅ Dice button
+  container.appendChild(deleteButton); // ✕ Delete
 
   return container;
 }

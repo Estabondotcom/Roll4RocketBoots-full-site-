@@ -692,9 +692,10 @@ function setupAutoSaveListeners() {
   // Re-attach for newly added elements
   const observer = new MutationObserver(() => setupAutoSaveListeners());
   observer.observe(document.getElementById("char-form"), { childList: true, subtree: true });
+  
 }
 function listenForEmojis() {
-  const display = document.getElementById("zoom-content"); // ✅ correct container
+  const display = document.getElementById("zoom-content");
   if (!display) {
     console.warn("⚠️ zoom-content not found");
     return;
@@ -703,17 +704,36 @@ function listenForEmojis() {
   db.collection("sessions").doc(currentSessionId).collection("emojis")
     .onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
-        const { id, symbol, x, y } = change.doc.data();
+        const data = change.doc.data();
+        const { id, symbol, x, y, creatorUid } = data;
 
         if (change.type === "added") {
           if (!display.querySelector(`[data-id="${id}"]`)) {
             const emoji = document.createElement("div");
             emoji.className = "draggable-emoji";
-            emoji.textContent = symbol;
             emoji.dataset.id = id;
             emoji.style.left = x + "px";
             emoji.style.top = y + "px";
-            emoji.style.fontSize = `${Math.max(16, 64 / zoomLevel)}px`;
+            emoji.style.fontSize = `${Math.max(16, 64 / (zoomLevel || 1))}px`;
+
+            // ✅ Emoji symbol
+            const symbolSpan = document.createElement("span");
+            symbolSpan.textContent = symbol;
+            emoji.appendChild(symbolSpan);
+
+            // ✅ Add delete button if user created it
+            const user = firebase.auth().currentUser;
+            if (user && user.uid === creatorUid) {
+              const delBtn = document.createElement("button");
+              delBtn.textContent = "🗑";
+              delBtn.className = "emoji-delete";
+              delBtn.onclick = (e) => {
+                e.stopPropagation();
+                db.collection("sessions").doc(currentSessionId).collection("emojis").doc(id).delete();
+              };
+              emoji.appendChild(delBtn);
+            }
+
             makeDraggable(emoji);
             display.appendChild(emoji);
           }
@@ -734,3 +754,4 @@ function listenForEmojis() {
       });
     });
 }
+

@@ -95,6 +95,28 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
   return container;
 }
 
+function createItemInput(value = "") {
+  const div = document.createElement("div");
+  div.className = "input-wrapper";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "item-input";
+  input.placeholder = "Item name";
+  input.maxLength = 30;
+  input.value = value;
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.textContent = "✕";
+  deleteBtn.className = "delete-button";
+  deleteBtn.onclick = () => div.remove();
+
+  div.appendChild(input);
+  div.appendChild(deleteBtn);
+  return div;
+}
+
 function addSkill(value = "", levels = [true, false, false, false]) {
   if (typeof value === 'object') {
     levels = value.levels || [true, false, false, false];

@@ -871,6 +871,7 @@ db.collection("sessions").doc(currentSessionId)
     creatorUid: firebase.auth().currentUser.uid, // 👈 This is the important addition
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
+}
 
 function makeDraggable(el) {
   let startX, startY, initialLeft, initialTop;

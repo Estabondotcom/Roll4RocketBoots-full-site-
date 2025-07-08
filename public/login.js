@@ -113,8 +113,16 @@ function saveCharacterToFirestore() {
   const user = auth.currentUser;
   if (!user) return alert("You must be logged in to save.");
 
-  const characterName = prompt("Enter a name for this character:");
+  let characterName = document.getElementById("player-name").value.trim();
+  const savedNames = window._availableCharacterNames || [];
+
   if (!characterName) return alert("Character not saved (no name given).");
+
+  // If this name doesn't exist yet, confirm creating a new save
+  if (!savedNames.includes(characterName)) {
+    const confirmNew = confirm(`Save as new character "${characterName}"?`);
+    if (!confirmNew) return;
+  }
 
   // Build skills array with levels
   const skills = Array.from(document.querySelectorAll('.skill-input')).map(input => {
@@ -172,6 +180,9 @@ function saveCharacterToFirestore() {
  Promise.all(promises)
   .then(() => {
     alert(`Character '${characterName}' saved to Firestore!`);
+        window._lastSavedCharacterName = characterName;
+    localStorage.setItem("autoSaveCharacterName", characterName);
+
 
     // ✅ Store the name for autosave use
     localStorage.setItem("autoSaveCharacterName", characterName);

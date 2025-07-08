@@ -850,7 +850,23 @@ const clampedY = Math.max(0, Math.min(offsetY, maxY));
 // ✅ Spawn emoji
 const emoji = document.createElement("div");
 emoji.className = "draggable-emoji";
-emoji.textContent = symbol;
+const symbolSpan = document.createElement("span");
+symbolSpan.textContent = symbol;
+emoji.appendChild(symbolSpan);
+
+// Add delete button immediately if you're the creator
+const user = firebase.auth().currentUser;
+if (user) {
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "🗑";
+  delBtn.className = "emoji-delete";
+  delBtn.onclick = (e) => {
+    e.stopPropagation();
+    db.collection("sessions").doc(currentSessionId).collection("emojis").doc(id).delete();
+  };
+  emoji.appendChild(delBtn);
+}
+
 emoji.dataset.id = id;
 emoji.style.left = `${clampedX}px`;
 emoji.style.top = `${clampedY}px`;

@@ -260,30 +260,43 @@ function loadCharacterFromFirestore() {
       db.collection("users").doc(user.uid).collection("characters").doc(selectedName).get()
         .then((doc) => {
           const data = doc.data();
+
           document.getElementById("player-name").value = data.name || "";
           document.getElementById("exp-value").textContent = data.exp || 0;
           document.getElementById("luck-value").textContent = data.luck || 1;
+
+          // ✅ Restore wounds
+          const woundButtons = document.querySelectorAll('.wounds button');
+          woundButtons.forEach((btn, i) => {
+            btn.classList.toggle('active', (data.wounds || [])[i] || false);
+          });
+
+          // ✅ Restore skills
           document.getElementById("skills-container").innerHTML = "";
           (data.skills || []).forEach(skill => addSkill(skill));
+
+          // ✅ Restore items
           document.getElementById("items-container").innerHTML = "";
           (data.items || []).forEach(item => addItem(item));
+
+          // ✅ Restore conditions
           document.getElementById("conditions-container").innerHTML = "";
           (data.conditions || []).forEach(cond => {
             addCondition(typeof cond === 'string' ? cond : cond.name);
           });
-          alert("Character '" + selectedName + "' loaded!");
-        }) // ✅ close inner .then()
+
+          alert(`Character '${selectedName}' loaded!`);
+        })
         .catch((error) => {
           console.error("Error loading character:", error);
           alert("Failed to load character.");
         });
-    }) // ✅ close outer .then()
+    })
     .catch((error) => {
       console.error("Error loading characters list:", error);
       alert("Failed to load characters.");
     });
 }
-
 
 function loadSessionsForUser(uid) {
   const userEmail = auth.currentUser.email;

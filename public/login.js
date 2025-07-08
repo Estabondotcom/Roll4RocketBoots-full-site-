@@ -196,8 +196,15 @@ function silentAutoSaveCharacter() {
   const user = auth.currentUser;
   if (!user) return;
 
-  const characterName = localStorage.getItem("autoSaveCharacterName");
-  if (!characterName) return;
+const nameField = document.getElementById("player-name").value.trim();
+const savedName = window._lastSavedCharacterName;
+
+if (!nameField || nameField !== savedName) {
+  console.warn("🛑 Not autosaving — name mismatch or no character loaded.");
+  return;
+}
+
+const characterName = nameField;
 
   // Build skills array with levels
   const skills = Array.from(document.querySelectorAll('.skill-input')).map(input => {

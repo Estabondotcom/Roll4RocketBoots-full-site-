@@ -42,6 +42,7 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
   input.placeholder = 'New skill...';
   input.value = value;
   input.maxLength = 20;
+  }
 
   // 🎲 Dice roll button
   const rollButton = document.createElement('button');
@@ -97,6 +98,7 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
 
   return container;
 }
+
 
 function addSkill(value = "", levels = [true, false, false, false]) {
   if (typeof value === 'object') {

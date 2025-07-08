@@ -254,43 +254,18 @@ function loadCharacterFromFirestore() {
       querySnapshot.forEach((doc) => names.push(doc.id));
       if (names.length === 0) return alert("No saved characters found.");
 
-      const selectedName = prompt("Which character would you like to load?\n\n" + names.join("\n"));
-      if (!selectedName || !names.includes(selectedName)) return alert("Invalid selection.");
+      const select = document.getElementById("characterSelect");
+      select.innerHTML = "";
 
-      db.collection("users").doc(user.uid).collection("characters").doc(selectedName).get()
-        .then((doc) => {
-          const data = doc.data();
+      names.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
 
-          document.getElementById("player-name").value = data.name || "";
-          document.getElementById("exp-value").textContent = data.exp || 0;
-          document.getElementById("luck-value").textContent = data.luck || 1;
-
-          // ✅ Restore wounds
-          const woundButtons = document.querySelectorAll('.wounds button');
-          woundButtons.forEach((btn, i) => {
-            btn.classList.toggle('active', (data.wounds || [])[i] || false);
-          });
-
-          // ✅ Restore skills
-          document.getElementById("skills-container").innerHTML = "";
-          (data.skills || []).forEach(skill => addSkill(skill));
-
-          // ✅ Restore items
-          document.getElementById("items-container").innerHTML = "";
-          (data.items || []).forEach(item => addItem(item));
-
-          // ✅ Restore conditions
-          document.getElementById("conditions-container").innerHTML = "";
-          (data.conditions || []).forEach(cond => {
-            addCondition(typeof cond === 'string' ? cond : cond.name);
-          });
-
-          alert(`Character '${selectedName}' loaded!`);
-        })
-        .catch((error) => {
-          console.error("Error loading character:", error);
-          alert("Failed to load character.");
-        });
+      document.getElementById("loadCharacterModal").style.display = "block";
+      window._availableCharacterNames = names;
     })
     .catch((error) => {
       console.error("Error loading characters list:", error);
@@ -325,8 +300,58 @@ function loadSessionsForUser(uid) {
       document.getElementById("sessionError").textContent = sessionListDiv.innerHTML ? "" : "You're not invited to any sessions.";
       document.getElementById("session-screen").style.display = "flex";
     });
-  
 }
+
+function confirmCharacterLoad() {
+  const selectedName = document.getElementById("characterSelect").value;
+  const names = window._availableCharacterNames || [];
+  document.getElementById("loadCharacterModal").style.display = "none";
+
+  if (!selectedName || !names.includes(selectedName)) {
+    alert("Invalid selection.");
+    return;
+  }
+
+  const user = auth.currentUser;
+  db.collection("users").doc(user.uid).collection("characters").doc(selectedName).get()
+    .then((doc) => {
+      const data = doc.data();
+
+      document.getElementById("player-name").value = data.name || "";
+      document.getElementById("exp-value").textContent = data.exp || 0;
+      document.getElementById("luck-value").textContent = data.luck || 1;
+
+      // ✅ Restore wounds
+      const woundButtons = document.querySelectorAll('.wounds button');
+      woundButtons.forEach((btn, i) => {
+        btn.classList.toggle('active', (data.wounds || [])[i] || false);
+      });
+
+      // ✅ Restore skills
+      document.getElementById("skills-container").innerHTML = "";
+      (data.skills || []).forEach(skill => addSkill(skill));
+
+      // ✅ Restore items
+      document.getElementById("items-container").innerHTML = "";
+      (data.items || []).forEach(item => addItem(item));
+
+      // ✅ Restore conditions
+      document.getElementById("conditions-container").innerHTML = "";
+      (data.conditions || []).forEach(cond => {
+        addCondition(typeof cond === 'string' ? cond : cond.name);
+      });
+
+      alert(`Character '${selectedName}' loaded!`);
+
+      // ✅ Update autosave name
+      localStorage.setItem("autoSaveCharacterName", selectedName);
+    })
+    .catch((error) => {
+      console.error("Error loading character:", error);
+      alert("Failed to load character.");
+    });
+}
+
 function listenForDisplayImageUpdates() {
   const display = document.getElementById("zoom-content");
   const sessionId = localStorage.getItem("currentSessionId");

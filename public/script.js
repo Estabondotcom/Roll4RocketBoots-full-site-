@@ -915,6 +915,30 @@ function makeDraggable(el) {
   };
 }
 
+function clearAllEmojis() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) return alert("No session ID found.");
+
+  if (!confirm("Are you sure you want to delete ALL emojis from the board?")) return;
+
+  db.collection("sessions").doc(sessionId).collection("emojis").get()
+    .then(snapshot => {
+      const batch = db.batch();
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      return batch.commit();
+    })
+    .then(() => {
+      console.log("✅ All emojis cleared.");
+    })
+    .catch((err) => {
+      console.error("❌ Failed to clear emojis:", err);
+      alert("Failed to clear emojis.");
+    });
+}
+
+
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;

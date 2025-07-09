@@ -830,13 +830,15 @@ window.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   });
 
-  zoomContainer.addEventListener("mousedown", (e) => {
-    if (e.target.classList.contains("draggable-emoji")) return;
-    isPanning = true;
-    startX = e.clientX - panX;
-    startY = e.clientY - panY;
-    zoomContainer.style.cursor = "grabbing";
-  });
+zoomContainer.addEventListener("mousedown", (e) => {
+  if (drawMode) return; // ✅ Don't pan while in draw mode
+  if (e.target.classList.contains("draggable-emoji")) return;
+
+  isPanning = true;
+  startX = e.clientX - panX;
+  startY = e.clientY - panY;
+  zoomContainer.style.cursor = "grabbing";
+});
 
   document.addEventListener("mousemove", (e) => {
     if (!isPanning) return;

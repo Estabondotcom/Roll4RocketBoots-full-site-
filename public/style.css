@@ -371,7 +371,7 @@ label[for="player-name"] {
   top: 0;
   left: 0;
   z-index: 20;
-  pointer-events: none; /* Allow toggling via JS */
+  pointer-events: auto; /* Allow toggling via JS */
 }
 
 

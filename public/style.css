@@ -366,4 +366,11 @@ label[for="player-name"] {
   cursor: pointer;
   z-index: 2;
 }
+#draw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 15; /* Above the image and emojis */
+  pointer-events: none;
+}
 

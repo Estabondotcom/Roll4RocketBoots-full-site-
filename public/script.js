@@ -1011,9 +1011,6 @@ let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
 
-const canvas = document.getElementById("draw-canvas");
-const ctx = canvas.getContext("2d");
-
 function toggleDrawMode() {
   drawMode = !drawMode;
   canvas.style.pointerEvents = drawMode ? "auto" : "none";

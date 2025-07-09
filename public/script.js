@@ -993,10 +993,6 @@ let isDrawing = false;
 let drawMode = false;
 let lastX = 0, lastY = 0;
 
-const canvas = document.getElementById("draw-canvas");
-const zoomContent = document.getElementById("zoom-content");
-const ctx = canvas.getContext("2d");
-
 function resizeCanvas() {
   canvas.width = zoomContent.scrollWidth;
   canvas.height = zoomContent.scrollHeight;

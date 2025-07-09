@@ -978,6 +978,21 @@ function makeDraggable(el) {
     };
   };
 }
+
+let isDrawing = false;
+let drawMode = false;
+let lastX = 0, lastY = 0;
+
+const canvas = document.getElementById("draw-canvas");
+const zoomContent = document.getElementById("zoom-content");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = zoomContent.scrollWidth;
+  canvas.height = zoomContent.scrollHeight;
+}
+resizeCanvas();
+
 let isDrawing = false;
 let drawMode = false;
 let lastX = 0, lastY = 0;
@@ -995,6 +1010,7 @@ resizeCanvas();
 function toggleDrawMode() {
   drawMode = !drawMode;
   canvas.style.pointerEvents = drawMode ? "auto" : "none";
+  console.log("Draw mode:", drawMode);
 }
 
 canvas.addEventListener("mousedown", (e) => {
@@ -1013,8 +1029,8 @@ canvas.addEventListener("mousemove", (e) => {
   const x = (e.clientX - rect.left) / zoomLevel;
   const y = (e.clientY - rect.top) / zoomLevel;
 
-  ctx.strokeStyle = document.getElementById("brushColor").value;
-  ctx.lineWidth = document.getElementById("brushSize").value;
+  ctx.strokeStyle = document.getElementById("brushColor")?.value || "#ff0000";
+  ctx.lineWidth = document.getElementById("brushSize")?.value || 2;
   ctx.lineCap = "round";
 
   ctx.beginPath();

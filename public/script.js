@@ -806,7 +806,7 @@ window.addEventListener("DOMContentLoaded", () => {
     canvas.style.transform = transform;
     canvas.style.transformOrigin = "0 0";
   }
-
+ }
   window.applyTransform = applyTransform;
 
   applyTransform();

@@ -543,7 +543,8 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   };
 
   container.appendChild(img);
-  let canvas = document.getElementById("draw-canvas");
+  // Ensure draw canvas exists
+let canvas = document.getElementById("draw-canvas");
 if (!canvas) {
   canvas = document.createElement("canvas");
   canvas.id = "draw-canvas";
@@ -554,8 +555,11 @@ if (!canvas) {
   canvas.style.zIndex = "20";
   container.appendChild(canvas);
 }
-
 resizeCanvas();
+
+// ✅ Assign global references now
+window.drawingCanvas = canvas;
+window.drawingCtx = canvas.getContext("2d");
 
   localStorage.setItem("gmDisplayImage", imageUrl);
 
@@ -994,10 +998,6 @@ function makeDraggable(el) {
     };
   };
 }
-
-const canvas = document.getElementById("draw-canvas");
-const zoomContent = document.getElementById("zoom-content");
-const ctx = canvas.getContext("2d");
 
 function resizeCanvas() {
   canvas.width = zoomContent.scrollWidth;

@@ -1050,7 +1050,10 @@ let lastY = 0;
 
 function toggleDrawMode() {
   drawMode = !drawMode;
-  canvas.style.pointerEvents = drawMode ? "auto" : "none";
+  const canvas = window.drawingCanvas;
+  if (canvas) {
+    canvas.style.pointerEvents = drawMode ? "auto" : "none";
+  }
   console.log("✏️ Draw mode:", drawMode);
 }
 

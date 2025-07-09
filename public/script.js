@@ -1000,9 +1000,13 @@ function makeDraggable(el) {
 }
 
 function resizeCanvas() {
+  const canvas = window.drawingCanvas;
+  const zoomContent = document.getElementById("zoom-content");
+  if (!canvas || !zoomContent) return;
   canvas.width = zoomContent.scrollWidth;
   canvas.height = zoomContent.scrollHeight;
 }
+
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 

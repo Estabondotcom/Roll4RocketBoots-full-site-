@@ -1010,10 +1010,19 @@ let isDrawing = false;
 let drawMode = false;
 let lastX = 0, lastY = 0;
 
+let drawMode = false;
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+let zoomLevel = 1; // Make sure to update this globally elsewhere
+
+const canvas = document.getElementById("draw-canvas");
+const ctx = canvas.getContext("2d");
+
 function toggleDrawMode() {
   drawMode = !drawMode;
   canvas.style.pointerEvents = drawMode ? "auto" : "none";
-  console.log("Draw mode:", drawMode);
+  console.log("✏️ Draw mode:", drawMode);
 }
 
 canvas.addEventListener("mousedown", (e) => {
@@ -1045,8 +1054,9 @@ canvas.addEventListener("mousemove", (e) => {
   lastY = y;
 });
 
-canvas.addEventListener("mouseup", () => isDrawing = false);
-canvas.addEventListener("mouseleave", () => isDrawing = false);
+["mouseup", "mouseleave"].forEach(evt =>
+  canvas.addEventListener(evt, () => isDrawing = false)
+);
 
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);

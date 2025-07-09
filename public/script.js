@@ -1006,10 +1006,6 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-let isDrawing = false;
-let drawMode = false;
-let lastX = 0, lastY = 0;
-
 let drawMode = false;
 let isDrawing = false;
 let lastX = 0;

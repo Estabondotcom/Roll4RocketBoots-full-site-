@@ -1054,39 +1054,6 @@ function toggleDrawMode() {
   console.log("✏️ Draw mode:", drawMode);
 }
 
-canvas.addEventListener("mousedown", (e) => {
-  if (!drawMode) return;
-
-  const rect = canvas.getBoundingClientRect();
-  lastX = (e.clientX - rect.left) / zoomLevel;
-  lastY = (e.clientY - rect.top) / zoomLevel;
-  isDrawing = true;
-});
-
-canvas.addEventListener("mousemove", (e) => {
-  if (!isDrawing || !drawMode) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / zoomLevel;
-  const y = (e.clientY - rect.top) / zoomLevel;
-
-  ctx.strokeStyle = document.getElementById("brushColor")?.value || "#ff0000";
-  ctx.lineWidth = document.getElementById("brushSize")?.value || 2;
-  ctx.lineCap = "round";
-
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.stroke();
-
-  lastX = x;
-  lastY = y;
-});
-
-["mouseup", "mouseleave"].forEach(evt =>
-  canvas.addEventListener(evt, () => isDrawing = false)
-);
-
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }

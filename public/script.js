@@ -543,6 +543,20 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   };
 
   container.appendChild(img);
+  let canvas = document.getElementById("draw-canvas");
+if (!canvas) {
+  canvas = document.createElement("canvas");
+  canvas.id = "draw-canvas";
+  canvas.style.pointerEvents = drawMode ? "auto" : "none";
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.zIndex = "20";
+  container.appendChild(canvas);
+}
+
+resizeCanvas();
+
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {

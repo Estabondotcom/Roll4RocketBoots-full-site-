@@ -990,16 +990,11 @@ function resizeCanvas() {
   canvas.height = zoomContent.scrollHeight;
 }
 resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 let isDrawing = false;
 let drawMode = false;
 let lastX = 0, lastY = 0;
-
-function resizeCanvas() {
-  canvas.width = zoomContent.scrollWidth;
-  canvas.height = zoomContent.scrollHeight;
-}
-resizeCanvas();
 
 function toggleDrawMode() {
   drawMode = !drawMode;

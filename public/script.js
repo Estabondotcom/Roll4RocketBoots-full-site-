@@ -1058,6 +1058,9 @@ function toggleDrawMode() {
 }
 
 function clearCanvas() {
+  const canvas = window.drawingCanvas;
+  const ctx = window.drawingCtx;
+  if (!canvas || !ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 

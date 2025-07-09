@@ -370,7 +370,8 @@ label[for="player-name"] {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 20; /* Above the image and emojis */
-  pointer-events: none;
+  z-index: 20;
+  pointer-events: none; /* Allow toggling via JS */
 }
+
 

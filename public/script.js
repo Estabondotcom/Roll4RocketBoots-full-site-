@@ -95,28 +95,6 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
   return container;
 }
 
-function createItemInput(value = "") {
-  const div = document.createElement("div");
-  div.className = "input-wrapper";
-
-  const input = document.createElement("input");
-  input.type = "text";
-  input.className = "item-input";
-  input.placeholder = "Item name";
-  input.maxLength = 30;
-  input.value = value;
-
-  const deleteBtn = document.createElement("button");
-  deleteBtn.type = "button";
-  deleteBtn.textContent = "✕";
-  deleteBtn.className = "delete-button";
-  deleteBtn.onclick = () => div.remove();
-
-  div.appendChild(input);
-  div.appendChild(deleteBtn);
-  return div;
-}
-
 function addSkill(value = "", levels = [true, false, false, false]) {
   if (typeof value === 'object') {
     levels = value.levels || [true, false, false, false];
@@ -543,57 +521,6 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   };
 
   container.appendChild(img);
-  // Ensure draw canvas exists
-let canvas = document.getElementById("draw-canvas");
-if (!canvas) {
-  canvas = document.createElement("canvas");
-  canvas.id = "draw-canvas";
-  canvas.style.pointerEvents = drawMode ? "auto" : "none";
-  canvas.style.position = "absolute";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.zIndex = "20";
-  container.appendChild(canvas);
-}
-resizeCanvas();
-
-// ✅ Assign global references now
-window.drawingCanvas = canvas;
-window.drawingCtx = canvas.getContext("2d");
-canvas.addEventListener("mousedown", (e) => {
-  if (!drawMode) return;
-
-  const rect = canvas.getBoundingClientRect();
-  lastX = (e.clientX - rect.left) / zoomLevel;
-  lastY = (e.clientY - rect.top) / zoomLevel;
-  isDrawing = true;
-});
-
-canvas.addEventListener("mousemove", (e) => {
-  if (!isDrawing || !drawMode) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / zoomLevel;
-  const y = (e.clientY - rect.top) / zoomLevel;
-
-  const ctx = window.drawingCtx;
-  ctx.strokeStyle = document.getElementById("brushColor")?.value || "#ff0000";
-  ctx.lineWidth = document.getElementById("brushSize")?.value || 2;
-  ctx.lineCap = "round";
-
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.stroke();
-
-  lastX = x;
-  lastY = y;
-});
-
-["mouseup", "mouseleave"].forEach(evt =>
-  canvas.addEventListener(evt, () => isDrawing = false)
-);
-
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {
@@ -845,19 +772,11 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
- function applyTransform() {
-  const transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-
-  const zoomContent = document.getElementById("zoom-content");
-  zoomContent.style.transform = transform;
-  zoomContent.style.transformOrigin = "0 0";
-
-  const canvas = document.getElementById("drawing-canvas");
-  if (canvas) {
-    canvas.style.transform = transform;
-    canvas.style.transformOrigin = "0 0";
+  function applyTransform() {
+    zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+    zoomContent.style.transformOrigin = "0 0";
   }
- }
+
   window.applyTransform = applyTransform;
 
   applyTransform();
@@ -881,15 +800,13 @@ window.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   });
 
-zoomContainer.addEventListener("mousedown", (e) => {
-  if (drawMode) return; // ✅ Don't pan while in draw mode
-  if (e.target.classList.contains("draggable-emoji")) return;
-
-  isPanning = true;
-  startX = e.clientX - panX;
-  startY = e.clientY - panY;
-  zoomContainer.style.cursor = "grabbing";
-});
+  zoomContainer.addEventListener("mousedown", (e) => {
+    if (e.target.classList.contains("draggable-emoji")) return;
+    isPanning = true;
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+    zoomContainer.style.cursor = "grabbing";
+  });
 
   document.addEventListener("mousemove", (e) => {
     if (!isPanning) return;
@@ -1032,38 +949,6 @@ function makeDraggable(el) {
   };
 }
 
-function resizeCanvas() {
-  const canvas = window.drawingCanvas;
-  const zoomContent = document.getElementById("zoom-content");
-  if (!canvas || !zoomContent) return;
-  canvas.width = zoomContent.scrollWidth;
-  canvas.height = zoomContent.scrollHeight;
-}
-
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-let drawMode = false;
-let isDrawing = false;
-let lastX = 0;
-let lastY = 0;
-
-function toggleDrawMode() {
-  drawMode = !drawMode;
-  const canvas = window.drawingCanvas;
-  if (canvas) {
-    canvas.style.pointerEvents = drawMode ? "auto" : "none";
-  }
-  console.log("✏️ Draw mode:", drawMode);
-}
-
-function clearCanvas() {
-  const canvas = window.drawingCanvas;
-  const ctx = window.drawingCtx;
-  if (!canvas || !ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
 function clearAllEmojis() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return alert("No session ID found.");
@@ -1086,6 +971,7 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
+
 
 window.addSkill = addSkill;
 window.addItem = addItem;

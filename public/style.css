@@ -366,12 +366,4 @@ label[for="player-name"] {
   cursor: pointer;
   z-index: 2;
 }
-#draw-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 20;
-  pointer-events: auto; /* Allow toggling via JS */
-}
-
 

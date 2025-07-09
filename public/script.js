@@ -1010,7 +1010,6 @@ let drawMode = false;
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
-let zoomLevel = 1; // Make sure to update this globally elsewhere
 
 const canvas = document.getElementById("draw-canvas");
 const ctx = canvas.getContext("2d");

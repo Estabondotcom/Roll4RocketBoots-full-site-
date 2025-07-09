@@ -794,9 +794,17 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  function applyTransform() {
-    zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-    zoomContent.style.transformOrigin = "0 0";
+ function applyTransform() {
+  const transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+
+  const zoomContent = document.getElementById("zoom-content");
+  zoomContent.style.transform = transform;
+  zoomContent.style.transformOrigin = "0 0";
+
+  const canvas = document.getElementById("drawing-canvas");
+  if (canvas) {
+    canvas.style.transform = transform;
+    canvas.style.transformOrigin = "0 0";
   }
 
   window.applyTransform = applyTransform;
@@ -970,6 +978,60 @@ function makeDraggable(el) {
     };
   };
 }
+let isDrawing = false;
+let drawMode = false;
+let lastX = 0, lastY = 0;
+
+const canvas = document.getElementById("draw-canvas");
+const zoomContent = document.getElementById("zoom-content");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = zoomContent.scrollWidth;
+  canvas.height = zoomContent.scrollHeight;
+}
+resizeCanvas();
+
+function toggleDrawMode() {
+  drawMode = !drawMode;
+  canvas.style.pointerEvents = drawMode ? "auto" : "none";
+}
+
+canvas.addEventListener("mousedown", (e) => {
+  if (!drawMode) return;
+
+  const rect = canvas.getBoundingClientRect();
+  lastX = (e.clientX - rect.left) / zoomLevel;
+  lastY = (e.clientY - rect.top) / zoomLevel;
+  isDrawing = true;
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (!isDrawing || !drawMode) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / zoomLevel;
+  const y = (e.clientY - rect.top) / zoomLevel;
+
+  ctx.strokeStyle = document.getElementById("brushColor").value;
+  ctx.lineWidth = document.getElementById("brushSize").value;
+  ctx.lineCap = "round";
+
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+
+  lastX = x;
+  lastY = y;
+});
+
+canvas.addEventListener("mouseup", () => isDrawing = false);
+canvas.addEventListener("mouseleave", () => isDrawing = false);
+
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 
 function clearAllEmojis() {
   const sessionId = localStorage.getItem("currentSessionId");
@@ -993,7 +1055,6 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
-
 
 window.addSkill = addSkill;
 window.addItem = addItem;

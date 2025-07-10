@@ -994,6 +994,113 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
+// === Drawing Canvas Tool for Image Display Area ===
+
+let isDrawing = false;
+let currentTool = "pen"; // or "eraser"
+let drawColor = "#ff0000";
+let drawLineWidth = 3;
+let canvas, ctx;
+
+function setupDrawingCanvas() {
+  const zoomContent = document.getElementById("zoom-content");
+  if (!zoomContent) return;
+
+  canvas = document.createElement("canvas");
+  canvas.id = "draw-canvas";
+  canvas.width = zoomContent.offsetWidth;
+  canvas.height = zoomContent.offsetHeight;
+  canvas.style.position = "absolute";
+  canvas.style.top = 0;
+  canvas.style.left = 0;
+  canvas.style.zIndex = 5;
+  canvas.style.pointerEvents = "none"; // default off
+
+  zoomContent.appendChild(canvas);
+  ctx = canvas.getContext("2d");
+
+  // Resize canvas when window resizes
+  window.addEventListener("resize", () => {
+    canvas.width = zoomContent.offsetWidth;
+    canvas.height = zoomContent.offsetHeight;
+  });
+}
+
+function toggleDrawingMode(enable) {
+  const canvas = document.getElementById("draw-canvas");
+  if (!canvas) return;
+  canvas.style.pointerEvents = enable ? "auto" : "none";
+  document.body.style.cursor = enable
+    ? "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"32\" width=\"32\"><text y=\"24\" font-size=\"24\">✏️</text></svg>') 0 24, auto"
+    : "auto";
+}
+
+function setDrawTool(tool) {
+  currentTool = tool;
+}
+
+function setDrawColor(color) {
+  drawColor = color;
+}
+
+function clearDrawingCanvas() {
+  if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function setupCanvasEvents() {
+  if (!canvas) return;
+
+  canvas.addEventListener("mousedown", (e) => {
+    isDrawing = true;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    if (!isDrawing) return;
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.strokeStyle = currentTool === "eraser" ? "#00000000" : drawColor;
+    ctx.lineWidth = drawLineWidth;
+    ctx.lineCap = "round";
+    ctx.globalCompositeOperation =
+      currentTool === "eraser" ? "destination-out" : "source-over";
+    ctx.stroke();
+  });
+
+  ["mouseup", "mouseleave"].forEach((ev) => {
+    canvas.addEventListener(ev, () => {
+      isDrawing = false;
+      ctx.closePath();
+    });
+  });
+}
+
+function createDrawingToolbar() {
+  const toolbar = document.createElement("div");
+  toolbar.id = "drawing-toolbar";
+  toolbar.style.position = "absolute";
+  toolbar.style.top = "10px";
+  toolbar.style.left = "50%";
+  toolbar.style.transform = "translateX(-50%)";
+  toolbar.style.zIndex = 9999;
+  toolbar.style.background = "#333";
+  toolbar.style.padding = "8px";
+  toolbar.style.border = "2px solid #fff";
+  toolbar.style.display = "flex";
+  toolbar.style.gap = "6px";
+
+  toolbar.innerHTML = `
+    <button onclick="toggleDrawingMode(true)">✏️ Draw</button>
+    <button onclick="toggleDrawingMode(false)">👋 Pan</button>
+    <input type="color" onchange="setDrawColor(this.value)" value="#ff0000">
+    <button onclick="setDrawTool('pen')">🖊️ Pen</button>
+    <button onclick="setDrawTool('eraser')">🧽 Erase</button>
+    <button onclick="clearDrawingCanvas()">🗑️ Clear</button>
+  `;
+
+  document.getElementById("zoom-container").appendChild(toolbar);
+}
+
 
 
 window.addSkill = addSkill;

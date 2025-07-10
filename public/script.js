@@ -1010,9 +1010,37 @@ let drawColor = "#ff0000";
 let drawLineWidth = 3;
 let canvas, ctx;
 
-function setupDrawingCanvas() {
+let drawingMode = false;
+
+function toggleDrawingMode(enable) {
+  const canvas = document.getElementById("draw-canvas");
+  const container = document.getElementById("zoom-container");
+  drawingMode = enable;
+
+  if (!canvas || !container) return;
+
+  if (enable) {
+    canvas.style.pointerEvents = "auto";
+    container.style.pointerEvents = "none";
+    document.body.style.cursor = "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"32\" width=\"32\"><text y=\"24\" font-size=\"24\">✏️</text></svg>') 0 24, auto";
+  } else {
+    canvas.style.pointerEvents = "none";
+    container.style.pointerEvents = "auto";
+    document.body.style.cursor = "auto";
+  }
+}
+
+function setDrawTool(tool) {
+  currentTool = tool;
+}
+
+function setDrawColor(color) {
+  drawColor = color;function setupDrawingCanvas() {
   const zoomContent = document.getElementById("zoom-content");
   if (!zoomContent) return;
+
+  const existing = document.getElementById("draw-canvas");
+  if (existing) existing.remove();
 
   canvas = document.createElement("canvas");
   canvas.id = "draw-canvas";
@@ -1021,42 +1049,12 @@ function setupDrawingCanvas() {
   canvas.style.position = "absolute";
   canvas.style.top = 0;
   canvas.style.left = 0;
-  canvas.style.zIndex = 20; // Ensure it's above the image (image = zIndex 1)
-  canvas.style.pointerEvents = "none"; // default off
+  canvas.style.zIndex = 5;
+  canvas.style.pointerEvents = "none";
+  canvas.style.touchAction = "none";
 
   zoomContent.appendChild(canvas);
   ctx = canvas.getContext("2d");
-
-  // Resize canvas with container
-  window.addEventListener("resize", () => {
-    canvas.width = zoomContent.offsetWidth;
-    canvas.height = zoomContent.offsetHeight;
-  });
-}
-
-
-function toggleDrawingMode(enable) {
-  const canvas = document.getElementById("draw-canvas");
-  if (!canvas) return;
-
-  if (enable) {
-    canvas.style.pointerEvents = "auto"; // allow drawing
-    disablePanAndZoom(); // << NEW
-    document.body.style.cursor = "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"32\" width=\"32\"><text y=\"24\" font-size=\"24\">✏️</text></svg>') 0 24, auto";
-  } else {
-    canvas.style.pointerEvents = "none"; // return to pan mode
-    enablePanAndZoom(); // << NEW
-    document.body.style.cursor = "auto";
-  }
-}
-
-
-function setDrawTool(tool) {
-  currentTool = tool;
-}
-
-function setDrawColor(color) {
-  drawColor = color;
 }
 
 function clearDrawingCanvas() {
@@ -1066,24 +1064,23 @@ function clearDrawingCanvas() {
 function setupCanvasEvents() {
   if (!canvas) return;
 
-  canvas.addEventListener("mousedown", (e) => {
+  canvas.addEventListener("mousedown", e => {
     isDrawing = true;
     ctx.beginPath();
     ctx.moveTo(e.offsetX, e.offsetY);
   });
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", e => {
     if (!isDrawing) return;
     ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.strokeStyle = currentTool === "eraser" ? "#00000000" : drawColor;
-    ctx.lineWidth = drawLineWidth;
+    ctx.strokeStyle = currentTool === "eraser" ? "rgba(0,0,0,1)" : drawColor;
+    ctx.lineWidth = currentTool === "eraser" ? 20 : drawLineWidth;
     ctx.lineCap = "round";
-    ctx.globalCompositeOperation =
-      currentTool === "eraser" ? "destination-out" : "source-over";
+    ctx.globalCompositeOperation = currentTool === "eraser" ? "destination-out" : "source-over";
     ctx.stroke();
   });
 
-  ["mouseup", "mouseleave"].forEach((ev) => {
+  ["mouseup", "mouseleave"].forEach(ev => {
     canvas.addEventListener(ev, () => {
       isDrawing = false;
       ctx.closePath();
@@ -1094,16 +1091,9 @@ function setupCanvasEvents() {
 function createDrawingToolbar() {
   const toolbar = document.createElement("div");
   toolbar.id = "drawing-toolbar";
-  toolbar.style.position = "absolute";
-  toolbar.style.top = "10px";
-  toolbar.style.left = "50%";
-  toolbar.style.transform = "translateX(-50%)";
-  toolbar.style.zIndex = 9999;
-  toolbar.style.background = "#333";
-  toolbar.style.padding = "8px";
-  toolbar.style.border = "2px solid #fff";
   toolbar.style.display = "flex";
   toolbar.style.gap = "6px";
+  toolbar.style.marginTop = "10px";
 
   toolbar.innerHTML = `
     <button onclick="toggleDrawingMode(true)">✏️ Draw</button>
@@ -1114,8 +1104,12 @@ function createDrawingToolbar() {
     <button onclick="clearDrawingCanvas()">🗑️ Clear</button>
   `;
 
-  document.getElementById("zoom-container").appendChild(toolbar);
+  const emojiToolbar = document.getElementById("emoji-toolbar");
+  if (emojiToolbar) {
+    emojiToolbar.appendChild(toolbar);
+  }
 }
+
 function disablePanAndZoom() {
   const container = document.getElementById("zoom-container");
   if (container) {

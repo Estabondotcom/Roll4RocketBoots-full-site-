@@ -544,6 +544,9 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   };
 
   container.appendChild(img);
+  setupDrawingCanvas();
+setupCanvasEvents();
+createDrawingToolbar();
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {

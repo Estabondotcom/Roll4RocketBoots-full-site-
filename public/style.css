@@ -368,8 +368,13 @@ label[for="player-name"] {
 }
 
 #draw-canvas {
-  pointer-events: none; /* default off */
-  cursor: crosshair;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100; /* well above emojis and images */
+  pointer-events: none; /* gets toggled on draw */
+}
+
 }
 
 

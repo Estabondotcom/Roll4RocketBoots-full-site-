@@ -374,7 +374,3 @@ label[for="player-name"] {
   z-index: 100; /* well above emojis and images */
   pointer-events: none; /* gets toggled on draw */
 }
-
-}
-
-

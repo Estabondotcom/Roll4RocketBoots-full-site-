@@ -1105,6 +1105,7 @@ function setupCanvasEvents() {
 }
 
 
+
 function createDrawingToolbar() {
   const toolbar = document.createElement("div");
   toolbar.id = "drawing-toolbar";

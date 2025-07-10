@@ -544,6 +544,11 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   };
 
   container.appendChild(img);
+// Remove any existing drawing canvas and toolbar
+const oldCanvas = document.getElementById("draw-canvas");
+const oldToolbar = document.getElementById("drawing-toolbar");
+if (oldCanvas) oldCanvas.remove();
+if (oldToolbar) oldToolbar.remove();
   setupDrawingCanvas();
 setupCanvasEvents();
 createDrawingToolbar();
@@ -1016,27 +1021,35 @@ function setupDrawingCanvas() {
   canvas.style.position = "absolute";
   canvas.style.top = 0;
   canvas.style.left = 0;
-  canvas.style.zIndex = 5;
+  canvas.style.zIndex = 20; // Ensure it's above the image (image = zIndex 1)
   canvas.style.pointerEvents = "none"; // default off
 
   zoomContent.appendChild(canvas);
   ctx = canvas.getContext("2d");
 
-  // Resize canvas when window resizes
+  // Resize canvas with container
   window.addEventListener("resize", () => {
     canvas.width = zoomContent.offsetWidth;
     canvas.height = zoomContent.offsetHeight;
   });
 }
 
+
 function toggleDrawingMode(enable) {
   const canvas = document.getElementById("draw-canvas");
   if (!canvas) return;
-  canvas.style.pointerEvents = enable ? "auto" : "none";
-  document.body.style.cursor = enable
-    ? "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"32\" width=\"32\"><text y=\"24\" font-size=\"24\">✏️</text></svg>') 0 24, auto"
-    : "auto";
+
+  if (enable) {
+    canvas.style.pointerEvents = "auto"; // allow drawing
+    disablePanAndZoom(); // << NEW
+    document.body.style.cursor = "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"32\" width=\"32\"><text y=\"24\" font-size=\"24\">✏️</text></svg>') 0 24, auto";
+  } else {
+    canvas.style.pointerEvents = "none"; // return to pan mode
+    enablePanAndZoom(); // << NEW
+    document.body.style.cursor = "auto";
+  }
 }
+
 
 function setDrawTool(tool) {
   currentTool = tool;
@@ -1102,6 +1115,21 @@ function createDrawingToolbar() {
   `;
 
   document.getElementById("zoom-container").appendChild(toolbar);
+}
+function disablePanAndZoom() {
+  const container = document.getElementById("zoom-container");
+  if (container) {
+    container.style.touchAction = "none";
+    container.style.pointerEvents = "none"; // disables emoji drag
+  }
+}
+
+function enablePanAndZoom() {
+  const container = document.getElementById("zoom-container");
+  if (container) {
+    container.style.touchAction = "auto";
+    container.style.pointerEvents = "auto";
+  }
 }
 
 

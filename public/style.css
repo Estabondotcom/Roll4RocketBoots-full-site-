@@ -367,3 +367,9 @@ label[for="player-name"] {
   z-index: 2;
 }
 
+#draw-canvas {
+  pointer-events: none; /* default off */
+  cursor: crosshair;
+}
+
+

@@ -1035,7 +1035,10 @@ function setDrawTool(tool) {
 }
 
 function setDrawColor(color) {
-  drawColor = color;function setupDrawingCanvas() {
+  drawColor = color;
+}
+
+function setupDrawingCanvas() {
   const zoomContent = document.getElementById("zoom-content");
   if (!zoomContent) return;
 

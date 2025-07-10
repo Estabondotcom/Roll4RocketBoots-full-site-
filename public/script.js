@@ -104,6 +104,29 @@ function addSkill(value = "", levels = [true, false, false, false]) {
   container.appendChild(createSkillInput(value, levels));
 }
 
+function createItemInput(value = "") {
+  const div = document.createElement('div');
+  div.className = "input-wrapper";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "item-input";
+  input.placeholder = "Enter item";
+  input.maxLength = 30;
+  input.value = value;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.textContent = "✕";
+  deleteButton.className = "delete-button";
+  deleteButton.onclick = () => div.remove();
+
+  div.appendChild(input);
+  div.appendChild(deleteButton);
+
+  return div;
+}
+
 function addItem(value = "") {
   const container = document.getElementById('items-container');
   container.appendChild(createItemInput(value));

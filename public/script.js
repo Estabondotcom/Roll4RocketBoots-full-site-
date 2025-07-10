@@ -1126,8 +1126,6 @@ function enablePanAndZoom() {
   }
 }
 
-
-
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;

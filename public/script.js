@@ -1067,44 +1067,41 @@ function clearDrawingCanvas() {
 function setupCanvasEvents() {
   if (!canvas) return;
 
-  canvas.addEventListener("mousedown", e => {
+  canvas.addEventListener("mousedown", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
     isDrawing = true;
-    console.log("🖱️ MOUSEDOWN on canvas", {
-      offsetX: e.offsetX,
-      offsetY: e.offsetY,
-      ctxExists: !!ctx,
-      canvasExists: !!canvas
-    });
+    console.log("🖱️ MOUSEDOWN on canvas", { x, y, rect });
     ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
+    ctx.moveTo(x, y);
   });
 
-  canvas.addEventListener("mousemove", e => {
+  canvas.addEventListener("mousemove", (e) => {
     if (!isDrawing) return;
-    console.log("✏️ DRAWING", {
-      tool: currentTool,
-      color: drawColor,
-      lineWidth: currentTool === "eraser" ? 20 : drawLineWidth,
-      x: e.offsetX,
-      y: e.offsetY
-    });
-    ctx.lineTo(e.offsetX, e.offsetY);
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    console.log("✏️ DRAWING", { tool: currentTool, x, y });
+    ctx.lineTo(x, y);
     ctx.strokeStyle = currentTool === "eraser" ? "rgba(0,0,0,1)" : drawColor;
     ctx.lineWidth = currentTool === "eraser" ? 20 : drawLineWidth;
     ctx.lineCap = "round";
-    ctx.globalCompositeOperation = currentTool === "eraser" ? "destination-out" : "source-over";
+    ctx.globalCompositeOperation =
+      currentTool === "eraser" ? "destination-out" : "source-over";
     ctx.stroke();
   });
 
-  ["mouseup", "mouseleave"].forEach(ev => {
+  ["mouseup", "mouseleave"].forEach((ev) => {
     canvas.addEventListener(ev, () => {
       isDrawing = false;
       ctx.closePath();
     });
   });
 }
-
-
 
 function createDrawingToolbar() {
   const toolbar = document.createElement("div");

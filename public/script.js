@@ -1069,12 +1069,25 @@ function setupCanvasEvents() {
 
   canvas.addEventListener("mousedown", e => {
     isDrawing = true;
+    console.log("🖱️ MOUSEDOWN on canvas", {
+      offsetX: e.offsetX,
+      offsetY: e.offsetY,
+      ctxExists: !!ctx,
+      canvasExists: !!canvas
+    });
     ctx.beginPath();
     ctx.moveTo(e.offsetX, e.offsetY);
   });
 
   canvas.addEventListener("mousemove", e => {
     if (!isDrawing) return;
+    console.log("✏️ DRAWING", {
+      tool: currentTool,
+      color: drawColor,
+      lineWidth: currentTool === "eraser" ? 20 : drawLineWidth,
+      x: e.offsetX,
+      y: e.offsetY
+    });
     ctx.lineTo(e.offsetX, e.offsetY);
     ctx.strokeStyle = currentTool === "eraser" ? "rgba(0,0,0,1)" : drawColor;
     ctx.lineWidth = currentTool === "eraser" ? 20 : drawLineWidth;
@@ -1090,6 +1103,7 @@ function setupCanvasEvents() {
     });
   });
 }
+
 
 function createDrawingToolbar() {
   const toolbar = document.createElement("div");

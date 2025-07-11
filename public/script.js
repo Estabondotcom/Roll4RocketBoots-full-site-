@@ -1018,8 +1018,9 @@ function setupDrawingCanvas() {
   canvas.style.position = "absolute";
   canvas.style.top = "0";
   canvas.style.left = "0";
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
+  canvas.style.width = "auto";
+  canvas.style.height = "auto";
+  canvas.style.pointerEvents = "auto";
   canvas.style.zIndex = "20";
   canvas.style.pointerEvents = "auto"; // Enable drawing
   canvas.style.backgroundColor = "rgba(255, 0, 0, 0.2)"; // TEMP
@@ -1028,14 +1029,14 @@ function setupDrawingCanvas() {
   resizeDrawingCanvas();
 }
 
-
 function resizeDrawingCanvas() {
   const canvas = document.getElementById("drawing-canvas");
-  const zoomContent = document.getElementById("zoom-content");
-  if (!canvas || !zoomContent) return;
+  const img = document.querySelector("#zoom-content img");
 
-  canvas.width = zoomContent.clientWidth;
-  canvas.height = zoomContent.clientHeight;
+  if (!canvas || !img) return;
+
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
 }
 
 function enableBasicDrawing() {

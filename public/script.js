@@ -1039,6 +1039,7 @@ function setDrawColor(color) {
 }
 
 function setupDrawingCanvas() {
+  console.log("🛠️ setupDrawingCanvas called — zoomContent exists:", !!document.getElementById("zoom-content"));
   const zoomContent = document.getElementById("zoom-content");
   if (!zoomContent) return;
 
@@ -1065,6 +1066,7 @@ function clearDrawingCanvas() {
 }
 
 function setupCanvasEvents() {
+  console.log("🔧 setupCanvasEvents triggered — canvas:", canvas);
   if (!canvas) return;
 
   canvas.addEventListener("mousedown", (e) => {

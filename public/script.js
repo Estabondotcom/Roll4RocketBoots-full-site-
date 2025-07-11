@@ -774,14 +774,12 @@ function viewGMCharacterLive(sessionId, charId) {
     });
 }
 
- 
   window.addEventListener("beforeunload", () => {
     localStorage.setItem("zoomLevel", zoomLevel);
     localStorage.setItem("panX", panX);
     localStorage.setItem("panY", panY);
   });
 });
-
 
 document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("autoSaveInitialized")) {
@@ -1000,6 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
     zoomContent.style.transformOrigin = '0 0';
   }
   window.applyTransform = applyTransform;
+  
   applyTransform();
 
   // Wheel-to-zoom
@@ -1048,8 +1047,6 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('panY',      panY);
   });
 });
-
-
 
 window.addSkill = addSkill;
 window.addItem = addItem;

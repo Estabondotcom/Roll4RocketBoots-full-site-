@@ -376,6 +376,7 @@ function toggleShowAndTell() {
     pushToDisplayArea(latestDisplayImage, false);
   }
   listenForDisplayImageUpdates(); // Now start listening
+  setupDrawingCanvas();
 }
 
   function toggleCharacterPanel() {
@@ -993,6 +994,33 @@ function clearAllEmojis() {
       console.error("❌ Failed to clear emojis:", err);
       alert("Failed to clear emojis.");
     });
+}
+function setupDrawingCanvas() {
+  const zoomContent = document.getElementById("zoom-content");
+
+  if (!zoomContent) {
+    console.warn("🛑 zoom-content not found!");
+    return;
+  }
+
+  let existingCanvas = document.getElementById("drawing-canvas");
+  if (existingCanvas) {
+    console.log("🖌️ Drawing canvas already exists.");
+    return;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.id = "drawing-canvas";
+  canvas.style.position = "absolute";
+  canvas.style.top = 0;
+  canvas.style.left = 0;
+  canvas.style.zIndex = 5;
+  canvas.style.pointerEvents = "none"; // Enable drawing later
+  canvas.width = zoomContent.offsetWidth;
+  canvas.height = zoomContent.offsetHeight;
+
+  zoomContent.appendChild(canvas);
+  console.log("🖌️ Drawing canvas added.");
 }
 
 

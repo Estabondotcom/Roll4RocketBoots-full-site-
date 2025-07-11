@@ -1058,9 +1058,6 @@ function setupDrawingCanvas() {
 
   zoomContent.appendChild(canvas);
   ctx = canvas.getContext("2d");
-
-  // 👉 Adjust for zoom so drawing matches transformed view
-  ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
 }
 
 function clearDrawingCanvas() {
@@ -1068,16 +1065,14 @@ function clearDrawingCanvas() {
 }
 
 function setupCanvasEvents() {
-  console.log("🔧 setupCanvasEvents triggered — canvas:", canvas);
-  if (!canvas) return;
+  if (!canvas || !ctx) return;
 
   canvas.addEventListener("mousedown", (e) => {
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left - panX) / zoomLevel;
+    const y = (e.clientY - rect.top - panY) / zoomLevel;
 
     isDrawing = true;
-    console.log("🖱️ MOUSEDOWN on canvas", { x, y, rect });
     ctx.beginPath();
     ctx.moveTo(x, y);
   });
@@ -1086,13 +1081,12 @@ function setupCanvasEvents() {
     if (!isDrawing) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left - panX) / zoomLevel;
+    const y = (e.clientY - rect.top - panY) / zoomLevel;
 
-    console.log("✏️ DRAWING", { tool: currentTool, x, y });
     ctx.lineTo(x, y);
     ctx.strokeStyle = currentTool === "eraser" ? "rgba(0,0,0,1)" : drawColor;
-    ctx.lineWidth = currentTool === "eraser" ? 20 : drawLineWidth;
+    ctx.lineWidth = (currentTool === "eraser" ? 20 : drawLineWidth) / zoomLevel; // account for zoom
     ctx.lineCap = "round";
     ctx.globalCompositeOperation =
       currentTool === "eraser" ? "destination-out" : "source-over";

@@ -774,22 +774,6 @@ function viewGMCharacterLive(sessionId, charId) {
     });
 }
 
-  let zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
-  let panX = parseFloat(localStorage.getItem("panX")) || 0;
-  let panY = parseFloat(localStorage.getItem("panY")) || 0;
-  let isPanning = false;
-  let startX = 0;
-  let startY = 0;
-
-window.addEventListener("DOMContentLoaded", () => {
-  const zoomContainer = document.getElementById("zoom-container");
-  const zoomContent = document.getElementById("zoom-content");
-
-  if (!zoomContainer || !zoomContent) {
-    console.warn("❌ Zoom container or content not found.");
-    return;
-  }
-
  
   window.addEventListener("beforeunload", () => {
     localStorage.setItem("zoomLevel", zoomLevel);

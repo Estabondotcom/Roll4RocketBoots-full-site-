@@ -522,12 +522,16 @@ function loadGMImages() {
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");
-  container.innerHTML = "";
+
+  // ⚠️ Only remove the image, leave canvas/emojis alone
+  const oldImage = container.querySelector("img");
+  if (oldImage) oldImage.remove();
 
   const img = document.createElement("img");
   img.src = imageUrl;
-  img.style = "max-width: none"; // Prevent auto scaling
-  img.style.position = "absolute"; // allow panning
+  img.style.maxWidth = "none";
+  img.style.position = "absolute";
+  img.style.zIndex = "1";
   img.draggable = false;
 
   img.onload = () => {
@@ -535,19 +539,13 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     const scaleX = containerBox.width / img.naturalWidth;
     const scaleY = containerBox.height / img.naturalHeight;
     const initialScale = Math.min(scaleX, scaleY);
-
-    // Set zoomLevel + pan to center the image
-    const zoomContent = document.getElementById("zoom-content");
     zoomLevel = initialScale;
-
     panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
     panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
-    window.applyTransform();
-
+    applyTransform();
   };
 
-  container.appendChild(img);
-  localStorage.setItem("gmDisplayImage", imageUrl);
+  container.appendChild(img); // Append *before* the canvas is created
 
   if (updateFirestore) {
     const sessionId = localStorage.getItem("currentSessionId");
@@ -558,7 +556,10 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
       });
     }
   }
+
+  localStorage.setItem("gmDisplayImage", imageUrl);
 }
+
 
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;

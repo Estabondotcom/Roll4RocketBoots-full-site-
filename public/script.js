@@ -999,6 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
     zoomContent.style.transform       = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
     zoomContent.style.transformOrigin = '0 0';
   }
+  window.applyTransform = applyTransform;
   applyTransform();
 
   // Wheel-to-zoom

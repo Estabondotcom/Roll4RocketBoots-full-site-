@@ -1146,3 +1146,10 @@ window.addItem = addItem;
 window.addCondition = addCondition;
 window.pushToDisplayArea = pushToDisplayArea;
 window.applyTransform = applyTransform;
+window.toggleDrawingMode = toggleDrawingMode;
+window.setupDrawingCanvas = setupDrawingCanvas;
+window.setupCanvasEvents = setupCanvasEvents;
+window.setDrawTool = setDrawTool;
+window.setDrawColor = setDrawColor;
+window.clearDrawingCanvas = clearDrawingCanvas;
+

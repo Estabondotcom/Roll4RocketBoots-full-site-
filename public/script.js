@@ -1111,7 +1111,7 @@ function createDrawingToolbar() {
   toolbar.style.marginTop = "10px";
 
   toolbar.innerHTML = `
-    <button onclick="toggleDrawingMode(true)">✏️ Draw</button>
+    <button onclick="console.log('✏️ BUTTON PRESSED'); toggleDrawingMode(true)">✏️ Draw</button>
     <button onclick="toggleDrawingMode(false)">👋 Pan</button>
     <input type="color" onchange="setDrawColor(this.value)" value="#ff0000">
     <button onclick="setDrawTool('pen')">🖊️ Pen</button>

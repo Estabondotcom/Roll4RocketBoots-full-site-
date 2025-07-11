@@ -543,6 +543,7 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
     panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
     applyTransform();
+    resizeDrawingCanvas();
   };
 
   container.appendChild(img); // Append *before* the canvas is created

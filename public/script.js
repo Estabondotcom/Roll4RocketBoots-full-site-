@@ -377,6 +377,8 @@ function toggleShowAndTell() {
   }
   listenForDisplayImageUpdates(); // Now start listening
   setupDrawingCanvas();
+  setupDrawingCanvas();
+enableBasicDrawing();
 }
 
   function toggleCharacterPanel() {
@@ -1017,12 +1019,46 @@ function setupDrawingCanvas() {
   canvas.style.zIndex = 20;
   canvas.style.pointerEvents = "none"; // Enable drawing later
   canvas.style.backgroundColor = "rgba(255, 0, 0, 0.2)"; // 🔴 Red tint for testing
-  canvas.width = zoomContent.offsetWidth;
-  canvas.height = zoomContent.offsetHeight;
+  canvas.width = zoomContent.clientWidth;
+  canvas.height = zoomContent.clientHeight;
 
   zoomContent.appendChild(canvas);
   console.log("🖌️ Drawing canvas added.");
 }
+
+function enableBasicDrawing() {
+  const canvas = document.getElementById("drawing-canvas");
+  if (!canvas) return console.warn("🛑 No drawing canvas found.");
+
+  const ctx = canvas.getContext("2d");
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 2;
+
+  let drawing = false;
+
+  canvas.addEventListener("mousedown", (e) => {
+    drawing = true;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    if (!drawing) return;
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  });
+
+  canvas.addEventListener("mouseup", () => {
+    drawing = false;
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    drawing = false;
+  });
+
+  console.log("🖊️ Drawing events enabled");
+}
+
 
 
 window.addSkill = addSkill;

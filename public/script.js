@@ -1014,7 +1014,7 @@ function setupDrawingCanvas() {
   canvas.style.position = "absolute";
   canvas.style.top = 0;
   canvas.style.left = 0;
-  canvas.style.zIndex = 5;
+  canvas.style.zIndex = 20;
   canvas.style.pointerEvents = "none"; // Enable drawing later
   canvas.style.backgroundColor = "rgba(255, 0, 0, 0.2)"; // 🔴 Red tint for testing
   canvas.width = zoomContent.offsetWidth;

@@ -997,33 +997,27 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
-function setupDrawingCanvas() {
+const canvas = document.createElement("canvas");
+canvas.id = "drawing-canvas";
+canvas.style.position = "absolute";
+canvas.style.top = "0";
+canvas.style.left = "0";
+canvas.style.width = "100%";
+canvas.style.height = "100%";
+canvas.style.zIndex = "20";
+canvas.style.pointerEvents = "auto";
+canvas.style.backgroundColor = "rgba(255, 0, 0, 0.2)"; // TEMP
+zoomContent.appendChild(canvas);
+resizeDrawingCanvas();
+}
+
+function resizeDrawingCanvas() {
+  const canvas = document.getElementById("drawing-canvas");
   const zoomContent = document.getElementById("zoom-content");
+  if (!canvas || !zoomContent) return;
 
-  if (!zoomContent) {
-    console.warn("🛑 zoom-content not found!");
-    return;
-  }
-
-  let existingCanvas = document.getElementById("drawing-canvas");
-  if (existingCanvas) {
-    console.log("🖌️ Drawing canvas already exists.");
-    return;
-  }
-
-  const canvas = document.createElement("canvas");
-  canvas.id = "drawing-canvas";
-  canvas.style.position = "absolute";
-  canvas.style.top = 0;
-  canvas.style.left = 0;
-  canvas.style.zIndex = 20;
-  canvas.style.pointerEvents = "none"; // Enable drawing later
-  canvas.style.backgroundColor = "rgba(255, 0, 0, 0.2)"; // 🔴 Red tint for testing
   canvas.width = zoomContent.clientWidth;
   canvas.height = zoomContent.clientHeight;
-
-  zoomContent.appendChild(canvas);
-  console.log("🖌️ Drawing canvas added.");
 }
 
 function enableBasicDrawing() {

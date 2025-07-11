@@ -511,6 +511,11 @@ function loadGMImages() {
   });
 }
 
+ function applyTransform() {
+  const zoomContent = document.getElementById("zoom-content");
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
+ }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");
@@ -774,12 +779,77 @@ function viewGMCharacterLive(sessionId, charId) {
     });
 }
 
+  let zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
+  let panX = parseFloat(localStorage.getItem("panX")) || 0;
+  let panY = parseFloat(localStorage.getItem("panY")) || 0;
+  let isPanning = false;
+  let startX = 0;
+  let startY = 0;
+
+window.addEventListener("DOMContentLoaded", () => {
+  const zoomContainer = document.getElementById("zoom-container");
+  const zoomContent = document.getElementById("zoom-content");
+
+  if (!zoomContainer || !zoomContent) {
+    console.warn("❌ Zoom container or content not found.");
+    return;
+  }
+
+  function applyTransform() {
+    zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+    zoomContent.style.transformOrigin = "0 0";
+  }
+
+  window.applyTransform = applyTransform;
+
+  applyTransform();
+
+  zoomContainer.addEventListener("wheel", (e) => {
+    e.preventDefault();
+
+    const rect = zoomContainer.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    const zoomFactor = 0.1;
+    const scaleChange = e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
+
+    const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.01), 4);
+
+    panX = offsetX - (offsetX - panX) * (newZoomLevel / zoomLevel);
+    panY = offsetY - (offsetY - panY) * (newZoomLevel / zoomLevel);
+
+    zoomLevel = newZoomLevel;
+    applyTransform();
+  });
+
+  zoomContainer.addEventListener("mousedown", (e) => {
+    if (e.target.classList.contains("draggable-emoji")) return;
+    isPanning = true;
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+    zoomContainer.style.cursor = "grabbing";
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isPanning) return;
+    panX = e.clientX - startX;
+    panY = e.clientY - startY;
+    applyTransform();
+  });
+
+  document.addEventListener("mouseup", () => {
+    isPanning = false;
+    zoomContainer.style.cursor = "grab";
+  });
+
   window.addEventListener("beforeunload", () => {
     localStorage.setItem("zoomLevel", zoomLevel);
     localStorage.setItem("panX", panX);
     localStorage.setItem("panY", panY);
   });
 });
+
 
 document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("autoSaveInitialized")) {
@@ -924,129 +994,7 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
-document.addEventListener('DOMContentLoaded', () => {
-  const zoomContainer = document.getElementById('zoom-container');
-  const zoomContent   = document.getElementById('zoom-content');
-  if (!zoomContainer || !zoomContent) {
-    console.error('❌ Zoom container or content not found');
-    return;
-  }
 
-  // ─── DRAWING OVERLAY SETUP ─────────────────────────────────────────────
-  let drawMode     = false;
-  let eraserMode   = false;
-  let drawingColor = '#ff0000';
-  let isDrawing    = false;
-
-  const drawingCanvas = document.createElement('canvas');
-  drawingCanvas.id    = 'drawing-canvas';
-  zoomContainer.appendChild(drawingCanvas);
-  const ctx = drawingCanvas.getContext('2d');
-
-  function resizeCanvas() {
-    drawingCanvas.width  = zoomContainer.clientWidth;
-    drawingCanvas.height = zoomContainer.clientHeight;
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
-  // Toolbar buttons (must match your HTML IDs)
-  document.getElementById('draw-toggle').addEventListener('click', () => {
-    drawMode = !drawMode;
-    drawingCanvas.style.pointerEvents = drawMode ? 'auto' : 'none';
-    zoomContainer.style.cursor = drawMode ? 'crosshair' : 'grab';
-  });
-  document.getElementById('eraser-toggle').addEventListener('click', () => {
-    eraserMode = !eraserMode;
-  });
-  document.getElementById('clear-drawings').addEventListener('click', () => {
-    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-  });
-  document.getElementById('color-picker').addEventListener('input', e => {
-    drawingColor = e.target.value;
-  });
-
-  // Drawing handlers
-  drawingCanvas.addEventListener('mousedown', e => {
-    if (!drawMode) return;
-    isDrawing = true;
-    ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
-  });
-  drawingCanvas.addEventListener('mousemove', e => {
-    if (!drawMode || !isDrawing) return;
-    ctx.globalCompositeOperation = eraserMode ? 'destination-out' : 'source-over';
-    ctx.strokeStyle              = eraserMode ? 'rgba(0,0,0,1)' : drawingColor;
-    ctx.lineWidth                = eraserMode ? 10 : 2;
-    ctx.lineCap                  = 'round';
-    ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.stroke();
-  });
-  ['mouseup','mouseleave'].forEach(evt =>
-    drawingCanvas.addEventListener(evt, () => { isDrawing = false; })
-  );
-
-  // ─── ZOOM & PAN SETUP ──────────────────────────────────────────────────
-  let zoomLevel = parseFloat(localStorage.getItem('zoomLevel')) || 1;
-  let panX      = parseFloat(localStorage.getItem('panX'))      || 0;
-  let panY      = parseFloat(localStorage.getItem('panY'))      || 0;
-  let isPanning = false;
-  let startX    = 0, startY = 0;
-
-  function applyTransform() {
-    zoomContent.style.transform       = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-    zoomContent.style.transformOrigin = '0 0';
-  }
-  window.applyTransform = applyTransform;
-  
-  applyTransform();
-
-  // Wheel-to-zoom
-  zoomContainer.addEventListener('wheel', e => {
-    e.preventDefault();
-    const rect    = zoomContainer.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    const factor  = 0.1;
-    const change  = e.deltaY < 0 ? 1 + factor : 1 - factor;
-    const newZoom = Math.min(Math.max(zoomLevel * change, 0.1), 4);
-
-    panX = offsetX - (offsetX - panX) * (newZoom / zoomLevel);
-    panY = offsetY - (offsetY - panY) * (newZoom / zoomLevel);
-    zoomLevel = newZoom;
-    applyTransform();
-  });
-
-  // Pan start (guarded by drawMode)
-  zoomContainer.addEventListener('mousedown', e => {
-    if (drawMode || e.target.classList.contains('draggable-emoji')) return;
-    isPanning = true;
-    startX    = e.clientX - panX;
-    startY    = e.clientY - panY;
-    zoomContainer.style.cursor = 'grabbing';
-  });
-
-  // Pan move
-  document.addEventListener('mousemove', e => {
-    if (drawMode || !isPanning) return;
-    panX = e.clientX - startX;
-    panY = e.clientY - startY;
-    applyTransform();
-  });
-
-  // Pan end
-  document.addEventListener('mouseup', () => {
-    isPanning = false;
-    zoomContainer.style.cursor = 'grab';
-  });
-
-  // Persist on unload
-  window.addEventListener('beforeunload', () => {
-    localStorage.setItem('zoomLevel', zoomLevel);
-    localStorage.setItem('panX',      panX);
-    localStorage.setItem('panY',      panY);
-  });
-});
 
 window.addSkill = addSkill;
 window.addItem = addItem;

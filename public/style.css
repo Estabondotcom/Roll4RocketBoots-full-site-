@@ -366,22 +366,4 @@ label[for="player-name"] {
   cursor: pointer;
   z-index: 2;
 }
-#drawing-toolbar button,
-#drawing-toolbar input[type="color"] {
-  font-size: 18px;
-  padding: 4px 6px;
-  background-color: #333;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#drawing-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 15;              /* above your image (z-index:1) but below emojis (z-index:10) */
-  pointer-events: none;     /* disabled until drawMode=true */
-}
 

@@ -544,14 +544,6 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   };
 
   container.appendChild(img);
-// Remove any existing drawing canvas and toolbar
-const oldCanvas = document.getElementById("draw-canvas");
-const oldToolbar = document.getElementById("drawing-toolbar");
-if (oldCanvas) oldCanvas.remove();
-if (oldToolbar) oldToolbar.remove();
-  setupDrawingCanvas();
-setupCanvasEvents();
-createDrawingToolbar();
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {
@@ -1002,152 +994,10 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
-// === Drawing Canvas Tool for Image Display Area ===
 
-let isDrawing = false;
-let currentTool = "pen"; // or "eraser"
-let drawColor = "#ff0000";
-let drawLineWidth = 3;
-let canvas, ctx;
-
-let drawingMode = false;
-
-function toggleDrawingMode(enable) {
-  const canvas = document.getElementById("draw-canvas");
-  const container = document.getElementById("zoom-container");
-  drawingMode = enable;
-
-  if (!canvas || !container) return;
-
-  if (enable) {
-    canvas.style.pointerEvents = "auto";
-    container.style.pointerEvents = "none";
-    document.body.style.cursor = "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"32\" width=\"32\"><text y=\"24\" font-size=\"24\">✏️</text></svg>') 0 24, auto";
-  } else {
-    canvas.style.pointerEvents = "none";
-    container.style.pointerEvents = "auto";
-    document.body.style.cursor = "auto";
-  }
-}
-
-function setDrawTool(tool) {
-  currentTool = tool;
-}
-
-function setDrawColor(color) {
-  drawColor = color;
-}
-
-function setupDrawingCanvas() {
-  const zoomContent = document.getElementById("zoom-content");
-  if (!zoomContent) return;
-
-  const existing = document.getElementById("draw-canvas");
-  if (existing) existing.remove();
-
-  canvas = document.createElement("canvas");
-  canvas.id = "draw-canvas";
-  canvas.width = zoomContent.offsetWidth;
-  canvas.height = zoomContent.offsetHeight;
-  canvas.style.position = "absolute";
-  canvas.style.top = 0;
-  canvas.style.left = 0;
-  canvas.style.zIndex = 99;
-  canvas.style.pointerEvents = "none";
-  canvas.style.touchAction = "none";
-
-  zoomContent.appendChild(canvas);
-  ctx = canvas.getContext("2d");
-}
-
-function clearDrawingCanvas() {
-  if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function setupCanvasEvents() {
-  if (!canvas || !ctx) return;
-
-  canvas.addEventListener("mousedown", (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left - panX) / zoomLevel;
-    const y = (e.clientY - rect.top - panY) / zoomLevel;
-
-    isDrawing = true;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  });
-
-  canvas.addEventListener("mousemove", (e) => {
-    if (!isDrawing) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left - panX) / zoomLevel;
-    const y = (e.clientY - rect.top - panY) / zoomLevel;
-
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = currentTool === "eraser" ? "rgba(0,0,0,1)" : drawColor;
-    ctx.lineWidth = (currentTool === "eraser" ? 20 : drawLineWidth) / zoomLevel; // account for zoom
-    ctx.lineCap = "round";
-    ctx.globalCompositeOperation =
-      currentTool === "eraser" ? "destination-out" : "source-over";
-    ctx.stroke();
-  });
-
-  ["mouseup", "mouseleave"].forEach((ev) => {
-    canvas.addEventListener(ev, () => {
-      isDrawing = false;
-      ctx.closePath();
-    });
-  });
-}
-
-function createDrawingToolbar() {
-  const toolbar = document.createElement("div");
-  toolbar.id = "drawing-toolbar";
-  toolbar.style.display = "flex";
-  toolbar.style.gap = "6px";
-  toolbar.style.marginTop = "10px";
-
-  toolbar.innerHTML = `
-    <button onclick="console.log('✏️ BUTTON PRESSED'); toggleDrawingMode(true)">✏️ Draw</button>
-    <button onclick="toggleDrawingMode(false)">👋 Pan</button>
-    <input type="color" onchange="setDrawColor(this.value)" value="#ff0000">
-    <button onclick="setDrawTool('pen')">🖊️ Pen</button>
-    <button onclick="setDrawTool('eraser')">🧽 Erase</button>
-    <button onclick="clearDrawingCanvas()">🗑️ Clear</button>
-  `;
-
-  const emojiToolbar = document.getElementById("emoji-toolbar");
-  if (emojiToolbar) {
-    emojiToolbar.appendChild(toolbar);
-  }
-}
-
-function disablePanAndZoom() {
-  const container = document.getElementById("zoom-container");
-  if (container) {
-    container.style.touchAction = "none";
-    container.style.pointerEvents = "none"; // disables emoji drag
-  }
-}
-
-function enablePanAndZoom() {
-  const container = document.getElementById("zoom-container");
-  if (container) {
-    container.style.touchAction = "auto";
-    container.style.pointerEvents = "auto";
-  }
-}
 
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;
 window.pushToDisplayArea = pushToDisplayArea;
 window.applyTransform = applyTransform;
-window.toggleDrawingMode = toggleDrawingMode;
-window.setupDrawingCanvas = setupDrawingCanvas;
-window.setupCanvasEvents = setupCanvasEvents;
-window.setDrawTool = setDrawTool;
-window.setDrawColor = setDrawColor;
-window.clearDrawingCanvas = clearDrawingCanvas;
-

@@ -367,13 +367,3 @@ label[for="player-name"] {
   z-index: 2;
 }
 
-#draw-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 99;  /* well above the image and emoji */
-  width: 100%;
-  height: 100%;
-  border: 2px dashed red; /* so you can SEE it */
-  pointer-events: auto !important;
-}

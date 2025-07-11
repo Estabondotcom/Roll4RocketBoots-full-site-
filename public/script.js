@@ -994,6 +994,73 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
+document.addEventListener('DOMContentLoaded', () => {
+  // ─── globals ─────────────────────────────────────────────────────────────
+  let drawMode    = false;
+  let eraserMode  = false;
+  let drawingColor= '#ff0000';
+  const zoomContainer = document.getElementById('zoom-container');
+
+  // ─── create & size canvas ────────────────────────────────────────────────
+  const drawingCanvas = document.createElement('canvas');
+  drawingCanvas.id = 'drawing-canvas';
+  zoomContainer.appendChild(drawingCanvas);
+  const ctx = drawingCanvas.getContext('2d');
+
+  function resizeCanvas(){
+    drawingCanvas.width  = zoomContainer.clientWidth;
+    drawingCanvas.height = zoomContainer.clientHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // ─── toolbar event-wiring ────────────────────────────────────────────────
+  document.getElementById('draw-toggle').addEventListener('click', () => {
+    drawMode = !drawMode;
+    drawingCanvas.style.pointerEvents = drawMode ? 'auto' : 'none';
+  });
+  document.getElementById('eraser-toggle').addEventListener('click', () => {
+    eraserMode = !eraserMode;
+  });
+  document.getElementById('clear-drawings').addEventListener('click', () => {
+    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+  });
+  document.getElementById('color-picker').addEventListener('change', e => {
+    drawingColor = e.target.value;
+  });
+
+  // ─── drawing logic ───────────────────────────────────────────────────────
+  let isDrawing = false;
+  drawingCanvas.addEventListener('mousedown', e => {
+    if (!drawMode) return;
+    isDrawing = true;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  });
+  drawingCanvas.addEventListener('mousemove', e => {
+    if (!drawMode || !isDrawing) return;
+    ctx.strokeStyle             = eraserMode ? 'rgba(0,0,0,1)' : drawingColor;
+    ctx.globalCompositeOperation = eraserMode ? 'destination-out' : 'source-over';
+    ctx.lineWidth               = eraserMode ? 10 : 2;
+    ctx.lineCap                 = 'round';
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  });
+  ['mouseup','mouseleave'].forEach(evt =>
+    drawingCanvas.addEventListener(evt, () => { isDrawing = false; })
+  );
+
+  // ─── disable pan when drawing ────────────────────────────────────────────
+  zoomContainer.addEventListener('mousedown', e => {
+    if (drawMode) return;
+    // … your existing pan-start logic …
+  });
+  zoomContainer.addEventListener('mousemove', e => {
+    if (drawMode) return;
+    // … your existing pan-move logic …
+  });
+  // etc. for your mouseup/pointerleave pan handlers
+});
 
 
 window.addSkill = addSkill;

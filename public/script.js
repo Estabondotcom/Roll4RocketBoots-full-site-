@@ -1039,7 +1039,6 @@ function setDrawColor(color) {
 }
 
 function setupDrawingCanvas() {
-  console.log("🛠️ setupDrawingCanvas called — zoomContent exists:", !!document.getElementById("zoom-content"));
   const zoomContent = document.getElementById("zoom-content");
   if (!zoomContent) return;
 
@@ -1053,12 +1052,15 @@ function setupDrawingCanvas() {
   canvas.style.position = "absolute";
   canvas.style.top = 0;
   canvas.style.left = 0;
-  canvas.style.zIndex = 5;
+  canvas.style.zIndex = 99;
   canvas.style.pointerEvents = "none";
   canvas.style.touchAction = "none";
 
   zoomContent.appendChild(canvas);
   ctx = canvas.getContext("2d");
+
+  // 👉 Adjust for zoom so drawing matches transformed view
+  ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
 }
 
 function clearDrawingCanvas() {

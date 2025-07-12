@@ -1072,16 +1072,11 @@ function setupDrawingCanvas() {
 
 function resizeDrawingCanvas() {
   const canvas = document.getElementById("drawing-canvas");
-  const img = document.querySelector("#zoom-content img");
+  const img = document.getElementById("display-image");
   if (!canvas || !img) return;
 
-  // Scale canvas to match image display size (not natural size)
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
-
-  // Set CSS size to match
-  canvas.style.width = img.style.width || img.naturalWidth + "px";
-  canvas.style.height = img.style.height || img.naturalHeight + "px";
 }
 
 function enableBasicDrawing() {

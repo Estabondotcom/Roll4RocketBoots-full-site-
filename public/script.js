@@ -516,9 +516,18 @@ function loadGMImages() {
 
  function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
-  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  const canvas = document.getElementById("drawing-canvas");
+
+  const transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+
+  zoomContent.style.transform = transform;
   zoomContent.style.transformOrigin = "0 0";
- }
+
+  if (canvas) {
+    canvas.style.transform = transform;
+    canvas.style.transformOrigin = "0 0";
+  }
+}
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");

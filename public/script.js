@@ -1042,7 +1042,6 @@ function setupDrawingCanvas() {
 function resizeDrawingCanvas() {
   const canvas = document.getElementById("drawing-canvas");
   const img = document.querySelector("#zoom-content img");
-
   if (!canvas || !img) return;
 
   canvas.width = img.naturalWidth;

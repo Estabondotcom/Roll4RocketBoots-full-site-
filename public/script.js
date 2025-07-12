@@ -530,34 +530,66 @@ function loadGMImages() {
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
-  const container = document.getElementById("zoom-content");
+  const zoomContent = document.getElementById("zoom-content");
 
-  // ⚠️ Only remove the image, leave canvas/emojis alone
-  const oldImage = container.querySelector("img");
-  if (oldImage) oldImage.remove();
+  // ✅ Ensure container exists
+  let layerWrapper = document.getElementById("zoom-layers");
+  if (!layerWrapper) {
+    layerWrapper = document.createElement("div");
+    layerWrapper.id = "zoom-layers";
+    layerWrapper.style.position = "absolute";
+    layerWrapper.style.top = "0";
+    layerWrapper.style.left = "0";
+    layerWrapper.style.width = "100%";
+    layerWrapper.style.height = "100%";
+    layerWrapper.style.zIndex = "1";
+    zoomContent.appendChild(layerWrapper);
+  } else {
+    layerWrapper.innerHTML = "";
+  }
 
+  // ✅ Add image
   const img = document.createElement("img");
+  img.id = "display-image";
   img.src = imageUrl;
-  img.style.maxWidth = "none";
   img.style.position = "absolute";
+  img.style.top = "0";
+  img.style.left = "0";
+  img.style.maxWidth = "none";
   img.style.zIndex = "1";
-  img.draggable = false;
 
- img.onload = () => {
-  const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
-  const scaleX = containerBox.width / img.naturalWidth;
-  const scaleY = containerBox.height / img.naturalHeight;
-  const initialScale = Math.min(scaleX, scaleY);
-  zoomLevel = initialScale;
-  panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
-  panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
+  img.onload = () => {
+    const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
+    const scaleX = containerBox.width / img.naturalWidth;
+    const scaleY = containerBox.height / img.naturalHeight;
+    const initialScale = Math.min(scaleX, scaleY);
 
-  container.appendChild(img); // Append first
-  resizeDrawingCanvas();      // Then resize canvas
-  applyTransform();           // Then transform both
-};
+    zoomLevel = initialScale;
+    panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
+    panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
 
-  container.appendChild(img); // Append *before* the canvas is created
+    window.applyTransform();
+    resizeDrawingCanvas(); // important!
+  };
+
+  layerWrapper.appendChild(img);
+
+  // ✅ Add canvas back
+  const canvas = document.createElement("canvas");
+  canvas.id = "drawing-canvas";
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  canvas.style.pointerEvents = "auto";
+  canvas.style.zIndex = "2";
+  layerWrapper.appendChild(canvas);
+
+  enableBasicDrawing();
+  resizeDrawingCanvas();
+
+  localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {
     const sessionId = localStorage.getItem("currentSessionId");
@@ -568,10 +600,7 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
       });
     }
   }
-
-  localStorage.setItem("gmDisplayImage", imageUrl);
 }
-
 
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;

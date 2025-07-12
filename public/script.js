@@ -543,17 +543,19 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   img.style.zIndex = "1";
   img.draggable = false;
 
-  img.onload = () => {
-    const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
-    const scaleX = containerBox.width / img.naturalWidth;
-    const scaleY = containerBox.height / img.naturalHeight;
-    const initialScale = Math.min(scaleX, scaleY);
-    zoomLevel = initialScale;
-    panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
-    panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
-    applyTransform();
-    resizeDrawingCanvas();
-  };
+ img.onload = () => {
+  const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
+  const scaleX = containerBox.width / img.naturalWidth;
+  const scaleY = containerBox.height / img.naturalHeight;
+  const initialScale = Math.min(scaleX, scaleY);
+  zoomLevel = initialScale;
+  panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
+  panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
+
+  container.appendChild(img); // Append first
+  resizeDrawingCanvas();      // Then resize canvas
+  applyTransform();           // Then transform both
+};
 
   container.appendChild(img); // Append *before* the canvas is created
 
@@ -1044,8 +1046,13 @@ function resizeDrawingCanvas() {
   const img = document.querySelector("#zoom-content img");
   if (!canvas || !img) return;
 
+  // Scale canvas to match image display size (not natural size)
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
+
+  // Set CSS size to match
+  canvas.style.width = img.style.width || img.naturalWidth + "px";
+  canvas.style.height = img.style.height || img.naturalHeight + "px";
 }
 
 function enableBasicDrawing() {

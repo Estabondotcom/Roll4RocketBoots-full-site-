@@ -376,9 +376,6 @@ function toggleShowAndTell() {
     pushToDisplayArea(latestDisplayImage, false);
   }
   listenForDisplayImageUpdates(); // Now start listening
-  setupDrawingCanvas();
-  setupDrawingCanvas();
-enableBasicDrawing();
 }
 
   function toggleCharacterPanel() {
@@ -516,47 +513,19 @@ function loadGMImages() {
 
  function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
-  const canvas = document.getElementById("drawing-canvas");
-
-  const transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-
-  zoomContent.style.transform = transform;
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
   zoomContent.style.transformOrigin = "0 0";
-
-  if (canvas) {
-    canvas.style.transform = transform;
-    canvas.style.transformOrigin = "0 0";
-  }
-}
+ }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
-  const zoomContent = document.getElementById("zoom-content");
+  const container = document.getElementById("zoom-content");
+  container.innerHTML = "";
 
-  // ✅ Ensure container exists
-  let layerWrapper = document.getElementById("zoom-layers");
-  if (!layerWrapper) {
-    layerWrapper = document.createElement("div");
-    layerWrapper.id = "zoom-layers";
-    layerWrapper.style.position = "absolute";
-    layerWrapper.style.top = "0";
-    layerWrapper.style.left = "0";
-    layerWrapper.style.width = "100%";
-    layerWrapper.style.height = "100%";
-    layerWrapper.style.zIndex = "1";
-    zoomContent.appendChild(layerWrapper);
-  } else {
-    layerWrapper.innerHTML = "";
-  }
-
-  // ✅ Add image
   const img = document.createElement("img");
-  img.id = "display-image";
   img.src = imageUrl;
-  img.style.position = "absolute";
-  img.style.top = "0";
-  img.style.left = "0";
-  img.style.maxWidth = "none";
-  img.style.zIndex = "1";
+  img.style = "max-width: none"; // Prevent auto scaling
+  img.style.position = "absolute"; // allow panning
+  img.draggable = false;
 
   img.onload = () => {
     const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
@@ -564,31 +533,17 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     const scaleY = containerBox.height / img.naturalHeight;
     const initialScale = Math.min(scaleX, scaleY);
 
+    // Set zoomLevel + pan to center the image
+    const zoomContent = document.getElementById("zoom-content");
     zoomLevel = initialScale;
+
     panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
     panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
-
     window.applyTransform();
-    resizeDrawingCanvas(); // important!
+
   };
 
-  layerWrapper.appendChild(img);
-
-  // ✅ Add canvas back
-  const canvas = document.createElement("canvas");
-  canvas.id = "drawing-canvas";
-  canvas.style.position = "absolute";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
-  canvas.style.pointerEvents = "auto";
-  canvas.style.zIndex = "2";
-  layerWrapper.appendChild(canvas);
-
-  enableBasicDrawing();
-  resizeDrawingCanvas();
-
+  container.appendChild(img);
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {
@@ -1039,79 +994,6 @@ function clearAllEmojis() {
       alert("Failed to clear emojis.");
     });
 }
-
-function setupDrawingCanvas() {
-  const zoomContent = document.getElementById("zoom-content");
-
-  if (!zoomContent) {
-    console.warn("🛑 zoom-content not found!");
-    return;
-  }
-
-  let existingCanvas = document.getElementById("drawing-canvas");
-  if (existingCanvas) {
-    console.log("🖌️ Drawing canvas already exists.");
-    return;
-  }
-
-  const canvas = document.createElement("canvas");
-  canvas.id = "drawing-canvas";
-  canvas.style.position = "absolute";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.width = "auto";
-  canvas.style.height = "auto";
-  canvas.style.pointerEvents = "auto";
-  canvas.style.zIndex = "20";
-  canvas.style.pointerEvents = "auto"; // Enable drawing
-  canvas.style.backgroundColor = "rgba(255, 0, 0, 0.2)"; // TEMP
-
-  zoomContent.appendChild(canvas);
-  resizeDrawingCanvas();
-}
-
-function resizeDrawingCanvas() {
-  const canvas = document.getElementById("drawing-canvas");
-  const img = document.getElementById("display-image");
-  if (!canvas || !img) return;
-
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-}
-
-function enableBasicDrawing() {
-  const canvas = document.getElementById("drawing-canvas");
-  if (!canvas) return console.warn("🛑 No drawing canvas found.");
-
-  const ctx = canvas.getContext("2d");
-  ctx.strokeStyle = "black";
-  ctx.lineWidth = 2;
-
-  let drawing = false;
-
-  canvas.addEventListener("mousedown", (e) => {
-    drawing = true;
-    ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
-  });
-
-  canvas.addEventListener("mousemove", (e) => {
-    if (!drawing) return;
-    ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.stroke();
-  });
-
-  canvas.addEventListener("mouseup", () => {
-    drawing = false;
-  });
-
-  canvas.addEventListener("mouseleave", () => {
-    drawing = false;
-  });
-
-  console.log("🖊️ Drawing events enabled");
-}
-
 
 
 window.addSkill = addSkill;

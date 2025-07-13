@@ -1013,6 +1013,11 @@ function setupDrawingCanvas() {
   const canvas = document.getElementById("drawing-canvas");
   const container = document.getElementById("zoom-content");
 
+  if (!canvas || !container) {
+    console.warn("🚫 Canvas or container not found when setting up drawing.");
+    return;
+  }
+
   function resizeCanvas() {
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
@@ -1047,9 +1052,6 @@ function setupDrawingCanvas() {
   canvas.addEventListener("pointerleave", () => {
     drawing = false;
   });
-   if (!canvas || !container) {
-    console.warn("🚫 Canvas or container not found when setting up drawing.");
-    return;
 }
 
 document.addEventListener("DOMContentLoaded", setupDrawingCanvas);

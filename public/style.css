@@ -372,7 +372,7 @@ label[for="player-name"] {
   top: 0;
   left: 0;
   z-index: 5; /* Make sure it's above the image but below emojis if needed */
-  background: 255,0,0,0.2;
+  background: rgba(255,0,0,0.2);
   pointer-events: none; /* We'll toggle this when drawing */
 }
 

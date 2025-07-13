@@ -995,6 +995,48 @@ function clearAllEmojis() {
     });
 }
 
+function setupDrawingCanvas() {
+  const canvas = document.getElementById("drawing-canvas");
+  const container = document.getElementById("zoom-content");
+
+  function resizeCanvas() {
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  const ctx = canvas.getContext("2d");
+  ctx.strokeStyle = "#ff0000";
+  ctx.lineWidth = 4;
+
+  let drawing = false;
+
+  canvas.addEventListener("pointerdown", (e) => {
+    drawing = true;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (drawing) {
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    }
+  });
+
+  canvas.addEventListener("pointerup", () => {
+    drawing = false;
+  });
+
+  canvas.addEventListener("pointerleave", () => {
+    drawing = false;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", setupDrawingCanvas);
+
 
 window.addSkill = addSkill;
 window.addItem = addItem;

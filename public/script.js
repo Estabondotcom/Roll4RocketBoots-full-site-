@@ -1030,9 +1030,8 @@ function setupDrawingCanvas() {
     drawing = false;
   });
 }
-}
-document.addEventListener("DOMContentLoaded", setupDrawingCanvas);
 
+document.addEventListener("DOMContentLoaded", setupDrawingCanvas);
 
 window.addSkill = addSkill;
 window.addItem = addItem;

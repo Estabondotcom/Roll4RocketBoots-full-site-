@@ -543,7 +543,21 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
 
   };
 
-  container.appendChild(img);
+ container.appendChild(img);
+
+// ✅ Re-insert canvas on top of image
+const existingCanvas = document.getElementById("drawing-canvas");
+if (!existingCanvas) {
+  const canvas = document.createElement("canvas");
+  canvas.id = "drawing-canvas";
+  canvas.style.position = "absolute";
+  canvas.style.top = 0;
+  canvas.style.left = 0;
+  canvas.style.zIndex = 5;
+  canvas.style.pointerEvents = "none";
+  container.appendChild(canvas);
+  setupDrawingCanvas(); // reinitialize
+}
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (updateFirestore) {
@@ -1033,6 +1047,9 @@ function setupDrawingCanvas() {
   canvas.addEventListener("pointerleave", () => {
     drawing = false;
   });
+   if (!canvas || !container) {
+    console.warn("🚫 Canvas or container not found when setting up drawing.");
+    return;
 }
 
 document.addEventListener("DOMContentLoaded", setupDrawingCanvas);

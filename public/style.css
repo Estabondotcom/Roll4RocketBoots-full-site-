@@ -371,7 +371,8 @@ label[for="player-name"] {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 2; /* Make sure it's above the image but below emojis if needed */
+  z-index: 5; /* Make sure it's above the image but below emojis if needed */
+  background: 255,0,0,0.2
   pointer-events: none; /* We'll toggle this when drawing */
 }
 

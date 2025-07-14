@@ -576,10 +576,13 @@ img.onload = () => {
 
   // Size canvas to match native image size (not scaled yet)
   if (canvas) {
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    canvas.style.width = img.naturalWidth + "px";
-    canvas.style.height = img.naturalHeight + "px";
+  canvas.id = "drawing-canvas";
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.pointerEvents = "none";
+  canvas.style.zIndex = "5"; // behind emojis or other overlays
+
   }
 
   applyTransform();

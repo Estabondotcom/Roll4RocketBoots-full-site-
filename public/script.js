@@ -1041,6 +1041,11 @@ function setupDrawingCanvas() {
 
  function resizeCanvasSmart() {
   const canvas = document.getElementById("drawing-canvas");
+canvas.style.position = "absolute";
+canvas.style.top = "0";
+canvas.style.left = "0";
+canvas.style.pointerEvents = "none";
+canvas.style.zIndex = "1"; // behind emojis or other overlays
   const container = document.getElementById("zoom-content");
   const img = container.querySelector("img");
 

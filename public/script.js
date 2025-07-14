@@ -560,6 +560,10 @@ if (!existingCanvas) {
 }
   localStorage.setItem("gmDisplayImage", imageUrl);
 
+  if (typeof window.resizeCanvasSmart === "function") {
+  window.resizeCanvasSmart();
+}
+
   if (updateFirestore) {
     const sessionId = localStorage.getItem("currentSessionId");
     if (sessionId) {
@@ -1012,8 +1016,29 @@ function setupDrawingCanvas() {
     return;
   }
 
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  function resizeCanvasSmart() {
+    const img = container.querySelector("img");
+    if (img) {
+      // Resize canvas to match image dimensions (scaled)
+      const scale = zoomLevel || 1;
+      const width = img.naturalWidth * scale;
+      const height = img.naturalHeight * scale;
+      canvas.width = width;
+      canvas.height = height;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+    } else {
+      // No image: fill the zoom-content container
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+    }
+  }
+
+  resizeCanvasSmart();
+  window.addEventListener("resize", resizeCanvasSmart);
 
   const ctx = canvas.getContext("2d");
   ctx.strokeStyle = "#ff0000";
@@ -1033,22 +1058,6 @@ function setupDrawingCanvas() {
       ctx.stroke();
     }
   });
-  
-  function resizeCanvasToImage() {
-  const img = container.querySelector("img");
-  if (!img) return;
-
-  // Get actual image dimensions (after transform)
-  const scale = zoomLevel || 1;
-  const width = img.naturalWidth * scale;
-  const height = img.naturalHeight * scale;
-
-  canvas.width = width;
-  canvas.height = height;
-
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-}
 
   canvas.addEventListener("pointerup", () => {
     drawing = false;
@@ -1057,9 +1066,10 @@ function setupDrawingCanvas() {
   canvas.addEventListener("pointerleave", () => {
     drawing = false;
   });
-}
 
-document.addEventListener("DOMContentLoaded", setupDrawingCanvas);
+  // Make globally accessible so we can re-trigger it later
+  window.resizeCanvasSmart = resizeCanvasSmart;
+}
 
 window.addSkill = addSkill;
 window.addItem = addItem;

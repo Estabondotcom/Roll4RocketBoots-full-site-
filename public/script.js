@@ -1032,24 +1032,28 @@ function setupDrawingCanvas() {
     return;
   }
 
-  function resizeCanvasSmart() {
-    const img = container.querySelector("img");
+ function resizeCanvasSmart() {
+  const canvas = document.getElementById("drawing-canvas");
+  const container = document.getElementById("zoom-content");
+  const img = container.querySelector("img");
 
-    if (img) {
-      // Match canvas to image’s *natural* size, let CSS transform handle zoom
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.style.width = img.naturalWidth + "px";
-      canvas.style.height = img.naturalHeight + "px";
-    } else {
-      // No image: blank default canvas
-      const size = 1000;
-      canvas.width = size;
-      canvas.height = size;
-      canvas.style.width = size + "px";
-      canvas.style.height = size + "px";
-    }
+  if (!canvas || !container) return;
+
+  if (img) {
+    // Use *natural* dimensions (internal) for drawing fidelity
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.style.width = `${img.naturalWidth}px`;
+    canvas.style.height = `${img.naturalHeight}px`;
+  } else {
+    // Default to container dimensions if no image
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width / zoomLevel;
+    canvas.height = rect.height / zoomLevel;
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
   }
+}
 
   resizeCanvasSmart();
   window.addEventListener("resize", resizeCanvasSmart);

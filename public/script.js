@@ -1045,24 +1045,31 @@ function setupDrawingCanvas() {
 
   if (!canvas || !container) return;
 
+  const dpr = window.devicePixelRatio || 1;
+
   if (img) {
-    // Use *natural* dimensions (internal) for drawing fidelity
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+    // Set internal resolution at full pixel density
+    canvas.width = img.naturalWidth * dpr;
+    canvas.height = img.naturalHeight * dpr;
+
+    // Set display size in CSS pixels
     canvas.style.width = `${img.naturalWidth}px`;
     canvas.style.height = `${img.naturalHeight}px`;
   } else {
-    // Default to container dimensions if no image
     const rect = container.getBoundingClientRect();
-    canvas.width = rect.width / zoomLevel;
-    canvas.height = rect.height / zoomLevel;
-    canvas.style.width = `${canvas.width}px`;
-    canvas.style.height = `${canvas.height}px`;
+    canvas.width = (rect.width / zoomLevel) * dpr;
+    canvas.height = (rect.height / zoomLevel) * dpr;
+    canvas.style.width = `${canvas.width / dpr}px`;
+    canvas.style.height = `${canvas.height / dpr}px`;
   }
+
+  // Rescale context to account for pixel density
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale all drawing commands
 }
 
   resizeCanvasSmart();
-  window.addEventListener("resize", resizeCanvasSmart);
+  window.addEventListe("resize", resizeCanvasSmart);
 
   const ctx = canvas.getContext("2d");
   ctx.strokeStyle = "#ff0000";

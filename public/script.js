@@ -563,7 +563,6 @@ img.onload = () => {
   }
 
   applyTransform();
-};
   };
 
  container.appendChild(img);

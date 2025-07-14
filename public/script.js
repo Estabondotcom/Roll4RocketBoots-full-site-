@@ -1039,35 +1039,27 @@ function setupDrawingCanvas() {
     return;
   }
 
- function resizeCanvasSmart() {
+ function applyTransform() {
+  const zoomContent = document.getElementById("zoom-content");
   const canvas = document.getElementById("drawing-canvas");
-canvas.style.position = "absolute";
-canvas.style.top = "0";
-canvas.style.left = "0";
-canvas.style.pointerEvents = "none";
-canvas.style.zIndex = "1"; // behind emojis or other overlays
-  const container = document.getElementById("zoom-content");
-  const img = container.querySelector("img");
+  const img = zoomContent.querySelector("img");
 
-  if (!canvas || !container) return;
+  // Apply the transform
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
 
-  const dpr = window.devicePixelRatio || 1;
+  if (canvas && img) {
+    // Size the canvas to match the image's native size
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
 
-if (img) {
-  // Let applyTransform handle canvas sizing
-  return;
-}
-else {
-    const rect = container.getBoundingClientRect();
-    canvas.width = (rect.width / zoomLevel) * dpr;
-    canvas.height = (rect.height / zoomLevel) * dpr;
-    canvas.style.width = `${canvas.width / dpr}px`;
-    canvas.style.height = `${canvas.height / dpr}px`;
+    canvas.style.width = `${img.naturalWidth}px`;
+    canvas.style.height = `${img.naturalHeight}px`;
+
+    // Do NOT set transform or scaling manually here anymore
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
   }
-
-  // Rescale context to account for pixel density
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale all drawing commands
 }
 
   resizeCanvasSmart();

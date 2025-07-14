@@ -1038,29 +1038,57 @@ function setupDrawingCanvas() {
     console.warn("🚫 Canvas or container not found when setting up drawing.");
     return;
   }
-}
- function applyTransform() {
-  const zoomContent = document.getElementById("zoom-content");
-  const canvas = document.getElementById("drawing-canvas");
-  const img = zoomContent.querySelector("img");
 
-  // Apply the transform
-  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-  zoomContent.style.transformOrigin = "0 0";
+  // 🔧 Define resizeCanvasSmart BEFORE calling it
+  function resizeCanvasSmart() {
+    const img = container.querySelector("img");
+    if (!img) return;
 
-  if (canvas && img) {
-    // Size the canvas to match the image's native size
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = img.naturalWidth * dpr;
+    canvas.height = img.naturalHeight * dpr;
 
     canvas.style.width = `${img.naturalWidth}px`;
     canvas.style.height = `${img.naturalHeight}px`;
 
-    // Do NOT set transform or scaling manually here anymore
     const ctx = canvas.getContext("2d");
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+
+  // ✅ Now it's safe to call it
+  resizeCanvasSmart();
+  window.resizeCanvasSmart = resizeCanvasSmart;
+  window.addEventListener("resize", resizeCanvasSmart);
+
+  const ctx = canvas.getContext("2d");
+  ctx.strokeStyle = "#ff0000";
+  ctx.lineWidth = 4;
+
+  let drawing = false;
+
+  canvas.addEventListener("pointerdown", (e) => {
+    drawing = true;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (drawing) {
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    }
+  });
+
+  canvas.addEventListener("pointerup", () => {
+    drawing = false;
+  });
+
+  canvas.addEventListener("pointerleave", () => {
+    drawing = false;
+  });
 }
+
 
   resizeCanvasSmart();
   

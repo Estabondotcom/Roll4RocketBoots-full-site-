@@ -1095,13 +1095,6 @@ function setupDrawingCanvas() {
   window.resizeCanvasSmart = resizeCanvasSmart;
 }
 
-// ✅ Remove canvas resize logic from applyTransform
-function applyTransform() {
-  const zoomContent = document.getElementById("zoom-content");
-  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-  zoomContent.style.transformOrigin = "0 0";
-}
-
 
 window.addSkill = addSkill;
 window.addItem = addItem;

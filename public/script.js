@@ -511,11 +511,11 @@ function loadGMImages() {
   });
 }
 
- function applyTransform() {
+function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
   zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
   zoomContent.style.transformOrigin = "0 0";
- }
+}
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");
@@ -540,6 +540,9 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
     panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
     window.applyTransform();
+    if (typeof window.resizeCanvasSmart === "function") {
+  window.resizeCanvasSmart();
+}
 
   };
 

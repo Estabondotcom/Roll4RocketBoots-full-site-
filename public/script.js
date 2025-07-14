@@ -840,22 +840,26 @@ window.addEventListener("DOMContentLoaded", () => {
   zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
   zoomContent.style.transformOrigin = "0 0";
 
+  // 🔧 Fix: also resize canvas to match image scale
   const canvas = document.getElementById("drawing-canvas");
-  if (canvas) {
-    const img = zoomContent.querySelector("img");
-    if (img) {
-      const width = img.naturalWidth * zoomLevel;
-      const height = img.naturalHeight * zoomLevel;
+  const img = zoomContent.querySelector("img");
 
-      canvas.width = width;
-      canvas.height = height;
+  if (canvas && img) {
+    const dpr = window.devicePixelRatio || 1;
 
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-    }
+    const width = img.naturalWidth * zoomLevel;
+    const height = img.naturalHeight * zoomLevel;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset transform to account for pixel density
   }
 }
-
 
   window.applyTransform = applyTransform;
 

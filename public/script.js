@@ -540,23 +540,30 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   img.style.position = "absolute"; // allow panning
   img.draggable = false;
 
-  img.onload = () => {
-    const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
-    const scaleX = containerBox.width / img.naturalWidth;
-    const scaleY = containerBox.height / img.naturalHeight;
-    const initialScale = Math.min(scaleX, scaleY);
+img.onload = () => {
+  const zoomContent = document.getElementById("zoom-content");
+  const canvas = document.getElementById("drawing-canvas");
 
-    // Set zoomLevel + pan to center the image
-    const zoomContent = document.getElementById("zoom-content");
-    zoomLevel = initialScale;
+  // Set initial zoom to fit
+  const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
+  const scaleX = containerBox.width / img.naturalWidth;
+  const scaleY = containerBox.height / img.naturalHeight;
+  const initialScale = Math.min(scaleX, scaleY);
+  zoomLevel = initialScale;
 
-    panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
-    panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
-    window.applyTransform();
-    if (typeof window.resizeCanvasSmart === "function") {
-  window.resizeCanvasSmart();
-}
+  panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
+  panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
 
+  // Size canvas to match native image size (not scaled yet)
+  if (canvas) {
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.style.width = img.naturalWidth + "px";
+    canvas.style.height = img.naturalHeight + "px";
+  }
+
+  applyTransform();
+};
   };
 
  container.appendChild(img);

@@ -1038,7 +1038,7 @@ function setupDrawingCanvas() {
     console.warn("🚫 Canvas or container not found when setting up drawing.");
     return;
   }
-
+}
  function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
   const canvas = document.getElementById("drawing-canvas");

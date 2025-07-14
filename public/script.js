@@ -1070,7 +1070,7 @@ function setupDrawingCanvas() {
 
   resizeCanvasSmart();
   
-  window.addEventListen("resize", resizeCanvasSmart);
+  window.addEventListener("resize", resizeCanvasSmart);
 
   const ctx = canvas.getContext("2d");
   ctx.strokeStyle = "#ff0000";

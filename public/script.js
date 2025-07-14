@@ -1018,22 +1018,20 @@ function setupDrawingCanvas() {
 
   function resizeCanvasSmart() {
     const img = container.querySelector("img");
+
     if (img) {
-      // Resize canvas to match image dimensions (scaled)
-      const scale = zoomLevel || 1;
-      const width = img.naturalWidth * scale;
-      const height = img.naturalHeight * scale;
-      canvas.width = width;
-      canvas.height = height;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+      // Match canvas to image’s *natural* size, let CSS transform handle zoom
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.style.width = img.naturalWidth + "px";
+      canvas.style.height = img.naturalHeight + "px";
     } else {
-      // No image: fill the zoom-content container
-      const rect = container.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
+      // No image: blank default canvas
+      const size = 1000;
+      canvas.width = size;
+      canvas.height = size;
+      canvas.style.width = size + "px";
+      canvas.style.height = size + "px";
     }
   }
 
@@ -1067,9 +1065,16 @@ function setupDrawingCanvas() {
     drawing = false;
   });
 
-  // Make globally accessible so we can re-trigger it later
   window.resizeCanvasSmart = resizeCanvasSmart;
 }
+
+// ✅ Remove canvas resize logic from applyTransform
+function applyTransform() {
+  const zoomContent = document.getElementById("zoom-content");
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
+}
+
 
 window.addSkill = addSkill;
 window.addItem = addItem;

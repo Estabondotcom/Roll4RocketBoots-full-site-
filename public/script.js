@@ -1045,15 +1045,11 @@ function setupDrawingCanvas() {
 
   const dpr = window.devicePixelRatio || 1;
 
-  if (img) {
-    // Set internal resolution at full pixel density
-    canvas.width = img.naturalWidth * dpr;
-    canvas.height = img.naturalHeight * dpr;
-
-    // Set display size in CSS pixels
-    canvas.style.width = `${img.naturalWidth}px`;
-    canvas.style.height = `${img.naturalHeight}px`;
-  } else {
+if (img) {
+  // Let applyTransform handle canvas sizing
+  return;
+}
+else {
     const rect = container.getBoundingClientRect();
     canvas.width = (rect.width / zoomLevel) * dpr;
     canvas.height = (rect.height / zoomLevel) * dpr;

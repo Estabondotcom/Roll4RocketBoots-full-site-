@@ -365,6 +365,32 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 }); 
 
+  function applyTransform() {
+  const zoomContent = document.getElementById("zoom-content");
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
+
+  // 🔧 Fix: also resize canvas to match image scale
+  const canvas = document.getElementById("drawing-canvas");
+  const img = zoomContent.querySelector("img");
+
+  if (canvas && img) {
+    const dpr = window.devicePixelRatio || 1;
+
+    const width = img.naturalWidth * zoomLevel;
+    const height = img.naturalHeight * zoomLevel;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset transform to account for pixel density
+  }
+}
+
 function toggleShowAndTell() {
   document.getElementById("character-panel").style.display = "none";
   document.getElementById("main-container").style.display = "none";
@@ -828,32 +854,6 @@ window.addEventListener("DOMContentLoaded", () => {
     console.warn("❌ Zoom container or content not found.");
     return;
   }
-
-  function applyTransform() {
-  const zoomContent = document.getElementById("zoom-content");
-  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-  zoomContent.style.transformOrigin = "0 0";
-
-  // 🔧 Fix: also resize canvas to match image scale
-  const canvas = document.getElementById("drawing-canvas");
-  const img = zoomContent.querySelector("img");
-
-  if (canvas && img) {
-    const dpr = window.devicePixelRatio || 1;
-
-    const width = img.naturalWidth * zoomLevel;
-    const height = img.naturalHeight * zoomLevel;
-
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset transform to account for pixel density
-  }
-}
 
   window.applyTransform = applyTransform;
 

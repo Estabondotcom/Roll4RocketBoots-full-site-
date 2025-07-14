@@ -810,9 +810,26 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function applyTransform() {
-    zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-    zoomContent.style.transformOrigin = "0 0";
+  const zoomContent = document.getElementById("zoom-content");
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
+
+  const canvas = document.getElementById("drawing-canvas");
+  if (canvas) {
+    const img = zoomContent.querySelector("img");
+    if (img) {
+      const width = img.naturalWidth * zoomLevel;
+      const height = img.naturalHeight * zoomLevel;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+    }
   }
+}
+
 
   window.applyTransform = applyTransform;
 
@@ -995,11 +1012,6 @@ function setupDrawingCanvas() {
     return;
   }
 
-  function resizeCanvas() {
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
-  }
-
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
@@ -1021,6 +1033,22 @@ function setupDrawingCanvas() {
       ctx.stroke();
     }
   });
+  
+  function resizeCanvasToImage() {
+  const img = container.querySelector("img");
+  if (!img) return;
+
+  // Get actual image dimensions (after transform)
+  const scale = zoomLevel || 1;
+  const width = img.naturalWidth * scale;
+  const height = img.naturalHeight * scale;
+
+  canvas.width = width;
+  canvas.height = height;
+
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+}
 
   canvas.addEventListener("pointerup", () => {
     drawing = false;

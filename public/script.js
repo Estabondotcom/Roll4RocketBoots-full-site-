@@ -376,6 +376,19 @@ function toggleShowAndTell() {
     pushToDisplayArea(latestDisplayImage, false);
   }
   listenForDisplayImageUpdates(); // Now start listening
+  const existingCanvas = document.getElementById("drawing-canvas");
+if (!existingCanvas) {
+  const canvas = document.createElement("canvas");
+  canvas.id = "drawing-canvas";
+  canvas.style.position = "absolute";
+  canvas.style.top = 0;
+  canvas.style.left = 0;
+  canvas.style.zIndex = 5;
+  canvas.style.pointerEvents = "none";
+  document.getElementById("zoom-content").appendChild(canvas);
+  setupDrawingCanvas();
+}
+
 }
 
   function toggleCharacterPanel() {

@@ -372,28 +372,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!canvas || !img) return;
 
-  // Apply pan manually
-  zoomContent.style.left = `${panX}px`;
-  zoomContent.style.top = `${panY}px`;
+  // ✅ Use CSS transform for zooming and panning
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  zoomContent.style.transformOrigin = "0 0";
 
-  // Apply zoom by resizing both the image and canvas
-  const displayWidth = img.naturalWidth * zoomLevel;
-  const displayHeight = img.naturalHeight * zoomLevel;
-
-  img.style.width = `${displayWidth}px`;
-  img.style.height = `${displayHeight}px`;
-
-  canvas.style.width = `${displayWidth}px`;
-  canvas.style.height = `${displayHeight}px`;
-
+  // ✅ Scale canvas to match image's natural dimensions
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = displayWidth * dpr;
-  canvas.height = displayHeight * dpr;
+  canvas.width = img.naturalWidth * dpr;
+  canvas.height = img.naturalHeight * dpr;
+  canvas.style.width = `${img.naturalWidth}px`;
+  canvas.style.height = `${img.naturalHeight}px`;
 
+  // ✅ Draw using offscreen buffer and scale the context
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-   drawFromBuffer();
+  ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+  drawFromBuffer();
 }
+
 
 function toggleShowAndTell() {
   document.getElementById("character-panel").style.display = "none";

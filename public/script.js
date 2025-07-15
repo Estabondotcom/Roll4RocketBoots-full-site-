@@ -1081,8 +1081,9 @@ function setupDrawingCanvas() {
   drawing = true;
   const { x, y } = getTrueCoords(e);
   offscreenCtx.beginPath();
-  offscreenCtx.strokeStyle = currentTool === 'erase' ? "#ffffff" : penColor;
   offscreenCtx.lineWidth = currentTool === 'erase' ? 20 : 4;
+offscreenCtx.strokeStyle = penColor;
+offscreenCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
   offscreenCtx.moveTo(x, y);
 });
 

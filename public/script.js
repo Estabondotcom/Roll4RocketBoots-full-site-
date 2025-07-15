@@ -1065,6 +1065,24 @@ function setupDrawingCanvas() {
   offscreenCtx = offscreenCanvas.getContext("2d");
 
   const ctx = canvas.getContext("2d");
+  
+  function loadAllDrawings() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) return;
+  db.collection("sessions").doc(sessionId).collection("drawings").get()
+    .then(snapshot => {
+      const ctx = offscreenCanvas.getContext("2d");
+      snapshot.forEach(doc => {
+        const { imageData } = doc.data();
+        if (imageData) {
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0);
+          img.src = imageData;
+        }
+      });
+      drawFromBuffer(); // update view
+    });
+}
 
   // Drawing state
   let drawing = false;
@@ -1095,11 +1113,21 @@ canvas.addEventListener("pointermove", (e) => {
   drawFromBuffer();
 });
 
-canvas.addEventListener("pointerup", () => { drawing = false; });
+  canvas.addEventListener("pointerup", () => {
+  drawing = false;
+  if (currentTool) {
+    // Copy current drawing to buffer first:
+    const ctx = offscreenCanvas.getContext("2d");
+    ctx.drawImage(canvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+    saveDrawingToFirestore(); // 🔥 sync after draw
+    drawFromBuffer(); // update visible canvas
+  }
+});
 canvas.addEventListener("pointerleave", () => { drawing = false; });
 
   drawFromBuffer(); // initial render
 }
+
 function drawFromBuffer() {
   const canvas = document.getElementById("drawing-canvas");
   if (!canvas || !offscreenCanvas) return;
@@ -1121,6 +1149,24 @@ function drawFromBuffer() {
   ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(offscreenCanvas, 0, 0);
+}
+
+function saveDrawingToFirestore() {
+  if (!offscreenCanvas) return;
+  const sessionId = localStorage.getItem("currentSessionId");
+  const user = firebase.auth().currentUser;
+  if (!sessionId || !user) return;
+
+  const imageData = offscreenCanvas.toDataURL("image/png", 0.6); // 60% quality to save space
+
+  db.collection("sessions")
+    .doc(sessionId)
+    .collection("drawings")
+    .doc(user.uid)
+    .set({
+      imageData,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 }
 let currentTool = null; // 'pen', 'erase', or null
 let penColor = '#ff0000';

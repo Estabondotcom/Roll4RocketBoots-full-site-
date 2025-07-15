@@ -1079,19 +1079,19 @@ function setupDrawingCanvas() {
  canvas.addEventListener("pointerdown", (e) => {
   if (!currentTool) return;
   drawing = true;
-  const ctx = canvas.getContext("2d");
-  ctx.beginPath();
-  ctx.strokeStyle = currentTool === 'erase' ? "#ffffff" : penColor;
-  ctx.lineWidth = currentTool === 'erase' ? 20 : 4; // Optional: thicker erase
-  ctx.moveTo(e.offsetX, e.offsetY);
+  const { x, y } = getTrueCoords(e);
+  offscreenCtx.beginPath();
+  offscreenCtx.strokeStyle = currentTool === 'erase' ? "#ffffff" : penColor;
+  offscreenCtx.lineWidth = currentTool === 'erase' ? 20 : 4;
+  offscreenCtx.moveTo(x, y);
 });
 
 canvas.addEventListener("pointermove", (e) => {
-  if (drawing && currentTool) {
-    const ctx = canvas.getContext("2d");
-    ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.stroke();
-  }
+  if (!drawing || !currentTool) return;
+  const { x, y } = getTrueCoords(e);
+  offscreenCtx.lineTo(x, y);
+  offscreenCtx.stroke();
+  drawFromBuffer();
 });
 
 canvas.addEventListener("pointerup", () => { drawing = false; });

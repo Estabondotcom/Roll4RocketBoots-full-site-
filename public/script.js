@@ -392,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+   drawFromBuffer();
 }
 
 function toggleShowAndTell() {
@@ -855,6 +856,8 @@ function viewGMCharacterLive(sessionId, charId) {
   let isPanning = false;
   let startX = 0;
   let startY = 0;
+let offscreenCanvas = null;
+let offscreenCtx = null;
 
 window.addEventListener("DOMContentLoaded", () => {
   const zoomContainer = document.getElementById("zoom-container");
@@ -1039,45 +1042,82 @@ function makeDraggable(el) {
 
 function setupDrawingCanvas() {
   const canvas = document.getElementById("drawing-canvas");
-  const container = document.getElementById("zoom-content");
+  const zoomContent = document.getElementById("zoom-content");
+  const img = zoomContent.querySelector("img");
 
-  if (!canvas || !container) {
-    console.warn("🚫 Canvas or container not found when setting up drawing.");
-    return;
-  }
+  if (!canvas || !img) return;
 
-  // ✅ Now it's safe to call it
-  resizeCanvasSmart();
-  window.resizeCanvasSmart = resizeCanvasSmart;
-  window.addEventListener("resize", resizeCanvasSmart);
+  // Set up main canvas
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.zIndex = "5";
+  canvas.style.pointerEvents = "auto";
+
+  // Create offscreen buffer
+  offscreenCanvas = document.createElement("canvas");
+  offscreenCanvas.width = img.naturalWidth;
+  offscreenCanvas.height = img.naturalHeight;
+  offscreenCtx = offscreenCanvas.getContext("2d");
 
   const ctx = canvas.getContext("2d");
-  ctx.strokeStyle = "#ff0000";
-  ctx.lineWidth = 4;
 
+  // Drawing state
   let drawing = false;
+
+  function getTrueCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
+    return { x, y };
+  }
 
   canvas.addEventListener("pointerdown", (e) => {
     drawing = true;
-    ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
+    const { x, y } = getTrueCoords(e);
+    offscreenCtx.beginPath();
+    offscreenCtx.moveTo(x, y);
   });
 
   canvas.addEventListener("pointermove", (e) => {
-    if (drawing) {
-      ctx.lineTo(e.offsetX, e.offsetY);
-      ctx.stroke();
-    }
+    if (!drawing) return;
+    const { x, y } = getTrueCoords(e);
+    offscreenCtx.lineTo(x, y);
+    offscreenCtx.strokeStyle = "#ff0000";
+    offscreenCtx.lineWidth = 4;
+    offscreenCtx.stroke();
+    drawFromBuffer(); // redraw visible canvas
   });
 
-  canvas.addEventListener("pointerup", () => {
-    drawing = false;
-  });
+  canvas.addEventListener("pointerup", () => drawing = false);
+  canvas.addEventListener("pointerleave", () => drawing = false);
 
-  canvas.addEventListener("pointerleave", () => {
-    drawing = false;
-  });
+  drawFromBuffer(); // initial render
 }
+function drawFromBuffer() {
+  const canvas = document.getElementById("drawing-canvas");
+  if (!canvas || !offscreenCanvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  // Resize canvas to match zoom
+  const img = document.querySelector("#zoom-content img");
+  if (!img) return;
+
+  const width = img.naturalWidth * zoomLevel;
+  const height = img.naturalHeight * zoomLevel;
+
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(offscreenCanvas, 0, 0);
+}
+
+
 
 window.addSkill = addSkill;
 window.addItem = addItem;

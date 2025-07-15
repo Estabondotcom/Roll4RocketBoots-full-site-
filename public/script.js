@@ -1089,33 +1089,6 @@ function setupDrawingCanvas() {
   });
 }
 
-  const ctx = canvas.getContext("2d");
-  ctx.strokeStyle = "#ff0000";
-  ctx.lineWidth = 4;
-
-  let drawing = false;
-
-  canvas.addEventListener("pointerdown", (e) => {
-    drawing = true;
-    ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
-  });
-
-  canvas.addEventListener("pointermove", (e) => {
-    if (drawing) {
-      ctx.lineTo(e.offsetX, e.offsetY);
-      ctx.stroke();
-    }
-  });
-
-  canvas.addEventListener("pointerup", () => {
-    drawing = false;
-  });
-
-  canvas.addEventListener("pointerleave", () => {
-    drawing = false;
-  });
-
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;

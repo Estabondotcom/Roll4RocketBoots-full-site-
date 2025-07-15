@@ -1196,7 +1196,13 @@ function setDrawingMode(mode) {
 function clearCanvas() {
   const canvas = document.getElementById('drawing-canvas');
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Clear the offscreen canvas
+  if (offscreenCtx && offscreenCanvas) {
+    offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+  }
+
+  // Then re-render to the visible canvas
   drawFromBuffer?.();
 }
 

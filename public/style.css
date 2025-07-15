@@ -379,4 +379,15 @@ label[for="player-name"] {
   pointer-events: auto; /* We'll toggle this when drawing */
 }
 
+#drawing-toolbar button.active-tool {
+  background-color: #00bcd4;
+  color: black;
+  font-weight: bold;
+  border: 2px solid #00acc1;
+}
+
+.no-pan {
+  pointer-events: none; /* Prevents zoomContainer interaction while drawing */
+}
+
 

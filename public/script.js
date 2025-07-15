@@ -1080,9 +1080,10 @@ function setupDrawingCanvas() {
           img.src = imageData;
         }
       });
-      drawFromBuffer(); // update view
+      drawFromBuffer();
+      loadAllDrawings();
     });
-}
+  }
 
   // Drawing state
   let drawing = false;
@@ -1240,17 +1241,15 @@ function setDrawingMode(mode) {
 }
 
 function clearCanvas() {
-  const canvas = document.getElementById('drawing-canvas');
-  const ctx = canvas.getContext('2d');
+  if (!offscreenCtx || !offscreenCanvas) return;
 
-  // Clear the offscreen canvas
-  if (offscreenCtx && offscreenCanvas) {
-    offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-  }
+  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+  drawFromBuffer();
 
-  // Then re-render to the visible canvas
-  drawFromBuffer?.();
+  // 🔥 Sync blank canvas to Firestore
+  saveDrawingToFirestore();
 }
+  
 
 document.getElementById('pen-color').addEventListener('input', (e) => {
   penColor = e.target.value;

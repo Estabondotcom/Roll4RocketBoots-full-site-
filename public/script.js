@@ -1065,6 +1065,7 @@ function setupDrawingCanvas() {
   offscreenCtx = offscreenCanvas.getContext("2d");
 
   const ctx = canvas.getContext("2d");
+  loadAllDrawings();
   
   function loadAllDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");
@@ -1081,7 +1082,6 @@ function setupDrawingCanvas() {
         }
       });
       drawFromBuffer();
-      loadAllDrawings();
     });
   }
 
@@ -1120,7 +1120,7 @@ canvas.addEventListener("pointermove", (e) => {
     // Copy current drawing to buffer first:
     const ctx = offscreenCanvas.getContext("2d");
     ctx.drawImage(canvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
-    saveDrawingToFirestore(); // 🔥 sync after draw
+    saveDrawingToFirestore();// 🔥 sync after draw
     drawFromBuffer(); // update visible canvas
   }
 });

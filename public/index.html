@@ -210,6 +210,15 @@
   <button onclick="spawnEmoji('💬')">💬</button>
   <button onclick="spawnEmoji('⚠️')">⚠️</button>
 </div>
+     <div id="drawing-toolbar" style="display: flex; gap: 6px; align-items: center; margin-left: 10px;">
+  <label style="color: white;">🖍️</label>
+  <input type="color" id="pen-color" value="#ff0000" style="width: 32px; height: 32px;" />
+
+  <button onclick="setDrawingMode('pen')">✏️ Pen</button>
+  <button onclick="setDrawingMode('erase')">🧽 Eraser</button>
+  <button onclick="clearCanvas()">🧹 Clear</button>
+</div>
+
  <div id="zoom-container" style="overflow: hidden; position: relative; width: 100%; height: 100%;">
   <div id="zoom-content">    
 <div id="image-display-area" style="width: 95%;height: 80vh; background-color: #111; padding: 30px; overflow-y: auto;">

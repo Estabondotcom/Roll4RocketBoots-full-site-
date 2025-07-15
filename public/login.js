@@ -52,6 +52,7 @@ function selectSession(sessionId) {
     setupChatListener(sessionId);
     listenForEmojis();
     listenForDisplayImageUpdates();
+    listenForDrawings();
     
   }).catch((error) => {
     console.error("Error loading session info:", error);
@@ -754,4 +755,27 @@ function listenForEmojis() {
       });
     });
 }
+function listenForDrawings() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) return;
+
+  db.collection("sessions").doc(sessionId).collection("drawings")
+    .onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === "added" || change.type === "modified") {
+          const { imageData } = change.doc.data();
+          if (imageData) {
+            const img = new Image();
+            img.onload = () => {
+              const ctx = offscreenCanvas.getContext("2d");
+              ctx.drawImage(img, 0, 0);
+              drawFromBuffer();
+            };
+            img.src = imageData;
+          }
+        }
+      });
+    });
+}
+
 

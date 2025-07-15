@@ -550,20 +550,24 @@ function loadGMImages() {
   });
 }
  function resizeCanvasSmart() {
-    const img = container.querySelector("img");
-    if (!img) return;
+  const container = document.getElementById("zoom-content");
+  const canvas = document.getElementById("drawing-canvas");
+  if (!container || !canvas) return;
 
-    const dpr = window.devicePixelRatio || 1;
+  const img = container.querySelector("img");
+  if (!img) return;
 
-    canvas.width = img.naturalWidth * dpr;
-    canvas.height = img.naturalHeight * dpr;
+  const dpr = window.devicePixelRatio || 1;
 
-    canvas.style.width = `${img.naturalWidth}px`;
-    canvas.style.height = `${img.naturalHeight}px`;
+  canvas.width = img.naturalWidth * dpr;
+  canvas.height = img.naturalHeight * dpr;
 
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
+  canvas.style.width = `${img.naturalWidth}px`;
+  canvas.style.height = `${img.naturalHeight}px`;
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");

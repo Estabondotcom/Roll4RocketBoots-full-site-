@@ -1072,25 +1072,26 @@ function setupDrawingCanvas() {
     return { x, y };
   }
 
-  canvas.addEventListener("pointerdown", (e) => {
-    drawing = true;
-    const { x, y } = getTrueCoords(e);
-    offscreenCtx.beginPath();
-    offscreenCtx.moveTo(x, y);
-  });
+ canvas.addEventListener("pointerdown", (e) => {
+  if (!currentTool) return;
+  drawing = true;
+  const ctx = canvas.getContext("2d");
+  ctx.beginPath();
+  ctx.strokeStyle = currentTool === 'erase' ? "#ffffff" : penColor;
+  ctx.lineWidth = currentTool === 'erase' ? 20 : 4; // Optional: thicker erase
+  ctx.moveTo(e.offsetX, e.offsetY);
+});
 
-  canvas.addEventListener("pointermove", (e) => {
-    if (!drawing) return;
-    const { x, y } = getTrueCoords(e);
-    offscreenCtx.lineTo(x, y);
-    offscreenCtx.strokeStyle = "#ff0000";
-    offscreenCtx.lineWidth = 4;
-    offscreenCtx.stroke();
-    drawFromBuffer(); // redraw visible canvas
-  });
+canvas.addEventListener("pointermove", (e) => {
+  if (drawing && currentTool) {
+    const ctx = canvas.getContext("2d");
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  }
+});
 
-  canvas.addEventListener("pointerup", () => drawing = false);
-  canvas.addEventListener("pointerleave", () => drawing = false);
+canvas.addEventListener("pointerup", () => { drawing = false; });
+canvas.addEventListener("pointerleave", () => { drawing = false; });
 
   drawFromBuffer(); // initial render
 }
@@ -1116,7 +1117,90 @@ function drawFromBuffer() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(offscreenCanvas, 0, 0);
 }
+let currentTool = null; // 'pen', 'erase', or null
+let penColor = '#ff0000';
+let drawing = false;
 
+function setDrawingMode(mode) {
+  const canvas = document.getElementById('drawing-canvas');
+  const penBtn = document.getElementById('pen-tool-btn');
+  const eraseBtn = document.getElementById('eraser-tool-btn');
+  const zoomContainer = document.getElementById('zoom-container');
+
+  if (currentTool === mode) {
+    // Deselect tool
+    currentTool = null;
+    canvas.style.pointerEvents = "none";
+    zoomContainer.classList.remove("no-pan");
+    penBtn.classList.remove("active-tool");
+    eraseBtn.classList.remove("active-tool");
+    canvas.style.cursor = "default";
+  } else {
+    currentTool = mode;
+    canvas.style.pointerEvents = "auto";
+    zoomContainer.classList.add("no-pan");
+
+    // Update button styles
+    penBtn.classList.toggle("active-tool", mode === 'pen');
+    eraseBtn.classList.toggle("active-tool", mode === 'erase');
+
+    // Set appropriate cursor
+    canvas.style.cursor = mode === 'pen' ? 'crosshair' : 'cell';
+  }
+}
+
+function clearCanvas() {
+  const canvas = document.getElementById('drawing-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawFromBuffer?.();
+}
+
+document.getElementById('pen-color').addEventListener('input', (e) => {
+  penColor = e.target.value;
+});
+let currentTool = null; // 'pen', 'erase', or null
+let penColor = '#ff0000';
+let drawing = false;
+
+function setDrawingMode(mode) {
+  const canvas = document.getElementById('drawing-canvas');
+  const penBtn = document.getElementById('pen-tool-btn');
+  const eraseBtn = document.getElementById('eraser-tool-btn');
+  const zoomContainer = document.getElementById('zoom-container');
+
+  if (currentTool === mode) {
+    // Deselect tool
+    currentTool = null;
+    canvas.style.pointerEvents = "none";
+    zoomContainer.classList.remove("no-pan");
+    penBtn.classList.remove("active-tool");
+    eraseBtn.classList.remove("active-tool");
+    canvas.style.cursor = "default";
+  } else {
+    currentTool = mode;
+    canvas.style.pointerEvents = "auto";
+    zoomContainer.classList.add("no-pan");
+
+    // Update button styles
+    penBtn.classList.toggle("active-tool", mode === 'pen');
+    eraseBtn.classList.toggle("active-tool", mode === 'erase');
+
+    // Set appropriate cursor
+    canvas.style.cursor = mode === 'pen' ? 'crosshair' : 'cell';
+  }
+}
+
+function clearCanvas() {
+  const canvas = document.getElementById('drawing-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawFromBuffer?.();
+}
+
+document.getElementById('pen-color').addEventListener('input', (e) => {
+  penColor = e.target.value;
+});
 
 
 window.addSkill = addSkill;

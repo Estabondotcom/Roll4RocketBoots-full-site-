@@ -365,30 +365,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 }); 
 
-  function applyTransform() {
+ function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
-  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-  zoomContent.style.transformOrigin = "0 0";
-
-  // 🔧 Fix: also resize canvas to match image scale
   const canvas = document.getElementById("drawing-canvas");
   const img = zoomContent.querySelector("img");
 
-  if (canvas && img) {
-    const dpr = window.devicePixelRatio || 1;
+  if (!canvas || !img) return;
 
-    const width = img.naturalWidth * zoomLevel;
-    const height = img.naturalHeight * zoomLevel;
+  // Apply pan manually
+  zoomContent.style.left = `${panX}px`;
+  zoomContent.style.top = `${panY}px`;
 
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+  // Apply zoom by resizing both the image and canvas
+  const displayWidth = img.naturalWidth * zoomLevel;
+  const displayHeight = img.naturalHeight * zoomLevel;
 
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+  img.style.width = `${displayWidth}px`;
+  img.style.height = `${displayHeight}px`;
 
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset transform to account for pixel density
-  }
+  canvas.style.width = `${displayWidth}px`;
+  canvas.style.height = `${displayHeight}px`;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = displayWidth * dpr;
+  canvas.height = displayHeight * dpr;
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function toggleShowAndTell() {
@@ -549,22 +552,9 @@ function loadGMImages() {
     });
   });
 }
-function resizeCanvasSmart() {
-  const container = document.getElementById("zoom-content");
-  const canvas = document.getElementById("drawing-canvas");
-  const img = container?.querySelector("img");
-  if (!container || !canvas || !img) return;
+ function resizeCanvasSmart() {
+  applyTransform();
 
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width = img.naturalWidth * dpr;
-  canvas.height = img.naturalHeight * dpr;
-
-  canvas.style.width = `${img.naturalWidth}px`;
-  canvas.style.height = `${img.naturalHeight}px`;
-
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {

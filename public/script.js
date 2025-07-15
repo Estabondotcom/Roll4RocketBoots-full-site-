@@ -549,6 +549,21 @@ function loadGMImages() {
     });
   });
 }
+ function resizeCanvasSmart() {
+    const img = container.querySelector("img");
+    if (!img) return;
+
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = img.naturalWidth * dpr;
+    canvas.height = img.naturalHeight * dpr;
+
+    canvas.style.width = `${img.naturalWidth}px`;
+    canvas.style.height = `${img.naturalHeight}px`;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");
@@ -1037,23 +1052,6 @@ function setupDrawingCanvas() {
   if (!canvas || !container) {
     console.warn("🚫 Canvas or container not found when setting up drawing.");
     return;
-  }
-
-  // 🔧 Define resizeCanvasSmart BEFORE calling it
-  function resizeCanvasSmart() {
-    const img = container.querySelector("img");
-    if (!img) return;
-
-    const dpr = window.devicePixelRatio || 1;
-
-    canvas.width = img.naturalWidth * dpr;
-    canvas.height = img.naturalHeight * dpr;
-
-    canvas.style.width = `${img.naturalWidth}px`;
-    canvas.style.height = `${img.naturalHeight}px`;
-
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   // ✅ Now it's safe to call it

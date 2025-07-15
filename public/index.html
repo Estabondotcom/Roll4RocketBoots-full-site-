@@ -210,12 +210,12 @@
   <button onclick="spawnEmoji('💬')">💬</button>
   <button onclick="spawnEmoji('⚠️')">⚠️</button>
 </div>
-     <div id="drawing-toolbar" style="display: flex; gap: 6px; align-items: center; margin-left: 10px;">
+   <div id="drawing-toolbar" style="display: flex; gap: 6px; align-items: center; margin-left: 10px;">
   <label style="color: white;">🖍️</label>
   <input type="color" id="pen-color" value="#ff0000" style="width: 32px; height: 32px;" />
 
-  <button onclick="setDrawingMode('pen')">✏️ Pen</button>
-  <button onclick="setDrawingMode('erase')">🧽 Eraser</button>
+  <button id="pen-tool-btn" onclick="setDrawingMode('pen')">✏️ Pen</button>
+  <button id="eraser-tool-btn" onclick="setDrawingMode('erase')">🧽 Eraser</button>
   <button onclick="clearCanvas()">🧹 Clear</button>
 </div>
 

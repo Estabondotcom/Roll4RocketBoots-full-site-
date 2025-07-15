@@ -1122,8 +1122,6 @@ function setupDrawingCanvas() {
   });
 
   window.resizeCanvasSmart = resizeCanvasSmart;
-}
-
 
 window.addSkill = addSkill;
 window.addItem = addItem;

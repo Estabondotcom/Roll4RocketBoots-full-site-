@@ -1120,7 +1120,7 @@ function setupDrawingCanvas() {
   canvas.addEventListener("pointerleave", () => {
     drawing = false;
   });
-
+}
   window.resizeCanvasSmart = resizeCanvasSmart;
 
 window.addSkill = addSkill;

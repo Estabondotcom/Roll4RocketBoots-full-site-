@@ -873,6 +873,7 @@ window.addEventListener("DOMContentLoaded", () => {
   applyTransform();
 
   zoomContainer.addEventListener("wheel", (e) => {
+    if (currentTool) return;
     e.preventDefault();
 
     const rect = zoomContainer.getBoundingClientRect();
@@ -892,6 +893,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   zoomContainer.addEventListener("mousedown", (e) => {
+    if (currentTool) return;
     if (e.target.classList.contains("draggable-emoji")) return;
     isPanning = true;
     startX = e.clientX - panX;
@@ -900,6 +902,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("mousemove", (e) => {
+    if (currentTool) return;
     if (!isPanning) return;
     panX = e.clientX - startX;
     panY = e.clientY - startY;
@@ -907,6 +910,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("mouseup", () => {
+    if (currentTool) return;
     isPanning = false;
     zoomContainer.style.cursor = "grab";
   });
@@ -1159,9 +1163,6 @@ function clearCanvas() {
 document.getElementById('pen-color').addEventListener('input', (e) => {
   penColor = e.target.value;
 });
-let currentTool = null; // 'pen', 'erase', or null
-let penColor = '#ff0000';
-let drawing = false;
 
 function setDrawingMode(mode) {
   const canvas = document.getElementById('drawing-canvas');

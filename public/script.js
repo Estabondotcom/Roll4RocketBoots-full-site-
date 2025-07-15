@@ -549,13 +549,11 @@ function loadGMImages() {
     });
   });
 }
- function resizeCanvasSmart() {
+function resizeCanvasSmart() {
   const container = document.getElementById("zoom-content");
   const canvas = document.getElementById("drawing-canvas");
-  if (!container || !canvas) return;
-
-  const img = container.querySelector("img");
-  if (!img) return;
+  const img = container?.querySelector("img");
+  if (!container || !canvas || !img) return;
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -1090,11 +1088,6 @@ function setupDrawingCanvas() {
     drawing = false;
   });
 }
-
-
-  resizeCanvasSmart();
-  
-  window.addEventListener("resize", resizeCanvasSmart);
 
   const ctx = canvas.getContext("2d");
   ctx.strokeStyle = "#ff0000";

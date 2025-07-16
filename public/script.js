@@ -1071,7 +1071,6 @@ function setupDrawingCanvas() {
   loadAllDrawings();
   listenForDrawings();
   
- const userCanvases = {};
 
 function loadAllDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");

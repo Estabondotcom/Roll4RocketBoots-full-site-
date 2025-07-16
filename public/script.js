@@ -1,4 +1,6 @@
 let gmUnsubscribe = null;
+let userCanvases = {}; // uid => canvas
+
 
 function createSkillInput(value = "", levels = [true, false, false, false]) {
   const container = document.createElement('div');
@@ -1069,23 +1071,37 @@ function setupDrawingCanvas() {
   loadAllDrawings();
   listenForDrawings();
   
-  function loadAllDrawings() {
+ const userCanvases = {};
+
+function loadAllDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return;
-  db.collection("sessions").doc(sessionId).collection("drawings").get()
+
+  db.collection("sessions").doc(sessionId).collection("drawings")
+    .get()
     .then(snapshot => {
-      const ctx = offscreenCanvas.getContext("2d");
+      userCanvases = {};
       snapshot.forEach(doc => {
         const { imageData } = doc.data();
+        const userId = doc.id;
+
         if (imageData) {
           const img = new Image();
-          img.onload = () => ctx.drawImage(img, 0, 0);
+          img.onload = () => {
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = offscreenCanvas.width;
+            tempCanvas.height = offscreenCanvas.height;
+            const ctx = tempCanvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            userCanvases[userId] = tempCanvas;
+            drawFromBuffer(); // refresh after each
+          };
           img.src = imageData;
         }
       });
-      drawFromBuffer();
     });
-  }
+}
+
 
   // Drawing state
   let drawing = false;
@@ -1097,24 +1113,44 @@ function setupDrawingCanvas() {
     return { x, y };
   }
 
- canvas.addEventListener("pointerdown", (e) => {
+canvas.addEventListener("pointerdown", async (e) => {
   if (!currentTool) return;
   drawing = true;
+
   const { x, y } = getTrueCoords(e);
-  offscreenCtx.beginPath();
-  offscreenCtx.lineWidth = currentTool === 'erase' ? 20 : 4;
-offscreenCtx.strokeStyle = penColor;
-offscreenCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
-  offscreenCtx.moveTo(x, y);
+
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  // Make sure user has a canvas layer
+  if (!userCanvases[user.uid]) {
+    userCanvases[user.uid] = document.createElement("canvas");
+    userCanvases[user.uid].width = offscreenCanvas.width;
+    userCanvases[user.uid].height = offscreenCanvas.height;
+  }
+
+  const myCtx = userCanvases[user.uid].getContext("2d");
+  myCtx.beginPath();
+  myCtx.lineWidth = currentTool === 'erase' ? 20 : 4;
+  myCtx.strokeStyle = penColor;
+  myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
+  myCtx.moveTo(x, y);
 });
+
 
 canvas.addEventListener("pointermove", (e) => {
   if (!drawing || !currentTool) return;
+
   const { x, y } = getTrueCoords(e);
-  offscreenCtx.lineTo(x, y);
-  offscreenCtx.stroke();
-  drawFromBuffer();
+  const user = firebase.auth().currentUser;
+  if (!user || !userCanvases[user.uid]) return;
+
+  const myCtx = userCanvases[user.uid].getContext("2d");
+  myCtx.lineTo(x, y);
+  myCtx.stroke();
+  drawFromBuffer(); // Re-draw everything
 });
+
 
   canvas.addEventListener("pointerup", () => {
   drawing = false;
@@ -1132,17 +1168,14 @@ canvas.addEventListener("pointerleave", () => { drawing = false; });
 
 function drawFromBuffer() {
   const canvas = document.getElementById("drawing-canvas");
-  if (!canvas || !offscreenCanvas) return;
-
   const ctx = canvas.getContext("2d");
 
-  // Resize canvas to match zoom
+  // Resize canvas
   const img = document.querySelector("#zoom-content img");
-  if (!img) return;
+  if (!img || !offscreenCanvas) return;
 
   const width = img.naturalWidth * zoomLevel;
   const height = img.naturalHeight * zoomLevel;
-
   canvas.width = width;
   canvas.height = height;
   canvas.style.width = `${width}px`;
@@ -1150,8 +1183,13 @@ function drawFromBuffer() {
 
   ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(offscreenCanvas, 0, 0);
+
+  // Draw all user layers
+  for (const uid in userCanvases) {
+    ctx.drawImage(userCanvases[uid], 0, 0);
+  }
 }
+
 
 function saveDrawingToFirestore() {
   if (!offscreenCanvas) return;
@@ -1231,29 +1269,22 @@ function setDrawingMode(mode) {
 }
 
 function clearCanvas() {
-  const canvas = document.getElementById('drawing-canvas');
-  const ctx = canvas.getContext('2d');
   const user = firebase.auth().currentUser;
   const sessionId = localStorage.getItem("currentSessionId");
 
-  // Clear from local offscreen canvas
-  if (offscreenCtx) {
-    offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-    drawFromBuffer();
-  }
+  if (!user || !sessionId) return;
 
-  // Clear Firestore entry for this user
-  if (user && sessionId) {
-    db.collection("sessions")
-      .doc(sessionId)
-      .collection("drawings")
-      .doc(user.uid)
-      .delete()
-      .then(() => console.log("✅ Drawing cleared from Firestore"))
-      .catch(err => console.error("❌ Failed to clear drawing:", err));
-  }
+  delete userCanvases[user.uid]; // remove local layer
+  drawFromBuffer();              // refresh the screen
+
+  db.collection("sessions")
+    .doc(sessionId)
+    .collection("drawings")
+    .doc(user.uid)
+    .delete()
+    .then(() => console.log("✅ Drawing cleared from Firestore"))
+    .catch(err => console.error("❌ Failed to clear drawing:", err));
 }
-
 
 document.getElementById('pen-color').addEventListener('input', (e) => {
   penColor = e.target.value;

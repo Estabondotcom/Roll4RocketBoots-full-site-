@@ -1202,17 +1202,6 @@ function setDrawingMode(mode) {
   }
 }
 
-function clearCanvas() {
-  const canvas = document.getElementById('drawing-canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawFromBuffer?.();
-}
-
-document.getElementById('pen-color').addEventListener('input', (e) => {
-  penColor = e.target.value;
-});
-
 function setDrawingMode(mode) {
   const canvas = document.getElementById('drawing-canvas');
   const penBtn = document.getElementById('pen-tool-btn');
@@ -1242,15 +1231,29 @@ function setDrawingMode(mode) {
 }
 
 function clearCanvas() {
-  if (!offscreenCtx || !offscreenCanvas) return;
+  const canvas = document.getElementById('drawing-canvas');
+  const ctx = canvas.getContext('2d');
+  const user = firebase.auth().currentUser;
+  const sessionId = localStorage.getItem("currentSessionId");
 
-  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-  drawFromBuffer();
+  // Clear from local offscreen canvas
+  if (offscreenCtx) {
+    offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+    drawFromBuffer();
+  }
 
-  // 🔥 Sync blank canvas to Firestore
-  saveDrawingToFirestore();
+  // Clear Firestore entry for this user
+  if (user && sessionId) {
+    db.collection("sessions")
+      .doc(sessionId)
+      .collection("drawings")
+      .doc(user.uid)
+      .delete()
+      .then(() => console.log("✅ Drawing cleared from Firestore"))
+      .catch(err => console.error("❌ Failed to clear drawing:", err));
+  }
 }
-  
+
 
 document.getElementById('pen-color').addEventListener('input', (e) => {
   penColor = e.target.value;

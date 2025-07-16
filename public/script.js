@@ -594,6 +594,7 @@ img.onload = () => {
   }
 
   applyTransform();
+  drawFromBuffer();
   };
 
  container.appendChild(img);
@@ -1066,6 +1067,7 @@ function setupDrawingCanvas() {
 
   const ctx = canvas.getContext("2d");
   loadAllDrawings();
+  listenForDrawings();
   
   function loadAllDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");

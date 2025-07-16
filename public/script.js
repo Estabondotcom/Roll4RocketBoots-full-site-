@@ -1121,7 +1121,6 @@ canvas.addEventListener("pointermove", (e) => {
   if (currentTool) {
     // Copy current drawing to buffer first:
     const ctx = offscreenCanvas.getContext("2d");
-    ctx.drawImage(canvas, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
     saveDrawingToFirestore();// 🔥 sync after draw
     drawFromBuffer(); // update visible canvas
   }

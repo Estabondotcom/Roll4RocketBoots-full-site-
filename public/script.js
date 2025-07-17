@@ -1047,32 +1047,6 @@ function makeDraggable(el) {
     };
   };
 }
-
-function setupDrawingCanvas() {
-  const canvas = document.getElementById("drawing-canvas");
-  const zoomContent = document.getElementById("zoom-content");
-  const img = zoomContent.querySelector("img");
-
-  if (!canvas || !img) return;
-
-  // Set up main canvas
-  canvas.style.position = "absolute";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.zIndex = "5";
-  canvas.style.pointerEvents = "auto";
-
-  // Create offscreen buffer
-  offscreenCanvas = document.createElement("canvas");
-  offscreenCanvas.width = img.naturalWidth;
-  offscreenCanvas.height = img.naturalHeight;
-  offscreenCtx = offscreenCanvas.getContext("2d");
-
-  const ctx = canvas.getContext("2d");
-  loadAllDrawings();
-  listenForDrawings();
-}
-
 function loadAllDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return;
@@ -1102,6 +1076,29 @@ function loadAllDrawings() {
     });
 }
 
+function setupDrawingCanvas() {
+  const canvas = document.getElementById("drawing-canvas");
+  const zoomContent = document.getElementById("zoom-content");
+  const img = zoomContent.querySelector("img");
+
+  if (!canvas || !img) return;
+
+  // Set up main canvas
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.zIndex = "5";
+  canvas.style.pointerEvents = "auto";
+
+  // Create offscreen buffer
+  offscreenCanvas = document.createElement("canvas");
+  offscreenCanvas.width = img.naturalWidth;
+  offscreenCanvas.height = img.naturalHeight;
+  offscreenCtx = offscreenCanvas.getContext("2d");
+
+  const ctx = canvas.getContext("2d");
+  loadAllDrawings();
+  listenForDrawings();
 
   // Drawing state
   let drawing = false;

@@ -597,6 +597,7 @@ img.onload = () => {
 
   applyTransform();
   drawFromBuffer();
+  loadAllDrawings();
   };
 
  container.appendChild(img);
@@ -1289,7 +1290,7 @@ document.getElementById('pen-color').addEventListener('input', (e) => {
   penColor = e.target.value;
 });
 
-
+window.loadAllDrawings = loadAllDrawings;
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;

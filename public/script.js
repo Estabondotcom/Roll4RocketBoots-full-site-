@@ -1335,17 +1335,6 @@ function syncPenColorFromPicker() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  syncPenColorFromPicker();         // sets penColor and updates CSS variable
-  updateSliderFill();              // fills the slider based on current width & color
-
-  document.getElementById('pen-color').addEventListener('change', () => {
-    syncPenColorFromPicker();
-    updateSliderFill();            // update fill only on change (not input)
-  });
-
-  document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
-});
 
 let penWidth = 4; // Default width
 
@@ -1395,6 +1384,18 @@ penColorPicker.addEventListener('input', updateSliderFill);
 penColorPicker.addEventListener('change', () => {
   syncPenColorFromPicker(); // or however you're applying the color
   updateSliderFill();       // update fill on final pick too
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  syncPenColorFromPicker();         // sets penColor and updates CSS variable
+  updateSliderFill();              // fills the slider based on current width & color
+
+  document.getElementById('pen-color').addEventListener('change', () => {
+    syncPenColorFromPicker();
+    updateSliderFill();            // update fill only on change (not input)
+  });
+
+  document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
 });
 
 

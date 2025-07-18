@@ -1275,9 +1275,16 @@ function clearCanvas() {
 
   if (!user || !sessionId) return;
 
-  delete userCanvases[user.uid]; // remove local layer
-  drawFromBuffer();              // refresh the screen
+  // 🔥 Remove local layer
+  delete userCanvases[user.uid];
 
+  // 🔥 Clear offscreenCanvas (so stale pixels aren't saved later)
+  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+  // 🔁 Redraw visible canvas
+  drawFromBuffer();
+
+  // 🔥 Delete from Firestore
   db.collection("sessions")
     .doc(sessionId)
     .collection("drawings")

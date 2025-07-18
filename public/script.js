@@ -1325,8 +1325,6 @@ function clearAllDrawings() {
     });
 }
 
-let penColor = '#ff0000'; // Default fallback
-
 function syncPenColorFromPicker() {
   const picker = document.getElementById('pen-color');
   if (picker) {

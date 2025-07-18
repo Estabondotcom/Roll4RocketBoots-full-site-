@@ -389,12 +389,13 @@ label[for="player-name"] {
   pointer-events: none; /* Prevents zoomContainer interaction while drawing */
 }
 #stroke-width-slider {
-  --track-color: #ff0000; /* default red */
   appearance: none;
-  width: 150px;   /* Horizontal length */
-  height: 8px;    /* Thickness of the track */
-  background: transparent;
+  width: 150px;
+  height: 8px;
+  background: var(--slider-fill, #fff); /* Will be set by JS */
   margin: 10px;
+  border-radius: 4px;
+  outline: none;
 }
 
 #stroke-width-slider::-webkit-slider-thumb {
@@ -405,14 +406,21 @@ label[for="player-name"] {
   height: 16px;
   border-radius: 50%;
   cursor: pointer;
+  margin-top: -4px; /* vertically centers the thumb */
 }
 
+#stroke-width-slider::-moz-range-thumb {
+  background: var(--track-color);
+  border: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* optional fallback */
 #stroke-width-slider::-webkit-slider-runnable-track {
   background-color: #fff;
   height: 8px;
   border-radius: 4px;
 }
-
-
-
-

@@ -1336,6 +1336,7 @@ function syncPenColorFromPicker() {
 }
 document.addEventListener("DOMContentLoaded", () => {
   syncPenColorFromPicker();
+  document.getElementById('pen-color').addEventListener('input', syncPenColorFromPicker);
 });
 
 let penWidth = 4; // Default width
@@ -1347,6 +1348,18 @@ function togglePenWidthSlider() {
 
 function updatePenWidth(value) {
   penWidth = parseInt(value);
+}
+
+function syncPenColorFromPicker() {
+  const picker = document.getElementById('pen-color');
+  const slider = document.getElementById('stroke-width-slider');
+  if (picker) {
+    penColor = picker.value;
+    if (slider) {
+      slider.style.setProperty('--track-color', penColor);
+    }
+    console.log("🎨 Synced penColor to:", penColor);
+  }
 }
 
 

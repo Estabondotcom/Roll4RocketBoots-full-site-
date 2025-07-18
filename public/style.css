@@ -391,11 +391,10 @@ label[for="player-name"] {
 #stroke-width-slider {
   --track-color: #ff0000; /* default red */
   appearance: none;
-  width: 8px;
-  height: 100px;
-  writing-mode: bt-lr; /* vertical */
-  transform: rotate(180deg); /* optional: makes it low-to-high top-down */
+  width: 150px;   /* Horizontal length */
+  height: 8px;    /* Thickness of the track */
   background: transparent;
+  margin: 10px;
 }
 
 #stroke-width-slider::-webkit-slider-thumb {
@@ -410,7 +409,7 @@ label[for="player-name"] {
 
 #stroke-width-slider::-webkit-slider-runnable-track {
   background: var(--track-color);
-  width: 8px;
+  height: 8px;
   border-radius: 4px;
 }
 

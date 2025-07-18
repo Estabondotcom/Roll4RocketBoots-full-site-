@@ -1297,7 +1297,31 @@ function clearCanvas() {
 document.getElementById('pen-color').addEventListener('input', (e) => {
   penColor = e.target.value;
 });
+function clearAllDrawings() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) return;
 
+  if (!confirm("Are you sure you want to delete ALL drawings from all users?")) return;
+
+  db.collection("sessions").doc(sessionId).collection("drawings")
+    .get()
+    .then(snapshot => {
+      const batch = db.batch();
+      snapshot.forEach(doc => batch.delete(doc.ref));
+      return batch.commit();
+    })
+    .then(() => {
+      userCanvases = {};
+      drawFromBuffer(); // Redraw with empty canvas
+      console.log("✅ All drawings cleared.");
+    })
+    .catch(err => {
+      console.error("❌ Failed to clear all drawings:", err);
+      alert("Failed to clear all drawings.");
+    });
+}
+
+window.clearAllDrawings = clearAllDrawings;
 window.loadAllDrawings = loadAllDrawings;
 window.addSkill = addSkill;
 window.addItem = addItem;

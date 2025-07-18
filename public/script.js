@@ -1158,18 +1158,19 @@ canvas.addEventListener("pointerup", () => {
   const user = firebase.auth().currentUser;
   if (!user || !userCanvases[user.uid]) return;
 
-  // ✅ 1. Copy from user's canvas to shared offscreen buffer
-  const userLayer = userCanvases[user.uid];
-  const ctx = offscreenCanvas.getContext("2d");
-  ctx.drawImage(userLayer, 0, 0);
+  // ✅ 1. Clear offscreen before applying new layer
+  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
 
-  // ✅ 2. Save merged layer to Firestore
+  // ✅ 2. Copy from user's canvas to shared buffer
+  const userLayer = userCanvases[user.uid];
+  offscreenCtx.drawImage(userLayer, 0, 0);
+
+  // ✅ 3. Save to Firestore
   saveDrawingToFirestore();
 
-  // ✅ 3. Redraw visible canvas
+  // ✅ 4. Redraw visible canvas
   drawFromBuffer();
 });
-}
 
 
 function drawFromBuffer() {

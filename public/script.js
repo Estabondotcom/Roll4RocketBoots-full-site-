@@ -1337,6 +1337,7 @@ function syncPenColorFromPicker() {
 document.addEventListener("DOMContentLoaded", () => {
   syncPenColorFromPicker();
   document.getElementById('pen-color').addEventListener('change', syncPenColorFromPicker);
+   updateSliderFill();
 });
 
 let penWidth = 4; // Default width
@@ -1361,7 +1362,33 @@ function syncPenColorFromPicker() {
     console.log("🎨 Synced penColor to:", penColor);
   }
 }
+const strokeSlider = document.getElementById('stroke-width-slider');
+const penColorPicker = document.getElementById('pen-color');
 
+function updateSliderFill() {
+  const value = strokeSlider.value;
+  const min = strokeSlider.min || 1;
+  const max = strokeSlider.max || 20;
+  const percent = ((value - min) / (max - min)) * 100;
+  const color = penColorPicker.value;
+
+  // Apply CSS gradient to simulate "filled" portion
+  strokeSlider.style.setProperty(
+    '--slider-fill',
+    `linear-gradient(to right, ${color} 0%, ${color} ${percent}%, white ${percent}%, white 100%)`
+  );
+
+  // Also set the thumb color
+  strokeSlider.style.setProperty('--track-color', color);
+}
+
+// Bind updates
+strokeSlider.addEventListener('input', updateSliderFill);
+penColorPicker.addEventListener('input', updateSliderFill);
+penColorPicker.addEventListener('change', () => {
+  syncPenColorFromPicker(); // or however you're applying the color
+  updateSliderFill();       // update fill on final pick too
+});
 
 
 window.loadAllDrawings = loadAllDrawings;

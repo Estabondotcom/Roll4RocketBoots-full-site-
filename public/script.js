@@ -1358,3 +1358,4 @@ window.addCondition = addCondition;
 window.pushToDisplayArea = pushToDisplayArea;
 window.applyTransform = applyTransform;
 window.clearAllDrawings = clearAllDrawings;
+console.log("✅ Script loaded.");

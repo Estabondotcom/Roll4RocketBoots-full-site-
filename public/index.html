@@ -210,17 +210,17 @@
   <button onclick="spawnEmoji('💬')">💬</button>
   <button onclick="spawnEmoji('⚠️')">⚠️</button>
 </div>
+      <div id="stroke-width-container" style="display: none; flex-direction: column; align-items: center; margin-top: 8px;">
+  <label for="stroke-width-slider" style="color: white; font-size: 12px;">✏️ Width</label>
+  <input id="stroke-width-slider" type="range" min="1" max="30" value="4" step="1"
+         style="writing-mode: bt-lr; transform: rotate(270deg); height: 80px;">
+</div>
    <div id="drawing-toolbar" style="display: flex; gap: 6px; align-items: center; margin-left: 10px;">
   <label style="color: white;">🖍️</label>
   <input type="color" id="pen-color" value="#ff0000" style="width: 32px; height: 32px;" />
   <button id="pen-tool-btn" onclick="setDrawingMode('pen')">✏️ Pen</button>
   <button id="eraser-tool-btn" onclick="setDrawingMode('erase')">🧽 Eraser</button>
   <button onclick="clearCanvas()">🧹 Clear</button>
-       <div id="stroke-width-container" style="display: none; flex-direction: column; align-items: center; margin-top: 8px;">
-  <label for="stroke-width-slider" style="color: white; font-size: 12px;">✏️ Width</label>
-  <input id="stroke-width-slider" type="range" min="1" max="30" value="4" step="1"
-         style="writing-mode: bt-lr; transform: rotate(270deg); height: 80px;">
-</div>
 </div>
 
  <div id="zoom-container" style="overflow: hidden; position: relative; width: 100%; height: 100%;">

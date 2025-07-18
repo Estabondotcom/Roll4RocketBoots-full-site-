@@ -388,16 +388,7 @@ label[for="player-name"] {
 .no-pan {
   pointer-events: none; /* Prevents zoomContainer interaction while drawing */
 }
-#stroke-width-container {
-  position: absolute;
-  top: 40px; /* adjust based on toolbar position */
-  left: 10px;
-  background: #222;
-  border: 1px solid #555;
-  padding: 6px;
-  border-radius: 6px;
-  z-index: 15;
-}
+
 
 
 

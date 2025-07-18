@@ -1143,7 +1143,8 @@ canvas.addEventListener("pointermove", (e) => {
 
   const myCtx = userCanvases[user.uid].getContext("2d");
   myCtx.strokeStyle = penColor;
-myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
+  myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
+  myCtx.lineWidth = currentTool === 'erase' ? 20 : 4;
   myCtx.lineTo(x, y);
   myCtx.stroke();
   drawFromBuffer(); // Re-draw everything

@@ -1149,19 +1149,25 @@ canvas.addEventListener("pointermove", (e) => {
 });
 
 
-  canvas.addEventListener("pointerup", () => {
+canvas.addEventListener("pointerup", () => {
   drawing = false;
-  if (currentTool) {
-    // Copy current drawing to buffer first:
-    const ctx = offscreenCanvas.getContext("2d");
-    saveDrawingToFirestore();// 🔥 sync after draw
-    drawFromBuffer(); // update visible canvas
-  }
-});
-canvas.addEventListener("pointerleave", () => { drawing = false; });
+  if (!currentTool) return;
 
-  drawFromBuffer(); // initial render
-}
+  const user = firebase.auth().currentUser;
+  if (!user || !userCanvases[user.uid]) return;
+
+  // ✅ 1. Copy from user's canvas to shared offscreen buffer
+  const userLayer = userCanvases[user.uid];
+  const ctx = offscreenCanvas.getContext("2d");
+  ctx.drawImage(userLayer, 0, 0);
+
+  // ✅ 2. Save merged layer to Firestore
+  saveDrawingToFirestore();
+
+  // ✅ 3. Redraw visible canvas
+  drawFromBuffer();
+});
+
 
 function drawFromBuffer() {
   const canvas = document.getElementById("drawing-canvas");

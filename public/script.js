@@ -1164,6 +1164,7 @@ canvas.addEventListener("pointerup", () => {
   // ✅ 3. Redraw visible canvas
   drawFromBuffer();
 });
+}
 
 
 function drawFromBuffer() {

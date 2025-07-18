@@ -1334,10 +1334,17 @@ function syncPenColorFromPicker() {
     console.log("🎨 Synced penColor to:", penColor);
   }
 }
+
 document.addEventListener("DOMContentLoaded", () => {
-  syncPenColorFromPicker();
-  document.getElementById('pen-color').addEventListener('change', syncPenColorFromPicker);
-   updateSliderFill();
+  syncPenColorFromPicker();         // sets penColor and updates CSS variable
+  updateSliderFill();              // fills the slider based on current width & color
+
+  document.getElementById('pen-color').addEventListener('change', () => {
+    syncPenColorFromPicker();
+    updateSliderFill();            // update fill only on change (not input)
+  });
+
+  document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
 });
 
 let penWidth = 4; // Default width

@@ -1127,7 +1127,7 @@ canvas.addEventListener("pointerdown", async (e) => {
 
   const myCtx = userCanvases[user.uid].getContext("2d");
   myCtx.beginPath();
-  myCtx.lineWidth = currentTool === 'erase' ? 20 : penWidth;
+  myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('pen-width-slider')?.value || 4);
   myCtx.strokeStyle = penColor;
   myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
   myCtx.moveTo(x, y);
@@ -1144,7 +1144,7 @@ canvas.addEventListener("pointermove", (e) => {
   const myCtx = userCanvases[user.uid].getContext("2d");
   myCtx.strokeStyle = penColor;
   myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
-  myCtx.lineWidth = currentTool === 'erase' ? 20 : penWidth;
+ myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('pen-width-slider')?.value || 4);
   myCtx.lineTo(x, y);
   myCtx.stroke();
   drawFromBuffer(); // Re-draw everything

@@ -1100,9 +1100,6 @@ function setupDrawingCanvas() {
   loadAllDrawings();
   listenForDrawings();
 
-  // Drawing state
-  let drawing = false;
-
   function getTrueCoords(e) {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoomLevel;

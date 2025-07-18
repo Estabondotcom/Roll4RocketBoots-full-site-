@@ -407,7 +407,9 @@ function toggleShowAndTell() {
   if (container && latestDisplayImage) {
     pushToDisplayArea(latestDisplayImage, false);
   }
-  listenForDisplayImageUpdates(); // Now start listening
+  listenForDisplayImageUpdates(); 
+  syncPenColorFromPicker();
+// Now start listening
   const existingCanvas = document.getElementById("drawing-canvas");
 if (!existingCanvas) {
   const canvas = document.createElement("canvas");
@@ -1322,6 +1324,20 @@ function clearAllDrawings() {
       alert("Failed to clear all drawings.");
     });
 }
+
+let penColor = '#ff0000'; // Default fallback
+
+function syncPenColorFromPicker() {
+  const picker = document.getElementById('pen-color');
+  if (picker) {
+    penColor = picker.value;
+    console.log("🎨 Synced penColor to:", penColor);
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  syncPenColorFromPicker();
+});
+
 
 
 window.loadAllDrawings = loadAllDrawings;

@@ -764,15 +764,27 @@ function listenForDrawings() {
       snapshot.docChanges().forEach(change => {
         if (change.type === "added" || change.type === "modified") {
           const { imageData } = change.doc.data();
+          const uid = change.doc.id;
+
           if (imageData) {
             const img = new Image();
             img.onload = () => {
-              const ctx = offscreenCanvas.getContext("2d");
+              const tempCanvas = document.createElement("canvas");
+              tempCanvas.width = offscreenCanvas.width;
+              tempCanvas.height = offscreenCanvas.height;
+              const ctx = tempCanvas.getContext("2d");
               ctx.drawImage(img, 0, 0);
+              userCanvases[uid] = tempCanvas;
               drawFromBuffer();
             };
             img.src = imageData;
           }
+        }
+
+        if (change.type === "removed") {
+          const uid = change.doc.id;
+          delete userCanvases[uid];
+          drawFromBuffer();
         }
       });
     });

@@ -408,7 +408,7 @@ label[for="player-name"] {
 }
 
 #stroke-width-slider::-webkit-slider-runnable-track {
-  background: var(--track-color);
+  background-color: #fff;
   height: 8px;
   border-radius: 4px;
 }

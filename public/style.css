@@ -388,6 +388,31 @@ label[for="player-name"] {
 .no-pan {
   pointer-events: none; /* Prevents zoomContainer interaction while drawing */
 }
+#stroke-width-slider {
+  --track-color: #ff0000; /* default red */
+  appearance: none;
+  width: 8px;
+  height: 100px;
+  writing-mode: bt-lr; /* vertical */
+  transform: rotate(180deg); /* optional: makes it low-to-high top-down */
+  background: transparent;
+}
+
+#stroke-width-slider::-webkit-slider-thumb {
+  appearance: none;
+  background: var(--track-color);
+  border: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+#stroke-width-slider::-webkit-slider-runnable-track {
+  background: var(--track-color);
+  width: 8px;
+  border-radius: 4px;
+}
 
 
 

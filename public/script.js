@@ -1336,7 +1336,7 @@ function syncPenColorFromPicker() {
 }
 document.addEventListener("DOMContentLoaded", () => {
   syncPenColorFromPicker();
-  document.getElementById('pen-color').addEventListener('input', syncPenColorFromPicker);
+  document.getElementById('pen-color').addEventListener('change', syncPenColorFromPicker);
 });
 
 let penWidth = 4; // Default width

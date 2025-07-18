@@ -1127,7 +1127,7 @@ canvas.addEventListener("pointerdown", async (e) => {
 
   const myCtx = userCanvases[user.uid].getContext("2d");
   myCtx.beginPath();
-  myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('pen-width-slider')?.value || 4);
+  myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('stroke-width-slider')?.value || 4);
   myCtx.strokeStyle = penColor;
   myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
   myCtx.moveTo(x, y);
@@ -1144,7 +1144,7 @@ canvas.addEventListener("pointermove", (e) => {
   const myCtx = userCanvases[user.uid].getContext("2d");
   myCtx.strokeStyle = penColor;
   myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
- myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('pen-width-slider')?.value || 4);
+ myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('stroke-width-slider')?.value || 4);
   myCtx.lineTo(x, y);
   myCtx.stroke();
   drawFromBuffer(); // Re-draw everything
@@ -1341,7 +1341,7 @@ document.addEventListener("DOMContentLoaded", () => {
 let penWidth = 4; // Default width
 
 function togglePenWidthSlider() {
-  const slider = document.getElementById("pen-width-slider");
+  const slider = document.getElementById("stroke-width-slider");
   slider.style.display = slider.style.display === "none" ? "block" : "none";
 }
 

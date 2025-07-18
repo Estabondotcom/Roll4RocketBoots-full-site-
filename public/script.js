@@ -1321,10 +1321,11 @@ function clearAllDrawings() {
     });
 }
 
-window.clearAllDrawings = clearAllDrawings;
+
 window.loadAllDrawings = loadAllDrawings;
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;
 window.pushToDisplayArea = pushToDisplayArea;
 window.applyTransform = applyTransform;
+window.clearAllDrawings = clearAllDrawings;

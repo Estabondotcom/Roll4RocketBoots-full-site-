@@ -594,7 +594,7 @@ img.onload = () => {
   canvas.style.top = "0";
   canvas.style.left = "0";
   canvas.style.pointerEvents = "none";
-  canvas.style.zIndex = "5"; // behind emojis or other overlays
+  canvas.style.zIndex = "5"; 
 
   }
 

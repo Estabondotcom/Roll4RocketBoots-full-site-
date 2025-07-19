@@ -108,11 +108,10 @@ function loadCharacterByName(name) {
       localStorage.setItem("autoSaveCharacterName", name);
       window._lastSavedCharacterName = name;
     });
-  if (!localStorage.getItem("autoSaveInitialized")) {
-  setupAutoSaveListeners();
-  localStorage.setItem("autoSaveInitialized", "true");
-  console.log("✅ Autosave listeners activated.");
-}
+setupAutoSaveListeners();
+localStorage.setItem("autoSaveInitialized", "true");
+console.log("✅ Autosave listeners (re)activated.");
+
 }
 function login() {
   const email = document.getElementById("authEmail").value;
@@ -423,6 +422,9 @@ function confirmCharacterLoad() {
       window._lastSavedCharacterName = selectedName;
 localStorage.setItem("autoSaveCharacterName", selectedName);
 disableCharacterInputs(false);
+setupAutoSaveListeners();
+localStorage.setItem("autoSaveInitialized", "true");
+
 
     });
 }

@@ -758,65 +758,69 @@ function setupAutoSaveListeners() {
 }
 
 function listenForEmojis() {
-  const display = document.getElementById("zoom-content");
-  if (!display) {
-    console.warn("⚠️ zoom-content not found");
-    return;
-  }
+  firebase.auth().onAuthStateChanged((user) => {
+    if (!user) return;
 
-  db.collection("sessions").doc(currentSessionId).collection("emojis")
-    .onSnapshot(snapshot => {
-      snapshot.docChanges().forEach(change => {
-        const data = change.doc.data();
-        const { id, symbol, x, y, creatorUid } = data;
+    const display = document.getElementById("zoom-content");
+    if (!display) {
+      console.warn("⚠️ zoom-content not found");
+      return;
+    }
 
-        if (change.type === "added") {
-          if (!display.querySelector(`[data-id="${id}"]`)) {
-            const emoji = document.createElement("div");
-            emoji.className = "draggable-emoji";
-            emoji.dataset.id = id;
-            emoji.style.left = x + "px";
-            emoji.style.top = y + "px";
-            emoji.style.fontSize = `${Math.max(16, 64 / (zoomLevel || 1))}px`;
+    db.collection("sessions").doc(currentSessionId).collection("emojis")
+      .onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+          const data = change.doc.data();
+          const { id, symbol, x, y, creatorUid } = data;
 
-            // ✅ Emoji symbol
-            const symbolSpan = document.createElement("span");
-            symbolSpan.textContent = symbol;
-            emoji.appendChild(symbolSpan);
+          if (change.type === "added") {
+            if (!display.querySelector(`[data-id="${id}"]`)) {
+              const emoji = document.createElement("div");
+              emoji.className = "draggable-emoji";
+              emoji.dataset.id = id;
+              emoji.style.left = x + "px";
+              emoji.style.top = y + "px";
+              emoji.style.fontSize = `${Math.max(16, 64 / (zoomLevel || 1))}px`;
 
-            // ✅ Add delete button if user created it
-            const user = firebase.auth().currentUser;
-            if (user && user.uid === creatorUid) {
-              const delBtn = document.createElement("button");
-              delBtn.textContent = "🗑";
-              delBtn.className = "emoji-delete";
-              delBtn.onclick = (e) => {
-                e.stopPropagation();
-                db.collection("sessions").doc(currentSessionId).collection("emojis").doc(id).delete();
-              };
-              emoji.appendChild(delBtn);
+              // Emoji symbol
+              const symbolSpan = document.createElement("span");
+              symbolSpan.textContent = symbol;
+              emoji.appendChild(symbolSpan);
+
+              // Delete button if creator
+              if (user.uid === creatorUid) {
+                const delBtn = document.createElement("button");
+                delBtn.textContent = "🗑";
+                delBtn.className = "emoji-delete";
+                delBtn.onclick = (e) => {
+                  e.stopPropagation();
+                  db.collection("sessions").doc(currentSessionId).collection("emojis").doc(id).delete();
+                };
+                emoji.appendChild(delBtn);
+              }
+
+              makeDraggable(emoji);
+              display.appendChild(emoji);
             }
-
-            makeDraggable(emoji);
-            display.appendChild(emoji);
           }
-        }
 
-        if (change.type === "modified") {
-          const emoji = display.querySelector(`[data-id="${id}"]`);
-          if (emoji) {
-            emoji.style.left = x + "px";
-            emoji.style.top = y + "px";
+          if (change.type === "modified") {
+            const emoji = display.querySelector(`[data-id="${id}"]`);
+            if (emoji) {
+              emoji.style.left = x + "px";
+              emoji.style.top = y + "px";
+            }
           }
-        }
 
-        if (change.type === "removed") {
-          const emoji = display.querySelector(`[data-id="${id}"]`);
-          if (emoji) emoji.remove();
-        }
+          if (change.type === "removed") {
+            const emoji = display.querySelector(`[data-id="${id}"]`);
+            if (emoji) emoji.remove();
+          }
+        });
       });
-    });
+  });
 }
+
 function listenForDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return;

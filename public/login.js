@@ -861,5 +861,62 @@ function disableCharacterInputs(disabled = true) {
     });
   });
 }
+function promptAndCreateCharacter() {
+  const name = prompt("Enter your new character's name:");
+  if (!name) return;
+
+  const user = auth.currentUser;
+  const sessionId = localStorage.getItem("currentSessionId");
+
+  const emptyCharacter = {
+    name: name,
+    exp: 0,
+    luck: 1,
+    skills: [],
+    items: [],
+    conditions: [],
+    wounds: [false, false, false, false, false],
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  const promises = [];
+
+  if (sessionId) {
+    promises.push(
+      db.collection("sessions").doc(sessionId)
+        .collection("characters").doc(name)
+        .set(emptyCharacter)
+    );
+  }
+
+  promises.push(
+    db.collection("users").doc(user.uid)
+      .collection("characters").doc(name)
+      .set(emptyCharacter)
+  );
+
+  Promise.all(promises)
+    .then(() => {
+      console.log(`✅ New character '${name}' created.`);
+      document.getElementById("player-name").value = name;
+      localStorage.setItem("autoSaveCharacterName", name);
+      localStorage.setItem("char_for_session_" + sessionId, name);
+      window._lastSavedCharacterName = name;
+
+      disableCharacterInputs(false);
+
+      if (!localStorage.getItem("autoSaveInitialized")) {
+        setupAutoSaveListeners();
+        localStorage.setItem("autoSaveInitialized", "true");
+        console.log("✅ Autosave listeners activated.");
+      }
+
+      document.getElementById("loadCharacterModal").style.display = "none";
+    })
+    .catch((err) => {
+      console.error("❌ Failed to create character:", err);
+      alert("Failed to create character.");
+    });
+}
 
 

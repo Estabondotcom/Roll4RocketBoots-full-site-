@@ -1390,6 +1390,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
+    // ✅ Add this here:
+  const clearBtn = document.getElementById("clear-button");
+  if (clearBtn) {
+    clearBtn.onclick = clearMyDrawings;
+  } else {
+    console.warn("❌ Could not find #clear-button to assign clearMyDrawings");
+  }
 });
 
 document.getElementById('chatInput').addEventListener('keydown', e => {

@@ -1303,28 +1303,22 @@ function clearCanvas() {
 document.getElementById('pen-color').addEventListener('input', (e) => {
   penColor = e.target.value;
 });
+
 function clearAllDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return;
 
-  if (!confirm("Are you sure you want to delete ALL drawings from all users?")) return;
-
-  db.collection("sessions").doc(sessionId).collection("drawings")
-    .get()
-    .then(snapshot => {
-      const batch = db.batch();
-      snapshot.forEach(doc => batch.delete(doc.ref));
-      return batch.commit();
-    })
-    .then(() => {
-      userCanvases = {};
-      drawFromBuffer(); // Redraw with empty canvas
-      console.log("✅ All drawings cleared.");
-    })
-    .catch(err => {
-      console.error("❌ Failed to clear all drawings:", err);
-      alert("Failed to clear all drawings.");
+  db.collection("sessions").doc(sessionId).collection("drawings").get().then(snapshot => {
+    const batch = db.batch();
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
     });
+    return batch.commit();
+  }).then(() => {
+    console.log("🧼 Cleared all drawing layers (GM action)");
+    userCanvases = {};
+    drawFromBuffer();
+  });
 }
 
 function syncPenColorFromPicker() {
@@ -1404,6 +1398,26 @@ document.getElementById('chatInput').addEventListener('keydown', e => {
     sendChatMessage();
   }
 });
+
+function clearMyDrawings() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  const user = firebase.auth().currentUser;
+  if (!user || !sessionId) return;
+
+  const uid = user.uid;
+
+  // 1. Remove from Firestore
+  db.collection("sessions").doc(sessionId).collection("drawings").doc(uid).delete().then(() => {
+    console.log("🧼 Cleared drawing layer for user:", uid);
+
+    // 2. Remove from local canvas buffer
+    delete userCanvases[uid];
+
+    // 3. Redraw buffer
+    drawFromBuffer();
+  });
+}
+
 
 
 window.loadAllDrawings = loadAllDrawings;

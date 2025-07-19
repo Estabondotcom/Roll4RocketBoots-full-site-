@@ -376,7 +376,7 @@ function updateEmojiPositions() {
   });
 }
 
- function applyTransform() {
+function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
   const canvas = document.getElementById("drawing-canvas");
   const img = zoomContent.querySelector("img");
@@ -403,12 +403,14 @@ function updateEmojiPositions() {
 
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-   drawFromBuffer();
-   applyTransform() {
+
+  drawFromBuffer();
+
+  // ✅ Apply transform and reposition emojis
   zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
   updateEmojiPositions();
-   }
 }
+
 
 function toggleShowAndTell() {
   document.getElementById("character-panel").style.display = "none";

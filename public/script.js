@@ -366,15 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 }); 
-function updateEmojiPositions() {
-  const emojis = document.querySelectorAll('.draggable-emoji');
-  emojis.forEach(emoji => {
-    const x = parseFloat(emoji.dataset.logicalX || 0);
-    const y = parseFloat(emoji.dataset.logicalY || 0);
-    emoji.style.left = (x * zoomLevel + panX) + 'px';
-    emoji.style.top = (y * zoomLevel + panY) + 'px';
-  });
-}
 
 function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
@@ -405,9 +396,7 @@ function applyTransform() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawFromBuffer();
-  updateEmojiPositions();
 }
-
 
 function toggleShowAndTell() {
   document.getElementById("character-panel").style.display = "none";
@@ -948,77 +937,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-function spawnEmoji(symbol) {
- const container = document.getElementById("zoom-container");
-const display = document.getElementById("zoom-content");
-if (!display || !container) {
-  console.warn("⚠️ zoom-content or container not found when spawning emoji");
-  return;
-}
-
-const id = `emoji-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-// Compute spawn position in content space
-const containerRect = container.getBoundingClientRect();
-const centerX = containerRect.width / 2;
-const centerY = containerRect.height / 2;
-
-// Convert screen center to content (untransformed) space
-const offsetX = (centerX - panX) / zoomLevel;
-const offsetY = (centerY - panY) / zoomLevel;
-console.log("🐣 Spawning emoji at:", offsetX, offsetY, "Zoom:", zoomLevel);
-
-// Clamp to zoom-content area
-const contentBounds = display.getBoundingClientRect();
-const maxX = contentBounds.width / zoomLevel - 40;
-const maxY = contentBounds.height / zoomLevel - 40;
-
-const clampedX = Math.max(0, Math.min(offsetX, maxX));
-const clampedY = Math.max(0, Math.min(offsetY, maxY));
-
-// ✅ Spawn emoji
-const emoji = document.createElement("div");
-emoji.className = "draggable-emoji";
-const symbolSpan = document.createElement("span");
-symbolSpan.textContent = symbol;
-emoji.appendChild(symbolSpan);
-
-// Add delete button immediately if you're the creator
-const user = firebase.auth().currentUser;
-if (user) {
-  const delBtn = document.createElement("button");
-  delBtn.textContent = "🗑";
-  delBtn.className = "emoji-delete";
-  delBtn.onclick = (e) => {
-    e.stopPropagation();
-    db.collection("sessions").doc(currentSessionId).collection("emojis").doc(id).delete();
-  };
-  emoji.appendChild(delBtn);
-}
-
-emoji.dataset.id = id;
-emoji.dataset.logicalX = clampedX;
-emoji.dataset.logicalY = clampedY;
-emoji.style.top = `${clampedY}px`;
-emoji.style.fontSize = `${Math.max(16, 64 / zoomLevel)}px`;
-emoji.style.zIndex = "10";
-makeDraggable(emoji);
-display.appendChild(emoji);
-console.log("📌 Appending emoji to zoom-content");
-console.log("🧭 Emoji z-index set to:", getComputedStyle(emoji).zIndex);
-  
-// ✅ Save to Firestore with creatorUid
-db.collection("sessions").doc(currentSessionId)
-  .collection("emojis").doc(id).set({
-    symbol,
-    x: clampedX,
-    y: clampedY,
-    id,
-    creatorUid: firebase.auth().currentUser.uid, // 👈 This is the important addition
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-}
-
 function makeDraggable(el) {
   let startX, startY, initialLeft, initialTop;
 
@@ -1062,6 +980,7 @@ function makeDraggable(el) {
     };
   };
 }
+
 function loadAllDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!sessionId) return;

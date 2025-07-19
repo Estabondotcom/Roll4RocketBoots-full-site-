@@ -64,7 +64,6 @@ if (previouslySaved) {
     if (document.getElementById('items-container').children.length === 0) addItem();
   
     setupChatListener(sessionId);
-    listenForEmojis();
     listenForDisplayImageUpdates();
     listenForDrawings();
     

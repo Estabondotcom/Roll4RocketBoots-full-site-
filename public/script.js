@@ -405,9 +405,6 @@ function applyTransform() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawFromBuffer();
-
-  // ✅ Apply transform and reposition emojis
-  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
   updateEmojiPositions();
 }
 

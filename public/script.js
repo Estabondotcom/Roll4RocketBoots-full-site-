@@ -681,12 +681,10 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
 function cleardisplay() {
   const zoomContent = document.getElementById("zoom-content");
   if (zoomContent) {
-    // ✅ Remove the image only (not emojis if they're separate)
     const img = zoomContent.querySelector("img");
     if (img) img.remove();
   }
 
-  // ✅ Reset zoom/pan if you want
   zoomLevel = 1;
   panX = 0;
   panY = 0;

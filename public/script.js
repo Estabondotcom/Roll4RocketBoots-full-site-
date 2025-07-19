@@ -997,8 +997,8 @@ if (user) {
 }
 
 emoji.dataset.id = id;
-emoji.dataset.logicalX = x;
-emoji.dataset.logicalY = y;
+emoji.dataset.logicalX = clampedX;
+emoji.dataset.logicalY = clampedY;
 emoji.style.top = `${clampedY}px`;
 emoji.style.fontSize = `${Math.max(16, 64 / zoomLevel)}px`;
 emoji.style.zIndex = "10";

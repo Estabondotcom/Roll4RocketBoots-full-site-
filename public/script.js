@@ -958,7 +958,6 @@ function makeDraggable(el) {
         const newX = parseFloat(el.style.left);
         const newY = parseFloat(el.style.top);
         db.collection("sessions").doc(currentSessionId)
-          .collection("emojis").doc(id)
           .update({ x: newX, y: newY });
       }
     };

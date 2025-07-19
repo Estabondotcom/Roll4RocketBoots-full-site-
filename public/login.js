@@ -2,7 +2,6 @@ let selectedSessionId = null;
 let currentUserRole = null;
 let currentSessionId = null;
 let latestDisplayImage = null;
-let emojiUnsubscribe = null;
 
 // 🔼 Near top of login.js
 function preloadDisplayImage() {

@@ -47,10 +47,13 @@ if (previouslySaved) {
   console.log("🔄 Auto-loading character:", previouslySaved);
   loadCharacterByName(previouslySaved);
   disableCharacterInputs(false);
+  localStorage.setItem("autoSaveCharacterName", previouslySaved);
+  window._lastSavedCharacterName = previouslySaved;
 } else {
   console.log("🆕 No saved character for session, prompting...");
   disableCharacterInputs(true);
-  loadCharacterFromFirestore(); // show modal
+  document.getElementById("player-name").value = ""; // clear autofill just in case
+  loadCharacterFromFirestore(); // shows modal
 }
 
     document.getElementById("session-screen").style.display = "none";
@@ -59,11 +62,7 @@ if (previouslySaved) {
     if (document.getElementById('skills-container').children.length === 0) addSkill('Do anything');
     if (document.getElementById('conditions-container').children.length === 0) addCondition();
     if (document.getElementById('items-container').children.length === 0) addItem();
-    if (!localStorage.getItem("autoSaveCharacterName")) {
-  disableCharacterInputs(true);
-  loadCharacterFromFirestore(); // prompt appears here
-}
-
+  
     setupChatListener(sessionId);
     listenForEmojis();
     listenForDisplayImageUpdates();
@@ -109,6 +108,10 @@ function loadCharacterByName(name) {
       localStorage.setItem("autoSaveCharacterName", name);
       window._lastSavedCharacterName = name;
     });
+  if (!localStorage.getItem("autoSaveInitialized")) {
+  setupAutoSaveListeners();
+  localStorage.setItem("autoSaveInitialized", "true");
+  console.log("✅ Autosave listeners activated.");
 }
 
 function login() {

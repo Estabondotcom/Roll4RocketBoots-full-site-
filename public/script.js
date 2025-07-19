@@ -366,6 +366,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 }); 
+function updateEmojiPositions() {
+  const emojis = document.querySelectorAll('.draggable-emoji');
+  emojis.forEach(emoji => {
+    const x = parseFloat(emoji.dataset.logicalX || 0);
+    const y = parseFloat(emoji.dataset.logicalY || 0);
+    emoji.style.left = (x * zoomLevel + panX) + 'px';
+    emoji.style.top = (y * zoomLevel + panY) + 'px';
+  });
+}
 
  function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
@@ -395,6 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
    drawFromBuffer();
+   applyTransform() {
+  zoomContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  updateEmojiPositions();
+   }
 }
 
 function toggleShowAndTell() {

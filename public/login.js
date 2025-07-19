@@ -41,6 +41,17 @@ function selectSession(sessionId) {
       currentUserRole = "player";
       document.getElementById("gm-tools-button").style.display = "none";
     }
+const previouslySaved = localStorage.getItem("char_for_session_" + sessionId);
+
+if (previouslySaved) {
+  console.log("🔄 Auto-loading character:", previouslySaved);
+  loadCharacterByName(previouslySaved);
+  disableCharacterInputs(false);
+} else {
+  console.log("🆕 No saved character for session, prompting...");
+  disableCharacterInputs(true);
+  loadCharacterFromFirestore(); // show modal
+}
 
     document.getElementById("session-screen").style.display = "none";
     document.getElementById("app-content").style.display = "flex";
@@ -63,6 +74,41 @@ function selectSession(sessionId) {
     alert("Failed to load session info.");
     
   });
+}
+function loadCharacterByName(name) {
+  const user = auth.currentUser;
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!user || !sessionId || !name) return;
+
+  db.collection("users").doc(user.uid).collection("characters").doc(name).get()
+    .then(doc => {
+      const data = doc.data();
+      if (!data) return alert("Character not found!");
+
+      document.getElementById("player-name").value = data.name || "";
+      document.getElementById("exp-value").textContent = data.exp || 0;
+      document.getElementById("luck-value").textContent = data.luck || 1;
+
+      const woundButtons = document.querySelectorAll('.wounds button');
+      woundButtons.forEach((btn, i) => {
+        btn.classList.toggle('active', (data.wounds || [])[i] || false);
+      });
+
+      document.getElementById("skills-container").innerHTML = "";
+      (data.skills || []).forEach(skill => addSkill(skill));
+
+      document.getElementById("items-container").innerHTML = "";
+      (data.items || []).forEach(item => addItem(item));
+
+      document.getElementById("conditions-container").innerHTML = "";
+      (data.conditions || []).forEach(cond => {
+        addCondition(typeof cond === 'string' ? cond : cond.name);
+      });
+
+      // Save state
+      localStorage.setItem("autoSaveCharacterName", name);
+      window._lastSavedCharacterName = name;
+    });
 }
 
 function login() {
@@ -186,11 +232,10 @@ function saveCharacterToFirestore() {
   .then(() => {
     alert(`Character '${characterName}' saved to Firestore!`);
         window._lastSavedCharacterName = characterName;
-    localStorage.setItem("autoSaveCharacterName", characterName);
-
+    localStorage.setItem("char_for_session_" + currentSessionId, characterName);
 
     // ✅ Store the name for autosave use
-    localStorage.setItem("autoSaveCharacterName", characterName);
+    localStorage.setItem("char_for_session_" + currentSessionId, characterName);
 
     // ✅ Activate autosave listeners if not already set
     if (!localStorage.getItem("autoSaveInitialized")) {

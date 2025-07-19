@@ -113,7 +113,7 @@ function loadCharacterByName(name) {
   localStorage.setItem("autoSaveInitialized", "true");
   console.log("✅ Autosave listeners activated.");
 }
-
+}
 function login() {
   const email = document.getElementById("authEmail").value;
   const password = document.getElementById("authPassword").value;

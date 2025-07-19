@@ -1116,6 +1116,7 @@ function setupDrawingCanvas() {
   listenForDrawings();
 
   function getTrueCoords(e) {
+    const zoomContent = document.getElementById("zoom-content");
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoomLevel;
     const y = (e.clientY - rect.top) / zoomLevel;

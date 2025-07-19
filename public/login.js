@@ -48,6 +48,10 @@ function selectSession(sessionId) {
     if (document.getElementById('skills-container').children.length === 0) addSkill('Do anything');
     if (document.getElementById('conditions-container').children.length === 0) addCondition();
     if (document.getElementById('items-container').children.length === 0) addItem();
+    if (!localStorage.getItem("autoSaveCharacterName")) {
+  disableCharacterInputs(true);
+  loadCharacterFromFirestore(); // prompt appears here
+}
 
     setupChatListener(sessionId);
     listenForEmojis();
@@ -370,6 +374,7 @@ function confirmCharacterLoad() {
       alert("Failed to load character.");
       window._lastSavedCharacterName = selectedName;
 localStorage.setItem("autoSaveCharacterName", selectedName);
+disableCharacterInputs(false);
 
     });
 }
@@ -672,29 +677,36 @@ function setupAutoSaveListeners() {
 
   const triggerSave = () => {
     if (!localStorage.getItem("autoSaveCharacterName")) return;
-
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       silentAutoSaveCharacter();
       console.log("💾 Autosave triggered");
-    }, 500); // Wait 500ms after last input before saving
+    }, 800);
   };
 
-  const elements = document.querySelectorAll(
-    '#player-name, #exp-value, #luck-value, .skill-input, .item-input, .condition-input, .skill-level, .wounds button'
-  );
+  const observeAndBind = () => {
+    const charForm = document.getElementById("char-form");
+    const triggerEvents = ["input", "change", "click"];
 
-  elements.forEach(el => {
-    el.addEventListener("input", triggerSave);
-    el.addEventListener("change", triggerSave);
-    el.addEventListener("click", triggerSave);
+    const attach = el => {
+      triggerEvents.forEach(event =>
+        el.addEventListener(event, triggerSave)
+      );
+    };
+
+    charForm.querySelectorAll("input, button, textarea, select").forEach(attach);
+  };
+
+  // First run
+  observeAndBind();
+
+  // Then re-run on DOM changes
+  new MutationObserver(observeAndBind).observe(document.getElementById("char-form"), {
+    childList: true,
+    subtree: true
   });
-
-  // Re-attach for newly added elements
-  const observer = new MutationObserver(() => setupAutoSaveListeners());
-  observer.observe(document.getElementById("char-form"), { childList: true, subtree: true });
-  
 }
+
 function listenForEmojis() {
   const display = document.getElementById("zoom-content");
   if (!display) {
@@ -788,6 +800,18 @@ function listenForDrawings() {
         }
       });
     });
+}
+
+function disableCharacterInputs(disabled = true) {
+  const selectors = [
+    '#char-form input', '#char-form button', '#exp-minus', '#exp-plus',
+    '#luck-minus', '#luck-plus'
+  ];
+  selectors.forEach(selector => {
+    document.querySelectorAll(selector).forEach(el => {
+      if (!el.id.includes("player-name")) el.disabled = disabled;
+    });
+  });
 }
 
 

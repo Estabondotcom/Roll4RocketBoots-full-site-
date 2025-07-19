@@ -1398,6 +1398,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
 });
 
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage();
+  }
+});
+
 
 window.loadAllDrawings = loadAllDrawings;
 window.addSkill = addSkill;

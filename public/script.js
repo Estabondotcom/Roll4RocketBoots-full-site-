@@ -703,20 +703,6 @@ function cleardisplay() {
     currentDisplayImage: firebase.firestore.FieldValue.delete(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
-
-  // ✅ Also remove emojis (already in your version)
-  db.collection("sessions").doc(sessionId).collection("emojis").get()
-    .then(snapshot => {
-      const batch = db.batch();
-      snapshot.forEach(doc => batch.delete(doc.ref));
-      return batch.commit();
-    })
-    .then(() => {
-      console.log("✅ Emojis cleared from Firestore");
-    })
-    .catch(err => {
-      console.error("❌ Failed to clear emojis:", err);
-    });
 }
 
 function clearchat() {

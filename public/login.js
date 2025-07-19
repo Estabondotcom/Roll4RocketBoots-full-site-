@@ -432,44 +432,6 @@ function listenForDisplayImageUpdates() {
   const sessionId = localStorage.getItem("currentSessionId");
   if (!display || !sessionId) return;
 
-  // Cancel previous listener
-  if (emojiUnsubscribe) emojiUnsubscribe();
-
-  // 🔁 Listen to emoji changes
-  emojiUnsubscribe = db.collection("sessions").doc(sessionId).collection("emojis")
-    .onSnapshot(snapshot => {
-      snapshot.docChanges().forEach(change => {
-        const data = change.doc.data();
-        const { id, symbol, x, y } = data;
-
-        if (change.type === "added") {
-          if (!display.querySelector(`[data-id="${id}"]`)) {
-            const emoji = document.createElement("div");
-            emoji.className = "draggable-emoji";
-            emoji.textContent = symbol;
-            emoji.dataset.id = id;
-            emoji.style.left = x + "px";
-            emoji.style.top = y + "px";
-            makeDraggable(emoji);
-            display.appendChild(emoji);
-          }
-        }
-
-        if (change.type === "modified") {
-          const emoji = display.querySelector(`[data-id="${id}"]`);
-          if (emoji) {
-            emoji.style.left = x + "px";
-            emoji.style.top = y + "px";
-          }
-        }
-
-        if (change.type === "removed") {
-          const emoji = display.querySelector(`[data-id="${id}"]`);
-          if (emoji) emoji.remove();
-        }
-      });
-    });
-
  // Watch display image itself
 db.collection("sessions").doc(sessionId).onSnapshot(doc => {
   const data = doc.data();

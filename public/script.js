@@ -518,62 +518,78 @@ function loadGMImages() {
     gallery.innerHTML = "";
 
     Object.entries(folderMap).forEach(([folderName, images]) => {
-      const section = document.createElement("div");
-      section.innerHTML = `<h3 style="color:white;">📁 ${folderName}</h3>`;
+  const section = document.createElement("div");
 
-      images.forEach(({ name, url, id }) => {
-        const wrapper = document.createElement("div");
-        wrapper.style = "display: flex; flex-direction: column; align-items: center; border: 1px solid #555; padding: 5px; background: #111;";
+  // Create folder header (clickable)
+  const header = document.createElement("h3");
+  header.style.color = "white";
+  header.style.cursor = "pointer";
+  header.textContent = `📁 ${folderName}`;
+  
+  // Create a collapsible content container
+  const content = document.createElement("div");
+  content.style.display = "none"; // collapsed by default
+  content.style.marginLeft = "10px";
 
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = name;
-        img.style = "width: 100px; height: auto; margin-bottom: 5px;";
-
-        const label = document.createElement("div");
-        label.textContent = name;
-        label.style = "font-size: 12px; color: white;";
-
-        const btnGroup = document.createElement("div");
-        btnGroup.style = "margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;";
-
-        const toDisplay = document.createElement("button");
-        toDisplay.textContent = "display";
-        toDisplay.onclick = () => pushToDisplayArea(url);
-
-        const toChat = document.createElement("button");
-        toChat.textContent = "Chat";
-        toChat.onclick = () => pushToChat(url, name);
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "❌";
-        deleteBtn.onclick = () => deleteGMImage(sessionId, id, name, wrapper);
-
-        [toDisplay, toChat, deleteBtn].forEach(btn => {
-          btn.style.padding = "2px 6px";
-          btn.style.fontSize = "12px";
-          btn.style.borderRadius = "4px";
-          btn.style.backgroundColor = "#333";
-          btn.style.color = "#fff";
-          btn.style.border = "1px solid #666";
-          btn.style.cursor = "pointer";
-        });
-
-        btnGroup.appendChild(toDisplay);
-        btnGroup.appendChild(toChat);
-        btnGroup.appendChild(deleteBtn);
-
-        wrapper.appendChild(img);
-        wrapper.appendChild(label);
-        wrapper.appendChild(btnGroup);
-
-        section.appendChild(wrapper);
-      });
-
-      gallery.appendChild(section);
-    });
+  header.addEventListener("click", () => {
+    content.style.display = content.style.display === "none" ? "block" : "none";
   });
- }
+
+  images.forEach(({ name, url, id }) => {
+    const wrapper = document.createElement("div");
+    wrapper.style = "display: flex; flex-direction: column; align-items: center; border: 1px solid #555; padding: 5px; background: #111; margin-bottom: 6px;";
+
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = name;
+    img.style = "width: 100px; height: auto; margin-bottom: 5px;";
+
+    const label = document.createElement("div");
+    label.textContent = name;
+    label.style = "font-size: 12px; color: white;";
+
+    const btnGroup = document.createElement("div");
+    btnGroup.style = "margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;";
+
+    const toDisplay = document.createElement("button");
+    toDisplay.textContent = "display";
+    toDisplay.onclick = () => pushToDisplayArea(url);
+
+    const toChat = document.createElement("button");
+    toChat.textContent = "Chat";
+    toChat.onclick = () => pushToChat(url, name);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "❌";
+    deleteBtn.onclick = () => deleteGMImage(sessionId, id, name, wrapper);
+
+    [toDisplay, toChat, deleteBtn].forEach(btn => {
+      btn.style.padding = "2px 6px";
+      btn.style.fontSize = "12px";
+      btn.style.borderRadius = "4px";
+      btn.style.backgroundColor = "#333";
+      btn.style.color = "#fff";
+      btn.style.border = "1px solid #666";
+      btn.style.cursor = "pointer";
+    });
+
+    btnGroup.appendChild(toDisplay);
+    btnGroup.appendChild(toChat);
+    btnGroup.appendChild(deleteBtn);
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(label);
+    wrapper.appendChild(btnGroup);
+
+    content.appendChild(wrapper);
+  });
+
+  section.appendChild(header);
+  section.appendChild(content);
+  gallery.appendChild(section);
+  });
+ });
+}
 
  function resizeCanvasSmart() {
   applyTransform();

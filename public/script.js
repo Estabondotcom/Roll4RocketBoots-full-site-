@@ -1300,28 +1300,29 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
-    // ✅ Add this here:
+
   const clearBtn = document.getElementById("clear-button");
   if (clearBtn) {
     clearBtn.onclick = clearMyDrawings;
   } else {
     console.warn("❌ Could not find #clear-button to assign clearMyDrawings");
   }
-});
 
-document.getElementById('chatInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendChatMessage();
-  }
-});
-document.getElementById("gm-image-upload").addEventListener("change", function () {
-  const filenameSpan = document.getElementById("gm-upload-filename");
-  if (this.files && this.files.length > 0) {
-    filenameSpan.textContent = this.files[0].name;
-  } else {
-    filenameSpan.textContent = "";
-  }
+  document.getElementById('chatInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+
+  document.getElementById("gm-image-upload").addEventListener("change", function () {
+    const filenameSpan = document.getElementById("gm-upload-filename");
+    if (this.files && this.files.length > 0) {
+      filenameSpan.textContent = this.files[0].name;
+    } else {
+      filenameSpan.textContent = "";
+    }
+  });
 });
 
 

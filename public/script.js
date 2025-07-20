@@ -505,83 +505,77 @@ function loadGMImages() {
   const sessionId = localStorage.getItem("currentSessionId");
 
   db.collection("sessions").doc(sessionId).collection("gmimages").get().then(snapshot => {
-    gallery.innerHTML = "";
+    const folderMap = {};
+
     snapshot.forEach(doc => {
-      const { name, url } = doc.data();
-      const docId = doc.id;
+      const data = doc.data();
+      const folder = data.folder || "Unsorted";
+      if (!folderMap[folder]) folderMap[folder] = [];
+      folderMap[folder].push({ id: doc.id, ...data });
+    });
 
-      const wrapper = document.createElement("div");
-      wrapper.style = "display: flex; flex-direction: column; align-items: center; border: 1px solid #555; padding: 5px; background: #111;";
+    gallery.innerHTML = "";
 
-      const img = document.createElement("img");
-      img.src = url;
-      img.alt = name;
-      img.style = "width: 100px; height: auto; margin-bottom: 5px;";
+    Object.entries(folderMap).forEach(([folderName, images]) => {
+      const section = document.createElement("div");
+      section.innerHTML = `<h3 style="color:white;">📁 ${folderName}</h3>`;
 
-      const label = document.createElement("div");
-      label.textContent = name;
-      label.style = "font-size: 12px; color: white;";
+      images.forEach(({ name, url, id }) => {
+        const wrapper = document.createElement("div");
+        wrapper.style = "display: flex; flex-direction: column; align-items: center; border: 1px solid #555; padding: 5px; background: #111;";
 
-      const btnGroup = document.createElement("div");
-      btnGroup.style = "margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;";
-      
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = name;
+        img.style = "width: 100px; height: auto; margin-bottom: 5px;";
 
-      const toDisplay = document.createElement("button");
-      toDisplay.textContent = "display";
-      toDisplay.onclick = () => pushToDisplayArea(url);
+        const label = document.createElement("div");
+        label.textContent = name;
+        label.style = "font-size: 12px; color: white;";
 
-      const toChat = document.createElement("button");
-      toChat.textContent = "Chat";
-      toChat.onclick = () => pushToChat(url, name);
+        const btnGroup = document.createElement("div");
+        btnGroup.style = "margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;";
 
-      const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "❌";
-      deleteBtn.onclick = () => deleteGMImage(sessionId, docId, name, wrapper);
-    
-      [toDisplay, toChat, deleteBtn].forEach(btn => {
-  btn.style.padding = "2px 6px";
-  btn.style.fontSize = "12px";
-  btn.style.borderRadius = "4px";
-  btn.style.backgroundColor = "#333";
-  btn.style.color = "#fff";
-  btn.style.border = "1px solid #666";
-  btn.style.cursor = "pointer";
-});
+        const toDisplay = document.createElement("button");
+        toDisplay.textContent = "display";
+        toDisplay.onclick = () => pushToDisplayArea(url);
 
-      btnGroup.appendChild(toDisplay);
-      btnGroup.appendChild(toChat);
-      btnGroup.appendChild(deleteBtn);
+        const toChat = document.createElement("button");
+        toChat.textContent = "Chat";
+        toChat.onclick = () => pushToChat(url, name);
 
-      wrapper.appendChild(img);
-      wrapper.appendChild(label);
-      wrapper.appendChild(btnGroup);
-      gallery.appendChild(wrapper);
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "❌";
+        deleteBtn.onclick = () => deleteGMImage(sessionId, id, name, wrapper);
+
+        [toDisplay, toChat, deleteBtn].forEach(btn => {
+          btn.style.padding = "2px 6px";
+          btn.style.fontSize = "12px";
+          btn.style.borderRadius = "4px";
+          btn.style.backgroundColor = "#333";
+          btn.style.color = "#fff";
+          btn.style.border = "1px solid #666";
+          btn.style.cursor = "pointer";
+        });
+
+        btnGroup.appendChild(toDisplay);
+        btnGroup.appendChild(toChat);
+        btnGroup.appendChild(deleteBtn);
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(label);
+        wrapper.appendChild(btnGroup);
+
+        section.appendChild(wrapper);
+      });
+
+      gallery.appendChild(section);
     });
   });
-const folderMap = {};
-
-snapshot.forEach(doc => {
-  const data = doc.data();
-  const folder = data.folder || "Unsorted";
-  if (!folderMap[folder]) folderMap[folder] = [];
-  folderMap[folder].push({ id: doc.id, ...data });
-});
-
-// Now loop through each folder
-gallery.innerHTML = "";
-Object.entries(folderMap).forEach(([folderName, images]) => {
-  const section = document.createElement("div");
-  section.innerHTML = `<h3 style="color:white;">📁 ${folderName}</h3>`;
-  images.forEach(({ name, url, id }) => {
-    // build each image element like before
-  });
-  gallery.appendChild(section);
-});
 }
-  
+
  function resizeCanvasSmart() {
   applyTransform();
-
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {

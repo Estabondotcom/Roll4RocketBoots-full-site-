@@ -129,45 +129,43 @@ function login() {
 }
 
 function signup() {
-  const email = document.getElementById("authEmail").value.trim();
+  const email = document.getElementById("authEmail").value;
   const password = document.getElementById("authPassword").value;
-  const username = document.getElementById("signup-username").value.trim();
 
-  if (!email || !password || !username) {
-    alert("Please fill in all fields.");
+  firebase.auth().createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      alert("Signed up successfully!");
+      // Redirect or show username input form/modal
+      showUsernamePrompt(); // <-- New step
+    })
+    .catch((error) => {
+      console.error("Signup error:", error);
+      alert(error.message);
+    });
+}
+
+function submitUsername() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const user = firebase.auth().currentUser;
+
+  if (!user || !username) {
+    alert("You must enter a username.");
     return;
   }
 
-  // Step 1: Check if the username is already taken
-  db.collection("users").where("username", "==", username).get()
-    .then(snapshot => {
-      if (!snapshot.empty) {
-        alert("Username already taken. Please choose another.");
-        throw new Error("Username already taken.");
-      }
-
-      // Step 2: Proceed with signup if username is unique
-      return firebase.auth().createUserWithEmailAndPassword(email, password);
-    })
-    .then((userCredential) => {
-      const user = userCredential.user;
-      return db.collection("users").doc(user.uid).set({
-        email: user.email,
-        username: username,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    })
-    .then(() => {
-      alert("✅ Account created!");
-      // You can optionally redirect or switch to login page here
-    })
-    .catch((error) => {
-      if (error.message !== "Username already taken.") {
-        console.error("Signup error:", error);
-        alert(error.message);
-      }
-    });
+  db.collection("users").doc(user.uid).set({
+    email: user.email,
+    username: username,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    alert("Username saved!");
+    // Proceed to app or redirect
+  }).catch(err => {
+    console.error("Failed to save username:", err);
+    alert("Error saving username.");
+  });
 }
+
 
 function logout() {
   auth.signOut().then(() => alert("Logged out successfully!"));

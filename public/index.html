@@ -288,6 +288,10 @@
   <div style="background:#222; padding:20px; max-width:90%; max-height:90%; overflow:auto; border:2px solid #555; position:relative;">
     <span onclick="closeGMImageModal()" style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:20px; color:white;">❌</span>
     <h2 style="color:white;">gallery</h2>
+    <label>
+  Folder:
+  <input type="text" id="gm-folder-input" placeholder="e.g., Maps or NPCs">
+</label>
   <input type="file" id="gm-image-upload" accept="image/*" />
   <button onclick="uploadGMImage()">Upload</button>
   <div id="upload-status" style="margin-top: 5px; color: lightgreen;"></div>

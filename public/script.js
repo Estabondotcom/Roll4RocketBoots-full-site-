@@ -479,20 +479,21 @@ function uploadGMImage() {
       uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
         status.textContent = "✅ Upload complete!";
         console.log("File available at", downloadURL);
+const folder = document.getElementById("gm-folder-input").value.trim() || "Unsorted";
 
-        // Optionally store the URL in Firestore for later use
-        firebase.firestore()
-          .collection("sessions")
-          .doc(sessionId)
-          .collection("gmimages")
-          .add({
-            name: file.name,
-            url: downloadURL,
-            uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
-              }).then(() => {
-              loadGMImages(); // 🔁 Refresh image list in modal
-          });
-      });
+firebase.firestore()
+  .collection("sessions")
+  .doc(sessionId)
+  .collection("gmimages")
+  .add({
+    name: file.name,
+    url: downloadURL,
+    folder,
+    uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(() => {
+    loadGMImages(); // refresh display
+  });
     }
   );
 }
@@ -557,7 +558,27 @@ function loadGMImages() {
       gallery.appendChild(wrapper);
     });
   });
+const folderMap = {};
+
+snapshot.forEach(doc => {
+  const data = doc.data();
+  const folder = data.folder || "Unsorted";
+  if (!folderMap[folder]) folderMap[folder] = [];
+  folderMap[folder].push({ id: doc.id, ...data });
+});
+
+// Now loop through each folder
+gallery.innerHTML = "";
+Object.entries(folderMap).forEach(([folderName, images]) => {
+  const section = document.createElement("div");
+  section.innerHTML = `<h3 style="color:white;">📁 ${folderName}</h3>`;
+  images.forEach(({ name, url, id }) => {
+    // build each image element like before
+  });
+  gallery.appendChild(section);
+});
 }
+  
  function resizeCanvasSmart() {
   applyTransform();
 

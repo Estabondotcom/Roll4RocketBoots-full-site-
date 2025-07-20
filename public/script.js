@@ -1177,34 +1177,6 @@ function setDrawingMode(mode) {
   }
 }
 
-function setDrawingMode(mode) {
-  const canvas = document.getElementById('drawing-canvas');
-  const penBtn = document.getElementById('pen-tool-btn');
-  const eraseBtn = document.getElementById('eraser-tool-btn');
-  const zoomContainer = document.getElementById('zoom-container');
-
-  if (currentTool === mode) {
-    // Deselect tool
-    currentTool = null;
-    canvas.style.pointerEvents = "none";
-    zoomContainer.classList.remove("no-pan");
-    penBtn.classList.remove("active-tool");
-    eraseBtn.classList.remove("active-tool");
-    canvas.style.cursor = "default";
-  } else {
-    currentTool = mode;
-    canvas.style.pointerEvents = "auto";
-    zoomContainer.classList.add("no-pan");
-
-    // Update button styles
-    penBtn.classList.toggle("active-tool", mode === 'pen');
-    eraseBtn.classList.toggle("active-tool", mode === 'erase');
-
-    // Set appropriate cursor
-    canvas.style.cursor = mode === 'pen' ? 'crosshair' : 'cell';
-  }
-}
-
 function clearCanvas() {
   const user = firebase.auth().currentUser;
   const sessionId = localStorage.getItem("currentSessionId");

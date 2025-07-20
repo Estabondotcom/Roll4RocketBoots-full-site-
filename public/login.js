@@ -885,5 +885,13 @@ function promptAndCreateCharacter() {
       alert("Failed to create character.");
     });
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const saveBtn = document.getElementById("saveUsernameBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", submitUsername);
+  } else {
+    console.warn("❌ saveUsernameBtn not found in DOM.");
+  }
+});
 
 

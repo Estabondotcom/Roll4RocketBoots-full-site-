@@ -572,6 +572,7 @@ function loadGMImages() {
       gallery.appendChild(section);
     });
   });
+ }
 }
 
  function resizeCanvasSmart() {

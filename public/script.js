@@ -1289,7 +1289,7 @@ penColorPicker.addEventListener('change', () => {
   syncPenColorFromPicker(); // or however you're applying the color
   updateSliderFill();       // update fill on final pick too
 });
-}
+
 
 function clearMyDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");

@@ -1315,6 +1315,15 @@ document.getElementById('chatInput').addEventListener('keydown', e => {
     sendChatMessage();
   }
 });
+document.getElementById("gm-image-upload").addEventListener("change", function () {
+  const filenameSpan = document.getElementById("gm-upload-filename");
+  if (this.files && this.files.length > 0) {
+    filenameSpan.textContent = this.files[0].name;
+  } else {
+    filenameSpan.textContent = "";
+  }
+});
+
 
 function clearMyDrawings() {
   const sessionId = localStorage.getItem("currentSessionId");

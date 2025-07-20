@@ -1309,6 +1309,10 @@ function clearMyDrawings() {
     drawFromBuffer();
   });
 }
+function showUsernamePrompt() {
+  document.getElementById("usernamePrompt").style.display = "block";
+}
+
 
 document.addEventListener("DOMContentLoaded", () => {
   syncPenColorFromPicker();         // sets penColor and updates CSS variable

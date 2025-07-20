@@ -203,7 +203,20 @@ auth.onAuthStateChanged((user) => {
   document.getElementById("session-screen").style.display = "none";
   document.getElementById("create-session-screen").style.display = "none";
   document.getElementById("app-content").style.display = "none";
-  if (user) loadSessionsForUser(user.uid);
+
+  if (user) {
+    db.collection("users").doc(user.uid).get().then((doc) => {
+      if (doc.exists && doc.data()?.username) {
+        // ✅ Username already set
+        loadSessionsForUser(user.uid);
+      } else {
+        // 👤 Prompt for username if not set
+        showUsernameModal();
+      }
+    }).catch((err) => {
+      console.error("Failed to check username:", err);
+    });
+  }
 });
 
 function showCreateSessionScreen() {

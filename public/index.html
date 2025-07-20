@@ -292,7 +292,9 @@
   Folder:
   <input type="text" id="gm-folder-input" placeholder="e.g., Maps or NPCs">
 </label>
-  <input type="file" id="gm-image-upload" accept="image/*" />
+  <input type="file" id="gm-image-upload" accept="image/*">
+    <input type="file" id="gm-image-upload">
+     <span id="gm-upload-filename" style="color: white; margin-left: 10px;"></span>
   <button onclick="uploadGMImage()">Upload</button>
   <div id="upload-status" style="margin-top: 5px; color: lightgreen;"></div>
     <div id="image-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>

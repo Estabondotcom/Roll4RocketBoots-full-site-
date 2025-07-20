@@ -133,16 +133,49 @@ function signup() {
   const password = document.getElementById("authPassword").value;
 
   firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      alert("Signed up successfully!");
-      // Redirect or show username input form/modal
-      showUsernamePrompt(); // <-- New step
+    .then(() => {
+      showUsernameModal(); // show username modal
     })
     .catch((error) => {
       console.error("Signup error:", error);
       alert(error.message);
     });
 }
+
+function showUsernameModal() {
+  document.getElementById("username-modal").style.display = "flex";
+}
+
+function submitUsername() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const user = firebase.auth().currentUser;
+
+  if (!username || !user) {
+    alert("Please enter a username.");
+    return;
+  }
+
+  db.collection("users").doc(user.uid).set({
+    email: user.email,
+    username,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    document.getElementById("username-status").style.display = "block";
+    document.getElementById("saveUsernameBtn").style.display = "none";
+    document.getElementById("usernameInput").disabled = true;
+    document.getElementById("nextButton").style.display = "inline-block";
+  }).catch(err => {
+    console.error("Error saving username:", err);
+    alert("Error saving username.");
+  });
+}
+
+document.getElementById("saveUsernameBtn").addEventListener("click", submitUsername);
+
+document.getElementById("nextButton").addEventListener("click", () => {
+  window.location.href = "session.html"; // change to your session page
+});
+
 
 function submitUsername() {
   const username = document.getElementById("usernameInput").value.trim();

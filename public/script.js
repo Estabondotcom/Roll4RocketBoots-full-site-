@@ -1223,15 +1223,6 @@ function clearAllDrawings() {
   });
 }
 
-function syncPenColorFromPicker() {
-  const picker = document.getElementById('pen-color');
-  if (picker) {
-    penColor = picker.value;
-    console.log("🎨 Synced penColor to:", penColor);
-  }
-}
-
-
 let penWidth = 4; // Default width
 
 function togglePenWidthSlider() {

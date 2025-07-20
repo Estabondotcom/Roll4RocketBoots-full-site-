@@ -495,9 +495,6 @@ firebase.firestore()
     loadGMImages(); // refresh display
   });
     }
-  );
-}
-    }
 function loadGMImages() {
   const gallery = document.getElementById("image-list");
   gallery.innerHTML = "<p>Loading...</p>";

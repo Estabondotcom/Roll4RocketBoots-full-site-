@@ -129,14 +129,43 @@ function login() {
 }
 
 function signup() {
-  const email = document.getElementById("authEmail").value;
+  const email = document.getElementById("authEmail").value.trim();
   const password = document.getElementById("authPassword").value;
+  const username = document.getElementById("signup-username").value.trim();
 
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(() => alert("Signup successful!"))
+  if (!email || !password || !username) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
+  // Step 1: Check if the username is already taken
+  db.collection("users").where("username", "==", username).get()
+    .then(snapshot => {
+      if (!snapshot.empty) {
+        alert("Username already taken. Please choose another.");
+        throw new Error("Username already taken.");
+      }
+
+      // Step 2: Proceed with signup if username is unique
+      return firebase.auth().createUserWithEmailAndPassword(email, password);
+    })
+    .then((userCredential) => {
+      const user = userCredential.user;
+      return db.collection("users").doc(user.uid).set({
+        email: user.email,
+        username: username,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    })
+    .then(() => {
+      alert("✅ Account created!");
+      // You can optionally redirect or switch to login page here
+    })
     .catch((error) => {
-      console.error("Signup Error:", error);
-      document.getElementById("loginError").textContent = "Signup failed: " + error.message;
+      if (error.message !== "Username already taken.") {
+        console.error("Signup error:", error);
+        alert(error.message);
+      }
     });
 }
 

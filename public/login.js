@@ -147,7 +147,7 @@ function showUsernameModal() {
 }
 
 function submitUsername() {
-  const username = document.getElementById("usernameInput").value.trim();
+  let username = document.getElementById("usernameInput").value.trim();
   const user = firebase.auth().currentUser;
 
   if (!username || !user) {
@@ -155,50 +155,41 @@ function submitUsername() {
     return;
   }
 
-  db.collection("users").doc(user.uid).set({
-    email: user.email,
-    username,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    document.getElementById("username-status").style.display = "block";
-    document.getElementById("saveUsernameBtn").style.display = "none";
-    document.getElementById("usernameInput").disabled = true;
-    document.getElementById("nextButton").style.display = "inline-block";
-  }).catch(err => {
-    console.error("Error saving username:", err);
-    alert("Error saving username.");
-  });
+  // Normalize to lowercase
+  const normalized = username.toLowerCase();
+
+  // Check if normalized username already exists
+  db.collection("users")
+    .where("normalizedUsername", "==", normalized)
+    .get()
+    .then((querySnapshot) => {
+      if (!querySnapshot.empty) {
+        alert("❌ Username is already taken (case-insensitive). Try another.");
+        return;
+      }
+
+      // Save original and normalized username
+      return db.collection("users").doc(user.uid).set({
+        email: user.email,
+        username: username,                  // Original casing (for display)
+        normalizedUsername: normalized,      // Lowercase (for checking)
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    })
+    .then(() => {
+      if (!user) return;
+
+      document.getElementById("username-status").textContent = "✅ Username saved!";
+      document.getElementById("username-status").style.display = "block";
+      document.getElementById("saveUsernameBtn").style.display = "none";
+      document.getElementById("usernameInput").disabled = true;
+      document.getElementById("nextButton").style.display = "inline-block";
+    })
+    .catch((error) => {
+      console.error("Error checking/saving username:", error);
+      alert("An error occurred. Please try again.");
+    });
 }
-
-document.getElementById("saveUsernameBtn").addEventListener("click", submitUsername);
-
-document.getElementById("nextButton").addEventListener("click", () => {
-  window.location.href = "session.html"; // change to your session page
-});
-
-
-function submitUsername() {
-  const username = document.getElementById("usernameInput").value.trim();
-  const user = firebase.auth().currentUser;
-
-  if (!user || !username) {
-    alert("You must enter a username.");
-    return;
-  }
-
-  db.collection("users").doc(user.uid).set({
-    email: user.email,
-    username: username,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    alert("Username saved!");
-    // Proceed to app or redirect
-  }).catch(err => {
-    console.error("Failed to save username:", err);
-    alert("Error saving username.");
-  });
-}
-
 
 function logout() {
   auth.signOut().then(() => alert("Logged out successfully!"));

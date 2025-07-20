@@ -47,13 +47,17 @@
   <h2>Welcome to Roll for Rocket Boots!</h2>
 
   <input type="email" id="authEmail" placeholder="Email">
-  <input type="text" id="signup-username" placeholder="Choose a username" required>
   <input type="password" id="authPassword" placeholder="Password">
 
   <div style="margin-top: 10px;">
     <button onclick="login()">Log In</button>
     <button onclick="signup()">Sign Up</button>
   </div>
+<div id="usernamePrompt" style="display:none;">
+  <label for="usernameInput">Choose a username:</label>
+  <input id="usernameInput" type="text" maxlength="20">
+  <button onclick="submitUsername()">Save Username</button>
+</div>
 
   <div id="loginError" style="color: red; margin-top: 10px;"></div>
 </div></div>

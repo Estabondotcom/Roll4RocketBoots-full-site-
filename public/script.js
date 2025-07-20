@@ -1289,6 +1289,26 @@ penColorPicker.addEventListener('change', () => {
   syncPenColorFromPicker(); // or however you're applying the color
   updateSliderFill();       // update fill on final pick too
 });
+}
+
+function clearMyDrawings() {
+  const sessionId = localStorage.getItem("currentSessionId");
+  const user = firebase.auth().currentUser;
+  if (!user || !sessionId) return;
+
+  const uid = user.uid;
+
+  // 1. Remove from Firestore
+  db.collection("sessions").doc(sessionId).collection("drawings").doc(uid).delete().then(() => {
+    console.log("🧼 Cleared drawing layer for user:", uid);
+
+    // 2. Remove from local canvas buffer
+    delete userCanvases[uid];
+
+    // 3. Redraw buffer
+    drawFromBuffer();
+  });
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   syncPenColorFromPicker();         // sets penColor and updates CSS variable
@@ -1324,27 +1344,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-
-function clearMyDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  const user = firebase.auth().currentUser;
-  if (!user || !sessionId) return;
-
-  const uid = user.uid;
-
-  // 1. Remove from Firestore
-  db.collection("sessions").doc(sessionId).collection("drawings").doc(uid).delete().then(() => {
-    console.log("🧼 Cleared drawing layer for user:", uid);
-
-    // 2. Remove from local canvas buffer
-    delete userCanvases[uid];
-
-    // 3. Redraw buffer
-    drawFromBuffer();
-  });
-}
-
 
 
 window.loadAllDrawings = loadAllDrawings;

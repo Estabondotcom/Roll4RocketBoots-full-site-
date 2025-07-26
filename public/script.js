@@ -403,27 +403,36 @@ function toggleShowAndTell() {
   document.getElementById("main-container").style.display = "none";
   document.getElementById("show-panel").style.display = "block";
 
-  // Only now insert the image and listen
   const container = document.getElementById("zoom-content");
   if (container && latestDisplayImage) {
     pushToDisplayArea(latestDisplayImage, false);
   }
+
   listenForDisplayImageUpdates(); 
   syncPenColorFromPicker();
-// Now start listening
-  const existingCanvas = document.getElementById("drawing-canvas");
-if (!existingCanvas) {
-  const canvas = document.createElement("canvas");
-  canvas.id = "drawing-canvas";
-  canvas.style.position = "absolute";
-  canvas.style.top = 0;
-  canvas.style.left = 0;
-  canvas.style.zIndex = 5;
-  canvas.style.pointerEvents = "none";
-  document.getElementById("zoom-content").appendChild(canvas);
-  setupDrawingCanvas();
-}
 
+  const existingCanvas = document.getElementById("drawing-canvas");
+  if (!existingCanvas) {
+    const canvas = document.createElement("canvas");
+    canvas.id = "drawing-canvas";
+    canvas.style.position = "absolute";
+    canvas.style.top = 0;
+    canvas.style.left = 0;
+    canvas.style.zIndex = 5;
+    canvas.style.pointerEvents = "none";
+    document.getElementById("zoom-content").appendChild(canvas);
+    setupDrawingCanvas();
+  }
+
+  // 👉 TEMP DEMO: initialize tab test content
+  if (document.getElementById("tab-bar")) {
+    const testTabs = [
+      { id: "map1", title: "City", imageUrl: "https://placekitten.com/500/400" },
+      { id: "map2", title: "Dungeon", imageUrl: "https://placebear.com/500/400" }
+    ];
+    renderTabs(testTabs, "map1");
+    showTabImage("https://placekitten.com/500/400");
+  }
 }
 
   function toggleCharacterPanel() {

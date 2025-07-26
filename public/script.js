@@ -606,74 +606,48 @@ function loadGMImages() {
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const container = document.getElementById("zoom-content");
-
-  const existingImg = document.getElementById("tab-image");
-  if (existingImg) {
-    existingImg.src = imageUrl;
-  } else {
-    console.warn("⚠️ tab-image not found in DOM.");
-  }
-
-  // (keep your canvas logic and applyTransform stuff here...)
-}
-
-
-  const img = document.createElement("img");
-  img.src = imageUrl;
-  img.style = "max-width: none"; // Prevent auto scaling
-  img.style.position = "absolute"; // allow panning
-  img.draggable = false;
-
-img.onload = () => {
-  const zoomContent = document.getElementById("zoom-content");
+  const img = document.getElementById("tab-image");
   const canvas = document.getElementById("drawing-canvas");
 
-  // Set initial zoom to fit
-  const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
-  const scaleX = containerBox.width / img.naturalWidth;
-  const scaleY = containerBox.height / img.naturalHeight;
-  const initialScale = Math.min(scaleX, scaleY);
-  zoomLevel = initialScale;
+  if (img) {
+    img.src = imageUrl;
 
-  panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
-  panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
+    img.onload = () => {
+      const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
+      const scaleX = containerBox.width / img.naturalWidth;
+      const scaleY = containerBox.height / img.naturalHeight;
+      const initialScale = Math.min(scaleX, scaleY);
+      zoomLevel = initialScale;
 
-  // Size canvas to match native image size (not scaled yet)
-  if (canvas) {
-  canvas.id = "drawing-canvas";
-  canvas.style.position = "absolute";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.pointerEvents = "none";
-  canvas.style.zIndex = "5"; 
+      panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
+      panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
 
+      applyTransform();
+      drawFromBuffer();
+      loadAllDrawings();
+    };
+  } else {
+    console.warn("⚠️ tab-image not found.");
   }
 
-  applyTransform();
-  drawFromBuffer();
-  loadAllDrawings();
-  };
+  // Ensure canvas exists
+  if (!canvas) {
+    const newCanvas = document.createElement("canvas");
+    newCanvas.id = "drawing-canvas";
+    newCanvas.style.position = "absolute";
+    newCanvas.style.top = 0;
+    newCanvas.style.left = 0;
+    newCanvas.style.zIndex = 5;
+    newCanvas.style.pointerEvents = "none";
+    container.appendChild(newCanvas);
+    setupDrawingCanvas();
+  }
 
- container.appendChild(img);
-
-// ✅ Re-insert canvas on top of image
-const existingCanvas = document.getElementById("drawing-canvas");
-if (!existingCanvas) {
-  const canvas = document.createElement("canvas");
-  canvas.id = "drawing-canvas";
-  canvas.style.position = "absolute";
-  canvas.style.top = 0;
-  canvas.style.left = 0;
-  canvas.style.zIndex = 5;
-  canvas.style.pointerEvents = "none";
-  container.appendChild(canvas);
-  setupDrawingCanvas(); // reinitialize
-}
   localStorage.setItem("gmDisplayImage", imageUrl);
 
   if (typeof window.resizeCanvasSmart === "function") {
-  window.resizeCanvasSmart();
-}
+    window.resizeCanvasSmart();
+  }
 
   if (updateFirestore) {
     const sessionId = localStorage.getItem("currentSessionId");
@@ -685,6 +659,7 @@ if (!existingCanvas) {
     }
   }
 }
+
 
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;

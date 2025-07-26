@@ -605,7 +605,10 @@ function loadGMImages() {
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
-  const container = document.getElementById("zoom-content");
+const img = document.getElementById("tab-image");
+if (img) {
+  img.src = imageUrl;
+}
   container.innerHTML = "";
 
   const img = document.createElement("img");

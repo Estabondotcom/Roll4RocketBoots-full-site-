@@ -1349,6 +1349,34 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+let currentTabId = null;
+
+function renderTabs(tabs, activeTabId) {
+  const tabBar = document.getElementById("tab-bar");
+  tabBar.innerHTML = "";
+
+  tabs.forEach(tab => {
+    const btn = document.createElement("button");
+    btn.textContent = tab.title;
+    btn.classList.add("tab-button");
+    if (tab.id === activeTabId) btn.classList.add("active");
+
+    btn.addEventListener("click", () => {
+      currentTabId = tab.id;
+      showTabImage(tab.imageUrl);
+      renderTabs(tabs, tab.id); // Re-render to update active state
+    });
+
+    tabBar.appendChild(btn);
+  });
+}
+
+function showTabImage(url) {
+  const img = document.getElementById("tab-image");
+  img.src = url || "";
+}
+
+
 
 window.loadAllDrawings = loadAllDrawings;
 window.addSkill = addSkill;

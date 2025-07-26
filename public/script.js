@@ -605,9 +605,11 @@ function loadGMImages() {
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
-const img = document.getElementById("tab-image");
-if (img) {
-  img.src = imageUrl;
+const existingImg = document.getElementById("tab-image");
+if (existingImg) {
+  existingImg.src = imageUrl;
+} else {
+  console.warn("⚠️ tab-image not found in DOM.");
 }
   container.innerHTML = "";
 

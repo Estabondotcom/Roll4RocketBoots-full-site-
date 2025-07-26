@@ -605,13 +605,18 @@ function loadGMImages() {
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
-const existingImg = document.getElementById("tab-image");
-if (existingImg) {
-  existingImg.src = imageUrl;
-} else {
-  console.warn("⚠️ tab-image not found in DOM.");
+  const container = document.getElementById("zoom-content");
+
+  const existingImg = document.getElementById("tab-image");
+  if (existingImg) {
+    existingImg.src = imageUrl;
+  } else {
+    console.warn("⚠️ tab-image not found in DOM.");
+  }
+
+  // (keep your canvas logic and applyTransform stuff here...)
 }
-  container.innerHTML = "";
+
 
   const img = document.createElement("img");
   img.src = imageUrl;

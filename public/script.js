@@ -210,7 +210,19 @@ function loadData() {
 
   alert('Character loaded!');
 }
-
+ function ensureTabImage() {
+  const container = document.getElementById("zoom-content");
+  if (!document.getElementById("tab-image")) {
+    const img = document.createElement("img");
+    img.id = "tab-image";
+    img.style.position = "absolute";
+    img.style.top = "0";
+    img.style.left = "0";
+    img.style.maxWidth = "none";
+    img.draggable = false;
+    container.appendChild(img);
+  }
+}
 
 function clearData() {
   localStorage.removeItem('rfrbCharacter');
@@ -423,20 +435,6 @@ function toggleShowAndTell() {
     document.getElementById("zoom-content").appendChild(canvas);
     setupDrawingCanvas();
   }
-  function ensureTabImage() {
-  const container = document.getElementById("zoom-content");
-  if (!document.getElementById("tab-image")) {
-    const img = document.createElement("img");
-    img.id = "tab-image";
-    img.style.position = "absolute";
-    img.style.top = "0";
-    img.style.left = "0";
-    img.style.maxWidth = "none";
-    img.draggable = false;
-    container.appendChild(img);
-  }
-}
-
 }
 
   function toggleCharacterPanel() {

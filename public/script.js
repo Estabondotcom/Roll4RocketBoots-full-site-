@@ -1372,7 +1372,11 @@ function renderTabs(tabs, activeTabId) {
 
 function showTabImage(url) {
   const img = document.getElementById("tab-image");
-  img.src = url || "";
+  if (img) {
+    img.src = url || "";
+  } else {
+    console.warn("⚠️ Tried to show image, but #tab-image is missing.");
+  }
 }
 
 

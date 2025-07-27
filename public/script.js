@@ -628,9 +628,9 @@ function showTabImage(url) {
   }
 }
 
- function ensureTabImage() {
+ function ensureTabImageExists() {
   const container = document.getElementById("zoom-content");
-  if (!document.getElementById("tab-image")) {
+  if (!document.getElementById("tab-image") && container) {
     const img = document.createElement("img");
     img.id = "tab-image";
     img.style.position = "absolute";
@@ -641,6 +641,7 @@ function showTabImage(url) {
     container.appendChild(img);
   }
 }
+
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const tabBar = document.getElementById("tab-bar");

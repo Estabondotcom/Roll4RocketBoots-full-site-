@@ -562,7 +562,12 @@ function loadGMImages() {
 
     const toDisplay = document.createElement("button");
     toDisplay.textContent = "display";
-    toDisplay.onclick = () => pushToDisplayArea(url);
+    toDisplay.onclick = () => {
+  toggleShowAndTell(); // Show & Tell panel must be visible
+  setTimeout(() => {
+    pushToDisplayArea(url);
+  }, 100); // Wait briefly to ensure DOM is ready
+};
 
     const toChat = document.createElement("button");
     toChat.textContent = "Chat";

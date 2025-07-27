@@ -616,6 +616,7 @@ function loadGMImages() {
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const tabBar = document.getElementById("tab-bar");
   const tabButtons = tabBar?.children || [];
+  ensureTabImageExists();
 
   // 🔍 If no tabs exist, prompt to create one and stop here
   if (tabButtons.length === 0) {

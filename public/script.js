@@ -423,16 +423,6 @@ function toggleShowAndTell() {
     document.getElementById("zoom-content").appendChild(canvas);
     setupDrawingCanvas();
   }
-
-  // 👉 TEMP DEMO: initialize tab test content
-  if (document.getElementById("tab-bar")) {
-    const testTabs = [
-      { id: "map1", title: "City", imageUrl: "https://placekitten.com/500/400" },
-      { id: "map2", title: "Dungeon", imageUrl: "https://placebear.com/500/400" }
-    ];
-    renderTabs(testTabs, "map1");
-    showTabImage("https://placekitten.com/500/400");
-  }
 }
 
   function toggleCharacterPanel() {

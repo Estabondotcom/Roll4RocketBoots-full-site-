@@ -712,8 +712,8 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
 function cleardisplay() {
   const zoomContent = document.getElementById("zoom-content");
   if (zoomContent) {
-    const img = zoomContent.querySelector("img");
-    if (img) img.remove();
+   const img = document.getElementById("tab-image");
+if (img) img.src = ""; // clear the image but leave it in the DOM
   }
 
   zoomLevel = 1;

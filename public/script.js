@@ -210,19 +210,6 @@ function loadData() {
 
   alert('Character loaded!');
 }
- function ensureTabImage() {
-  const container = document.getElementById("zoom-content");
-  if (!document.getElementById("tab-image")) {
-    const img = document.createElement("img");
-    img.id = "tab-image";
-    img.style.position = "absolute";
-    img.style.top = "0";
-    img.style.left = "0";
-    img.style.maxWidth = "none";
-    img.draggable = false;
-    container.appendChild(img);
-  }
-}
 
 function clearData() {
   localStorage.removeItem('rfrbCharacter');
@@ -609,6 +596,49 @@ function loadGMImages() {
 
  function resizeCanvasSmart() {
   applyTransform();
+}
+
+function renderTabs(tabs, activeTabId) {
+  const tabBar = document.getElementById("tab-bar");
+  tabBar.innerHTML = "";
+
+  tabs.forEach(tab => {
+    const btn = document.createElement("button");
+    btn.textContent = tab.title;
+    btn.classList.add("tab-button");
+    if (tab.id === activeTabId) btn.classList.add("active");
+
+    btn.addEventListener("click", () => {
+      currentTabId = tab.id;
+      showTabImage(tab.imageUrl);
+      renderTabs(tabs, tab.id); // Re-render to update active state
+    });
+
+    tabBar.appendChild(btn);
+  });
+}
+
+function showTabImage(url) {
+  const img = document.getElementById("tab-image");
+  if (img) {
+    img.src = url || "";
+  } else {
+    console.warn("⚠️ Tried to show image, but #tab-image is missing.");
+  }
+}
+
+ function ensureTabImage() {
+  const container = document.getElementById("zoom-content");
+  if (!document.getElementById("tab-image")) {
+    const img = document.createElement("img");
+    img.id = "tab-image";
+    img.style.position = "absolute";
+    img.style.top = "0";
+    img.style.left = "0";
+    img.style.maxWidth = "none";
+    img.draggable = false;
+    container.appendChild(img);
+  }
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
@@ -1412,34 +1442,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let currentTabId = null;
 
-function renderTabs(tabs, activeTabId) {
-  const tabBar = document.getElementById("tab-bar");
-  tabBar.innerHTML = "";
 
-  tabs.forEach(tab => {
-    const btn = document.createElement("button");
-    btn.textContent = tab.title;
-    btn.classList.add("tab-button");
-    if (tab.id === activeTabId) btn.classList.add("active");
-
-    btn.addEventListener("click", () => {
-      currentTabId = tab.id;
-      showTabImage(tab.imageUrl);
-      renderTabs(tabs, tab.id); // Re-render to update active state
-    });
-
-    tabBar.appendChild(btn);
-  });
-}
-
-function showTabImage(url) {
-  const img = document.getElementById("tab-image");
-  if (img) {
-    img.src = url || "";
-  } else {
-    console.warn("⚠️ Tried to show image, but #tab-image is missing.");
-  }
-}
 
 
 

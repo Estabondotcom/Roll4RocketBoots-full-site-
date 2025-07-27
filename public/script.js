@@ -610,6 +610,19 @@ function loadGMImages() {
 }
 
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
+  const tabBar = document.getElementById("tab-bar");
+  const tabButtons = tabBar?.children || [];
+
+  // 🔍 If no tabs exist, prompt to create one and stop here
+  if (tabButtons.length === 0) {
+    const newTabName = prompt("No tabs exist. Enter a name for the new tab:");
+    if (!newTabName) return; // cancel if nothing entered
+
+    createNewTab(newTabName, imageUrl, updateFirestore);
+    return;
+  }
+
+  // ✅ Proceed with showing image in current display
   const container = document.getElementById("zoom-content");
   const img = document.getElementById("tab-image");
   const canvas = document.getElementById("drawing-canvas");
@@ -635,7 +648,7 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     console.warn("⚠️ tab-image not found.");
   }
 
-  // Ensure canvas exists
+  // 🔧 Ensure canvas exists
   if (!canvas) {
     const newCanvas = document.createElement("canvas");
     newCanvas.id = "drawing-canvas";
@@ -659,6 +672,31 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     if (sessionId) {
       db.collection("sessions").doc(sessionId).update({
         currentDisplayImage: imageUrl,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  }
+}
+
+
+function createNewTab(name, imageUrl, updateFirestore = true) {
+  const tabBar = document.getElementById("tab-bar");
+
+  const button = document.createElement("button");
+  button.textContent = name;
+  button.onclick = () => showTabImage(imageUrl);
+  tabBar.appendChild(button);
+
+  showTabImage(imageUrl); // immediately show the image
+
+  if (updateFirestore) {
+    const sessionId = localStorage.getItem("currentSessionId");
+    if (sessionId) {
+      const tabRef = db.collection("sessions").doc(sessionId).collection("tabs").doc(name);
+      tabRef.set({ imageUrl });
+
+      db.collection("sessions").doc(sessionId).update({
+        tabOrder: firebase.firestore.FieldValue.arrayUnion(name),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -710,29 +748,50 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
 }
 
 function cleardisplay() {
-  const zoomContent = document.getElementById("zoom-content");
-  if (zoomContent) {
-   const img = document.getElementById("tab-image");
-if (img) img.src = ""; // clear the image but leave it in the DOM
+  // Clear the tab image visually
+  const img = document.getElementById("tab-image");
+  if (img) {
+    img.src = "";
   }
 
-  zoomLevel = 1;
-  panX = 0;
-  panY = 0;
-  applyTransform();
+  // Clear canvas
+  const canvas = document.getElementById("drawing-canvas");
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 
-  // ✅ Clear local image record
-  localStorage.removeItem("gmDisplayImage");
+  // Clear all tab buttons
+  const tabBar = document.getElementById("tab-bar");
+  if (tabBar) {
+    tabBar.innerHTML = "";
+  }
 
-  // ✅ Remove from Firestore
+  // Clear local tab data
+  if (window.tabs) {
+    window.tabs = [];
+  }
+
+  // Clear tab data in Firestore
   const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) return;
+  if (sessionId) {
+    const tabsRef = db.collection("sessions").doc(sessionId).collection("tabs");
+    tabsRef.get().then(snapshot => {
+      const batch = db.batch();
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      return batch.commit();
+    });
 
-  db.collection("sessions").doc(sessionId).update({
-    currentDisplayImage: firebase.firestore.FieldValue.delete(),
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+    db.collection("sessions").doc(sessionId).update({
+      tabOrder: [],
+      currentDisplayImage: "", // Optional: clear global display image too
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
 }
+
 
 function clearchat() {
   const sessionId = localStorage.getItem("currentSessionId");

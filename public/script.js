@@ -554,6 +554,7 @@ function loadGMImages() {
     toDisplay.onclick = () => {
   toggleShowAndTell(); // Show & Tell panel must be visible
   setTimeout(() => {
+     ensureTabImageExists();
     pushToDisplayArea(url);
   }, 100); // Wait briefly to ensure DOM is ready
 };

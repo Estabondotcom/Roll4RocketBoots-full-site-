@@ -1,11 +1,66 @@
 rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /sessions/{sessionId}/gm_uploads/{imageName} {
-      allow read, write: if request.auth != null;
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthed() {
+      return request.auth != null;
     }
-    match /chatImages/{imageName} {
-      allow read, write: if request.auth != null;
+
+    function email() {
+      return request.auth.token.email;
+    }
+
+    function sessionDoc(sessionId) {
+      return get(/databases/$(database)/documents/sessions/$(sessionId));
+    }
+
+    function isGM(sessionId) {
+      return isAuthed() && sessionDoc(sessionId).data.creatorUid == request.auth.uid;
+    }
+
+    function isInvited(sessionId) {
+      return isAuthed()
+        && (sessionDoc(sessionId).data.invitedUserEmails.hasAny([email()]));
+    }
+
+    function isParticipant(sessionId) {
+      return isGM(sessionId) || isInvited(sessionId);
+    }
+
+    // Users can read/write their own user doc and subcollections (characters).
+    match /users/{uid} {
+      allow read, write: if isAuthed() && request.auth.uid == uid;
+
+      match /characters/{charId} {
+        allow read, write: if isAuthed() && request.auth.uid == uid;
+      }
+    }
+
+    // Sessions: only GM or invited emails can read.
+    match /sessions/{sessionId} {
+      allow read: if isParticipant(sessionId);
+      allow create: if isAuthed();
+      allow update, delete: if isGM(sessionId);
+
+      // Drawings: per-user ownership. GM can delete any; user can write/delete their own doc.
+      match /drawings/{drawingUid} {
+        allow read: if isParticipant(sessionId);
+        allow create, update: if isAuthed() && request.auth.uid == drawingUid && isParticipant(sessionId);
+        allow delete: if (isAuthed() && request.auth.uid == drawingUid && isParticipant(sessionId)) || isGM(sessionId);
+      }
+
+      // Chat: participants can read/add. (No delete by default.)
+      match /chat/{msgId} {
+        allow read: if isParticipant(sessionId);
+        allow create: if isParticipant(sessionId);
+        allow update, delete: if false;
+      }
+
+      // (Optional) If you store tabs/images per session, keep them participant-readable, GM-writable.
+      match /displayTabs/{tabId} {
+        allow read: if isParticipant(sessionId);
+        allow write: if isGM(sessionId);
+      }
     }
   }
 }

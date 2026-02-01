@@ -367,15 +367,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const savedImageUrl = localStorage.getItem("gmDisplayImage");
 
+  // ✅ PATCH: don't call .doc("") if sessionId isn't ready
+  const sid = (localStorage.getItem("currentSessionId") || "").trim();
+  if (!sid) {
+    console.warn("⚠️ No currentSessionId yet — skipping display restore.");
+    return;
+  }
+
   // 🔒 Only restore if Firestore still has a valid image
-  db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().then(doc => {
+  db.collection("sessions").doc(sid).get().then(doc => {
     if (doc.exists && doc.data()?.currentDisplayImage) {
       pushToDisplayArea(doc.data().currentDisplayImage, false);
     } else {
       localStorage.removeItem("gmDisplayImage");
     }
+  }).catch(err => {
+    console.error("❌ Failed to restore display image:", err);
   });
-}); 
+});
 
 function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");

@@ -1,140 +1,60 @@
+// =====================
+// login.js (CLEANED + FIXED)
+// =====================
+
 let selectedSessionId = null;
 let currentUserRole = null;
 let currentSessionId = null;
 let latestDisplayImage = null;
 
-// 🔼 Near top of login.js
-function preloadDisplayImage() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) return;
-
-  db.collection("sessions").doc(sessionId).get().then(doc => {
-    if (doc.exists && doc.data()?.currentDisplayImage) {
-      latestDisplayImage = doc.data().currentDisplayImage;
-    }
-  });
+// --- Helpers ---
+function getSessionId() {
+  return (localStorage.getItem("currentSessionId") || "").trim();
 }
 
-function selectSession(sessionId) {
+function setSessionId(sessionId) {
   selectedSessionId = sessionId;
-  currentSessionId = sessionId; 
+  currentSessionId = sessionId;
   localStorage.setItem("currentSessionId", sessionId);
-    // Load current display image immediately
-  db.collection("sessions").doc(sessionId).get().then(doc => {
-    const data = doc.data();
-    if (data?.currentDisplayImage) {
-      pushToDisplayArea(data.currentDisplayImage);
-    }
-  });
-  
-  db.collection("sessions").doc(sessionId).get().then((doc) => {
-    const data = doc.data();
-    const user = auth.currentUser;
-
-    if (user.uid === data.creatorUid) {
-      console.log("You are the GM for this session.");
-      currentUserRole = "gm";
-      document.getElementById("gm-tools-button").style.display = "inline-block";
-    } else {
-      console.log("You are a player in this session.");
-      currentUserRole = "player";
-      document.getElementById("gm-tools-button").style.display = "none";
-    }
-const previouslySaved = localStorage.getItem("char_for_session_" + sessionId);
-
-if (previouslySaved) {
-  console.log("🔄 Auto-loading character:", previouslySaved);
-  loadCharacterByName(previouslySaved);
-  disableCharacterInputs(false);
-  localStorage.setItem("autoSaveCharacterName", previouslySaved);
-  window._lastSavedCharacterName = previouslySaved;
-} else {
-  console.log("🆕 No saved character for session, prompting...");
-  disableCharacterInputs(true);
-  document.getElementById("player-name").value = ""; // clear autofill just in case
-  loadCharacterFromFirestore(); // shows modal
 }
 
-    document.getElementById("session-screen").style.display = "none";
-    document.getElementById("app-content").style.display = "flex";
-
-    if (document.getElementById('skills-container').children.length === 0) addSkill('Do anything');
-    if (document.getElementById('conditions-container').children.length === 0) addCondition();
-    if (document.getElementById('items-container').children.length === 0) addItem();
-  
-    setupChatListener(sessionId);
-    listenForDisplayImageUpdates();
-    listenForDrawings();
-    
-  }).catch((error) => {
-    console.error("Error loading session info:", error);
-    alert("Failed to load session info.");
-    
-  });
+function show(elId, display = "flex") {
+  const el = document.getElementById(elId);
+  if (el) el.style.display = display;
 }
-function loadCharacterByName(name) {
-  const user = auth.currentUser;
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!user || !sessionId || !name) return;
 
-  db.collection("users").doc(user.uid).collection("characters").doc(name).get()
-    .then(doc => {
-      const data = doc.data();
-      if (!data) return alert("Character not found!");
-
-      document.getElementById("player-name").value = data.name || "";
-      document.getElementById("exp-value").textContent = data.exp || 0;
-      document.getElementById("luck-value").textContent = data.luck || 1;
-
-      const woundButtons = document.querySelectorAll('.wounds button');
-      woundButtons.forEach((btn, i) => {
-        btn.classList.toggle('active', (data.wounds || [])[i] || false);
-      });
-
-      document.getElementById("skills-container").innerHTML = "";
-      (data.skills || []).forEach(skill => addSkill(skill));
-
-      document.getElementById("items-container").innerHTML = "";
-      (data.items || []).forEach(item => addItem(item));
-
-      document.getElementById("conditions-container").innerHTML = "";
-      (data.conditions || []).forEach(cond => {
-        addCondition(typeof cond === 'string' ? cond : cond.name);
-      });
-
-      // Save state
-      localStorage.setItem("autoSaveCharacterName", name);
-      window._lastSavedCharacterName = name;
-    });
-setupAutoSaveListeners();
-localStorage.setItem("autoSaveInitialized", "true");
-console.log("✅ Autosave listeners (re)activated.");
-
+function hide(elId) {
+  const el = document.getElementById(elId);
+  if (el) el.style.display = "none";
 }
+
+// =====================
+// Auth
+// =====================
+
 function login() {
-  const email = document.getElementById("authEmail").value;
-  const password = document.getElementById("authPassword").value;
+  const email = document.getElementById("authEmail")?.value || "";
+  const password = document.getElementById("authPassword")?.value || "";
 
- auth.signInWithEmailAndPassword(email, password)
-  .then(() => {
-    alert("Login successful!");
-    console.log("✅ Logged in");
-    preloadDisplayImage();
-  })
-  .catch((error) => {
-    console.error("Login Error:", error);
-    document.getElementById("loginError").textContent = "Login failed: " + error.message;
-  });
-
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      console.log("✅ Logged in");
+      alert("Login successful!");
+    })
+    .catch((error) => {
+      console.error("Login Error:", error);
+      const loginError = document.getElementById("loginError");
+      if (loginError) loginError.textContent = "Login failed: " + error.message;
+    });
 }
 
 function signup() {
-  const email = document.getElementById("authEmail").value;
-  const password = document.getElementById("authPassword").value;
+  const email = document.getElementById("authEmail")?.value || "";
+  const password = document.getElementById("authPassword")?.value || "";
 
   firebase.auth().createUserWithEmailAndPassword(email, password)
     .then(() => {
-      showUsernameModal(); // show username modal
+      showUsernameModal();
     })
     .catch((error) => {
       console.error("Signup error:", error);
@@ -142,12 +62,46 @@ function signup() {
     });
 }
 
+function logout() {
+  auth.signOut().then(() => alert("Logged out successfully!"));
+  localStorage.removeItem("autoSaveCharacterName");
+  localStorage.removeItem("autoSaveInitialized");
+  localStorage.removeItem("currentSessionId");
+  selectedSessionId = null;
+  currentSessionId = null;
+}
+
+auth.onAuthStateChanged((user) => {
+  // Always reset screens
+  show("login-screen", user ? "none" : "flex");
+  hide("session-screen");
+  hide("create-session-screen");
+  hide("app-content");
+
+  if (!user) return;
+
+  // Check if user has username set
+  db.collection("users").doc(user.uid).get().then((doc) => {
+    if (doc.exists && doc.data()?.username) {
+      loadSessionsForUser(user.uid);
+    } else {
+      showUsernameModal();
+    }
+  }).catch((err) => {
+    console.error("Failed to check username:", err);
+  });
+});
+
+// =====================
+// Username Modal
+// =====================
+
 function showUsernameModal() {
-  document.getElementById("username-modal").style.display = "flex";
+  show("username-modal", "flex");
 }
 
 function submitUsername() {
-  let username = document.getElementById("usernameInput").value.trim();
+  let username = document.getElementById("usernameInput")?.value?.trim() || "";
   const user = firebase.auth().currentUser;
 
   if (!username || !user) {
@@ -155,35 +109,41 @@ function submitUsername() {
     return;
   }
 
-  // Normalize to lowercase
   const normalized = username.toLowerCase();
 
-  // Check if normalized username already exists
   db.collection("users")
     .where("normalizedUsername", "==", normalized)
     .get()
     .then((querySnapshot) => {
       if (!querySnapshot.empty) {
         alert("❌ Username is already taken (case-insensitive). Try another.");
-        return;
+        return null;
       }
 
-      // Save original and normalized username
       return db.collection("users").doc(user.uid).set({
         email: user.email,
-        username: username,                  // Original casing (for display)
-        normalizedUsername: normalized,      // Lowercase (for checking)
+        username: username,
+        normalizedUsername: normalized,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      }, { merge: true });
     })
-    .then(() => {
-      if (!user) return;
+    .then((res) => {
+      if (!res) return;
 
-      document.getElementById("username-status").textContent = "✅ Username saved!";
-      document.getElementById("username-status").style.display = "block";
-      document.getElementById("saveUsernameBtn").style.display = "none";
-      document.getElementById("usernameInput").disabled = true;
-      document.getElementById("nextButton").style.display = "inline-block";
+      const status = document.getElementById("username-status");
+      if (status) {
+        status.textContent = "✅ Username saved!";
+        status.style.display = "block";
+      }
+
+      const saveBtn = document.getElementById("saveUsernameBtn");
+      if (saveBtn) saveBtn.style.display = "none";
+
+      const input = document.getElementById("usernameInput");
+      if (input) input.disabled = true;
+
+      const nextBtn = document.getElementById("nextButton");
+      if (nextBtn) nextBtn.style.display = "inline-block";
     })
     .catch((error) => {
       console.error("Error checking/saving username:", error);
@@ -191,83 +151,271 @@ function submitUsername() {
     });
 }
 
-function logout() {
-  auth.signOut().then(() => alert("Logged out successfully!"));
-  localStorage.removeItem("autoSaveCharacterName");
-localStorage.removeItem("autoSaveInitialized");
+document.addEventListener("DOMContentLoaded", () => {
+  const saveBtn = document.getElementById("saveUsernameBtn");
+  if (saveBtn) saveBtn.addEventListener("click", submitUsername);
 
-}
-
-auth.onAuthStateChanged((user) => {
-  document.getElementById("login-screen").style.display = user ? "none" : "flex";
-  document.getElementById("session-screen").style.display = "none";
-  document.getElementById("create-session-screen").style.display = "none";
-  document.getElementById("app-content").style.display = "none";
-
-  if (user) {
-    db.collection("users").doc(user.uid).get().then((doc) => {
-      if (doc.exists && doc.data()?.username) {
-        // ✅ Username already set
-        loadSessionsForUser(user.uid);
-      } else {
-        // 👤 Prompt for username if not set
-        showUsernameModal();
-      }
-    }).catch((err) => {
-      console.error("Failed to check username:", err);
+  const nextBtn = document.getElementById("nextButton");
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      hide("username-modal");
+      const user = auth.currentUser;
+      if (user) loadSessionsForUser(user.uid);
     });
   }
 });
 
+// =====================
+// Sessions
+// =====================
+
+function loadSessionsForUser(uid) {
+  const userEmail = auth.currentUser?.email;
+  if (!userEmail) return;
+
+  db.collection("sessions").get()
+    .then((querySnapshot) => {
+      const sessionListDiv = document.getElementById("session-list");
+      if (!sessionListDiv) return;
+
+      sessionListDiv.innerHTML = "";
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const invited = (data.invitedUserEmails || []).includes(userEmail);
+        const isGM = data.creatorUid === uid;
+
+        if (!isGM && !invited) return;
+
+        const row = document.createElement("div");
+        row.style.marginBottom = "10px";
+
+        const joinBtn = document.createElement("button");
+        joinBtn.textContent = data.sessionName;
+        joinBtn.onclick = () => selectSession(doc.id);
+        row.appendChild(joinBtn);
+
+        if (isGM) {
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "❌ Delete";
+          deleteBtn.style.marginLeft = "10px";
+          deleteBtn.onclick = () => deleteSession(doc.id);
+          row.appendChild(deleteBtn);
+        }
+
+        sessionListDiv.appendChild(row);
+      });
+
+      const sessionError = document.getElementById("sessionError");
+      if (sessionError) {
+        sessionError.textContent = sessionListDiv.innerHTML ? "" : "You're not invited to any sessions.";
+      }
+
+      show("session-screen", "flex");
+    })
+    .catch((err) => {
+      console.error("Failed to load sessions:", err);
+      show("session-screen", "flex");
+      const sessionError = document.getElementById("sessionError");
+      if (sessionError) sessionError.textContent = "Failed to load sessions.";
+    });
+}
+
+function selectSession(sessionId) {
+  setSessionId(sessionId);
+
+  // Hide session UI, show app UI
+  hide("session-screen");
+  show("app-content", "flex");
+
+  // Determine role + toggle GM tools button
+  db.collection("sessions").doc(sessionId).get().then((doc) => {
+    const data = doc.data();
+    const user = auth.currentUser;
+    if (!data || !user) return;
+
+    const gmBtn = document.getElementById("gm-tools-button");
+
+    if (user.uid === data.creatorUid) {
+      console.log("You are the GM for this session.");
+      currentUserRole = "gm";
+      if (gmBtn) gmBtn.style.display = "inline-block";
+    } else {
+      console.log("You are a player in this session.");
+      currentUserRole = "player";
+      if (gmBtn) gmBtn.style.display = "none";
+    }
+
+    // Ensure base UI exists
+    if (document.getElementById("skills-container")?.children.length === 0) addSkill("Do anything");
+    if (document.getElementById("conditions-container")?.children.length === 0) addCondition();
+    if (document.getElementById("items-container")?.children.length === 0) addItem();
+
+    // Start listeners
+    setupChatListener(sessionId);
+    listenForDisplayImageUpdates();
+
+    // Character load flow
+    const previouslySaved = localStorage.getItem("char_for_session_" + sessionId);
+    if (previouslySaved) {
+      console.log("🔄 Auto-loading character:", previouslySaved);
+      loadCharacterByName(previouslySaved);
+      disableCharacterInputs(false);
+      localStorage.setItem("autoSaveCharacterName", previouslySaved);
+      window._lastSavedCharacterName = previouslySaved;
+    } else {
+      console.log("🆕 No saved character for session, prompting...");
+      disableCharacterInputs(true);
+      const pn = document.getElementById("player-name");
+      if (pn) pn.value = "";
+      loadCharacterFromFirestore(); // opens modal
+    }
+
+    // Load current display image once on join
+    if (data.currentDisplayImage) {
+      latestDisplayImage = data.currentDisplayImage;
+      if (typeof pushToDisplayArea === "function") {
+        pushToDisplayArea(data.currentDisplayImage, false);
+      }
+    }
+  }).catch((error) => {
+    console.error("Error loading session info:", error);
+    alert("Failed to load session info.");
+  });
+}
+
 function showCreateSessionScreen() {
-  document.getElementById("session-screen").style.display = "none";
-  document.getElementById("create-session-screen").style.display = "flex";
+  hide("session-screen");
+  show("create-session-screen", "flex");
+}
+
+function createSession() {
+  const user = auth.currentUser;
+  if (!user) return alert("You must be logged in to create a session!");
+
+  const sessionName = document.getElementById("newSessionName")?.value?.trim() || "";
+  const invitedEmails = (document.getElementById("inviteEmails")?.value || "")
+    .split(",")
+    .map(e => e.trim())
+    .filter(Boolean);
+
+  if (!sessionName) {
+    const err = document.getElementById("createSessionError");
+    if (err) err.textContent = "Session name is required.";
+    return;
+  }
+
+  const sessionId = db.collection("sessions").doc().id;
+
+  db.collection("sessions").doc(sessionId).set({
+    sessionName,
+    creatorUid: user.uid,
+    invitedUserEmails: invitedEmails,
+    roles: { [user.uid]: "gm" }
+  }).then(() => {
+    alert("Session created!");
+    hide("create-session-screen");
+    loadSessionsForUser(user.uid);
+  }).catch(err => {
+    console.error("Failed to create session:", err);
+    const e = document.getElementById("createSessionError");
+    if (e) e.textContent = "Failed to create session.";
+  });
+}
+
+function deleteSession(sessionId) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  db.collection("sessions").doc(sessionId).get()
+    .then((doc) => {
+      if (!doc.exists) return alert("Session does not exist.");
+      if (doc.data().creatorUid !== user.uid) return alert("Only the session creator can delete this session.");
+
+      if (confirm(`Are you sure you want to delete the session "${doc.data().sessionName}"?`)) {
+        return db.collection("sessions").doc(sessionId).delete()
+          .then(() => loadSessionsForUser(user.uid));
+      }
+    })
+    .catch(err => {
+      console.error("Failed to delete session:", err);
+      alert("Failed to delete session.");
+    });
+}
+
+function returnToSessions() {
+  hide("app-content");
+  show("session-screen", "flex");
+}
+
+// =====================
+// Character Save/Load
+// =====================
+
+function disableCharacterInputs(disabled = true) {
+  const form = document.getElementById("char-form");
+  if (!form) return;
+
+  // Disable all fields except player-name
+  form.querySelectorAll("input, textarea, select").forEach(el => {
+    if (el.id === "player-name") return;
+    el.disabled = disabled;
+  });
+
+  // Disable dynamic checkboxes + wound buttons
+  form.querySelectorAll(".skill-level, .wounds button").forEach(el => {
+    el.disabled = disabled;
+  });
+
+  // Disable most buttons, BUT keep Save/Load always enabled so you can recover
+  form.querySelectorAll("button").forEach(btn => {
+    const onclick = (btn.getAttribute("onclick") || "");
+    const isSave = onclick.includes("saveCharacterToFirestore");
+    const isLoad = onclick.includes("loadCharacterFromFirestore");
+    const isClear = onclick.includes("clearData"); // up to you; leaving enabled is fine
+    if (isSave || isLoad || isClear) {
+      btn.disabled = false;
+    } else {
+      btn.disabled = disabled;
+    }
+  });
 }
 
 function saveCharacterToFirestore() {
   const user = auth.currentUser;
   if (!user) return alert("You must be logged in to save.");
 
-  let characterName = document.getElementById("player-name").value.trim();
+  let characterName = document.getElementById("player-name")?.value?.trim() || "";
   const savedNames = window._availableCharacterNames || [];
 
   if (!characterName) return alert("Character not saved (no name given).");
 
-  // If this name doesn't exist yet, confirm creating a new save
   if (!savedNames.includes(characterName)) {
     const confirmNew = confirm(`Save as new character "${characterName}"?`);
     if (!confirmNew) return;
   }
 
-  // Build skills array with levels
-  const skills = Array.from(document.querySelectorAll('.skill-input')).map(input => {
-    const container = input.closest('.input-wrapper');
-    const checkboxes = container.querySelectorAll('.skill-level');
+  const skills = Array.from(document.querySelectorAll(".skill-input")).map(input => {
+    const container = input.closest(".input-wrapper");
+    const checkboxes = container ? container.querySelectorAll(".skill-level") : [];
     const levels = Array.from(checkboxes).map(cb => cb.checked);
-    return {
-      name: input.value,
-      levels
-    };
+    return { name: input.value, levels };
   });
 
-  // Build conditions array
- const conditions = Array.from(document.querySelectorAll('.condition-input'))
-  .map(input => input.value.trim())
-  .filter(Boolean);
-  
-  // Build items array
-  const items = Array.from(document.querySelectorAll('.item-input')).map(input => input.value);
+  const conditions = Array.from(document.querySelectorAll(".condition-input"))
+    .map(input => input.value.trim())
+    .filter(Boolean);
 
-  // Build wounds array (if implemented)
-  const wounds = Array.from(document.querySelectorAll('.wounds button')).map(btn =>
-    btn.classList.contains('active')
+  const items = Array.from(document.querySelectorAll(".item-input")).map(input => input.value);
+
+  const wounds = Array.from(document.querySelectorAll(".wounds button")).map(btn =>
+    btn.classList.contains("active")
   );
 
-  // Collect character data
   const characterData = {
-    name: document.getElementById("player-name").value || "",
-    exp: parseInt(document.getElementById("exp-value").textContent) || 0,
-    luck: parseInt(document.getElementById("luck-value").textContent) || 1,
+    name: characterName,
+    exp: parseInt(document.getElementById("exp-value")?.textContent || "0", 10) || 0,
+    luck: parseInt(document.getElementById("luck-value")?.textContent || "1", 10) || 1,
     skills,
     items,
     conditions,
@@ -275,7 +423,7 @@ function saveCharacterToFirestore() {
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  const sessionId = localStorage.getItem("currentSessionId");
+  const sessionId = getSessionId();
   const promises = [];
 
   if (sessionId) {
@@ -292,70 +440,66 @@ function saveCharacterToFirestore() {
       .set(characterData)
   );
 
- Promise.all(promises)
-  .then(() => {
-    alert(`Character '${characterName}' saved to Firestore!`);
-        window._lastSavedCharacterName = characterName;
-    localStorage.setItem("char_for_session_" + currentSessionId, characterName);
+  Promise.all(promises)
+    .then(() => {
+      alert(`Character '${characterName}' saved!`);
 
-    // ✅ Store the name for autosave use
-    localStorage.setItem("char_for_session_" + currentSessionId, characterName);
+      window._lastSavedCharacterName = characterName;
+      localStorage.setItem("char_for_session_" + sessionId, characterName);
+      localStorage.setItem("autoSaveCharacterName", characterName);
 
-    // ✅ Activate autosave listeners if not already set
-    if (!localStorage.getItem("autoSaveInitialized")) {
-      setupAutoSaveListeners();
-      localStorage.setItem("autoSaveInitialized", "true");
-      console.log("✅ Autosave listeners activated.");
-      const hint = document.getElementById("autosave-hint");
-  if (hint) hint.style.display = "none";
-    }
-  })
-  .catch((error) => {
-    console.error("Error saving character:", error);
-    alert("Failed to save character.");
-  });
+      // Enable inputs after first real save
+      disableCharacterInputs(false);
 
+      if (!localStorage.getItem("autoSaveInitialized")) {
+        setupAutoSaveListeners();
+        localStorage.setItem("autoSaveInitialized", "true");
+        const hint = document.getElementById("autosave-hint");
+        if (hint) hint.style.display = "none";
+        console.log("✅ Autosave listeners activated.");
+      }
+    })
+    .catch((error) => {
+      console.error("Error saving character:", error);
+      alert("Failed to save character.");
+    });
 }
 
 function silentAutoSaveCharacter() {
   const user = auth.currentUser;
   if (!user) return;
 
-const nameField = document.getElementById("player-name").value.trim();
-const savedName = window._lastSavedCharacterName;
+  const nameField = document.getElementById("player-name")?.value?.trim() || "";
+  const savedName = window._lastSavedCharacterName;
 
-if (!nameField || nameField !== savedName) {
-  console.warn("🛑 Not autosaving — name mismatch or no character loaded.");
-  return;
-}
+  if (!nameField || nameField !== savedName) {
+    console.warn("🛑 Not autosaving — name mismatch or no character loaded.");
+    return;
+  }
 
-const characterName = nameField;
+  const characterName = nameField;
 
-  // Build skills array with levels
-  const skills = Array.from(document.querySelectorAll('.skill-input')).map(input => {
-    const container = input.closest('.input-wrapper');
-    const checkboxes = container.querySelectorAll('.skill-level');
+  const skills = Array.from(document.querySelectorAll(".skill-input")).map(input => {
+    const container = input.closest(".input-wrapper");
+    const checkboxes = container ? container.querySelectorAll(".skill-level") : [];
     const levels = Array.from(checkboxes).map(cb => cb.checked);
-    return {
-      name: input.value,
-      levels
-    };
+    return { name: input.value, levels };
   });
 
-  const conditions = Array.from(document.querySelectorAll('.condition-input')).map(input => ({
-    name: input.value
-  }));
+  const conditions = Array.from(document.querySelectorAll(".condition-input"))
+    .map(input => input.value.trim())
+    .filter(Boolean);
 
-  const items = Array.from(document.querySelectorAll('.item-input')).map(input => input.value);
+  const items = Array.from(document.querySelectorAll(".item-input")).map(input => input.value);
 
-  const wounds = Array.from(document.querySelectorAll('.wounds button')).map(btn =>
-    btn.classList.contains('active')
+  const wounds = Array.from(document.querySelectorAll(".wounds button")).map(btn =>
+    btn.classList.contains("active")
   );
 
   const characterData = {
-    name: document.getElementById("player-name").value || "",
-    exp: parseInt(document.getElementById("exp-value").textContent) || 0,
-    luck: parseInt(document.getElementById("luck-value").textContent) || 1,
+    name: characterName,
+    exp: parseInt(document.getElementById("exp-value")?.textContent || "0", 10) || 0,
+    luck: parseInt(document.getElementById("luck-value")?.textContent || "1", 10) || 1,
     skills,
     items,
     conditions,
@@ -363,7 +507,7 @@ const characterName = nameField;
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  const sessionId = localStorage.getItem("currentSessionId");
+  const sessionId = getSessionId();
 
   if (sessionId) {
     db.collection("sessions").doc(sessionId)
@@ -387,8 +531,9 @@ function loadCharacterFromFirestore() {
       if (names.length === 0) return alert("No saved characters found.");
 
       const select = document.getElementById("characterSelect");
-      select.innerHTML = "";
+      if (!select) return;
 
+      select.innerHTML = "";
       names.forEach(name => {
         const option = document.createElement("option");
         option.value = name;
@@ -396,7 +541,7 @@ function loadCharacterFromFirestore() {
         select.appendChild(option);
       });
 
-      document.getElementById("loadCharacterModal").style.display = "block";
+      show("loadCharacterModal", "block");
       window._availableCharacterNames = names;
     })
     .catch((error) => {
@@ -405,39 +550,55 @@ function loadCharacterFromFirestore() {
     });
 }
 
-function loadSessionsForUser(uid) {
-  const userEmail = auth.currentUser.email;
-  db.collection("sessions").get()
-    .then((querySnapshot) => {
-      const sessionListDiv = document.getElementById("session-list");
-      sessionListDiv.innerHTML = "";
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.creatorUid === uid || (data.invitedUserEmails || []).includes(userEmail)) {
-          const div = document.createElement("div");
-          const joinBtn = document.createElement("button");
-          joinBtn.textContent = data.sessionName;
-          joinBtn.onclick = () => selectSession(doc.id);
-          div.appendChild(joinBtn);
-          if (data.creatorUid === uid) {
-            const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "❌ Delete";
-            deleteBtn.style.marginLeft = "10px";
-            deleteBtn.onclick = () => deleteSession(doc.id);
-            div.appendChild(deleteBtn);
-          }
-          sessionListDiv.appendChild(div);
-        }
+function loadCharacterByName(name) {
+  const user = auth.currentUser;
+  const sessionId = getSessionId();
+  if (!user || !sessionId || !name) return;
+
+  db.collection("users").doc(user.uid).collection("characters").doc(name).get()
+    .then(doc => {
+      const data = doc.data();
+      if (!data) return alert("Character not found!");
+
+      document.getElementById("player-name").value = data.name || "";
+      document.getElementById("exp-value").textContent = data.exp ?? 0;
+      document.getElementById("luck-value").textContent = data.luck ?? 1;
+
+      const woundButtons = document.querySelectorAll(".wounds button");
+      woundButtons.forEach((btn, i) => {
+        btn.classList.toggle("active", (data.wounds || [])[i] || false);
       });
-      document.getElementById("sessionError").textContent = sessionListDiv.innerHTML ? "" : "You're not invited to any sessions.";
-      document.getElementById("session-screen").style.display = "flex";
+
+      document.getElementById("skills-container").innerHTML = "";
+      (data.skills || []).forEach(skill => addSkill(skill));
+
+      document.getElementById("items-container").innerHTML = "";
+      (data.items || []).forEach(item => addItem(item));
+
+      document.getElementById("conditions-container").innerHTML = "";
+      (data.conditions || []).forEach(cond => {
+        addCondition(typeof cond === "string" ? cond : cond.name);
+      });
+
+      // Autosave state
+      localStorage.setItem("autoSaveCharacterName", name);
+      window._lastSavedCharacterName = name;
+
+      disableCharacterInputs(false);
+
+      if (!localStorage.getItem("autoSaveInitialized")) {
+        setupAutoSaveListeners();
+        localStorage.setItem("autoSaveInitialized", "true");
+        console.log("✅ Autosave listeners activated.");
+      }
     });
 }
 
 function confirmCharacterLoad() {
-  const selectedName = document.getElementById("characterSelect").value;
+  const selectedName = document.getElementById("characterSelect")?.value || "";
   const names = window._availableCharacterNames || [];
-  document.getElementById("loadCharacterModal").style.display = "none";
+
+  hide("loadCharacterModal");
 
   if (!selectedName || !names.includes(selectedName)) {
     alert("Invalid selection.");
@@ -445,395 +606,64 @@ function confirmCharacterLoad() {
   }
 
   const user = auth.currentUser;
+  if (!user) return;
+
   db.collection("users").doc(user.uid).collection("characters").doc(selectedName).get()
     .then((doc) => {
       const data = doc.data();
+      if (!data) {
+        alert("Character data missing.");
+        return;
+      }
 
       document.getElementById("player-name").value = data.name || "";
-      document.getElementById("exp-value").textContent = data.exp || 0;
-      document.getElementById("luck-value").textContent = data.luck || 1;
+      document.getElementById("exp-value").textContent = data.exp ?? 0;
+      document.getElementById("luck-value").textContent = data.luck ?? 1;
 
-      // ✅ Restore wounds
-      const woundButtons = document.querySelectorAll('.wounds button');
+      const woundButtons = document.querySelectorAll(".wounds button");
       woundButtons.forEach((btn, i) => {
-        btn.classList.toggle('active', (data.wounds || [])[i] || false);
+        btn.classList.toggle("active", (data.wounds || [])[i] || false);
       });
 
-      // ✅ Restore skills
       document.getElementById("skills-container").innerHTML = "";
       (data.skills || []).forEach(skill => addSkill(skill));
 
-      // ✅ Restore items
       document.getElementById("items-container").innerHTML = "";
       (data.items || []).forEach(item => addItem(item));
 
-      // ✅ Restore conditions
       document.getElementById("conditions-container").innerHTML = "";
       (data.conditions || []).forEach(cond => {
-        addCondition(typeof cond === 'string' ? cond : cond.name);
+        addCondition(typeof cond === "string" ? cond : cond.name);
       });
 
       alert(`Character '${selectedName}' loaded!`);
 
-      // ✅ Update autosave name
+      // ✅ THIS WAS YOUR BUG: inputs were never re-enabled on success
+      disableCharacterInputs(false);
+
+      // Keep autosave aligned with your name-mismatch guard
+      window._lastSavedCharacterName = selectedName;
       localStorage.setItem("autoSaveCharacterName", selectedName);
+      localStorage.setItem("char_for_session_" + getSessionId(), selectedName);
+
+      if (!localStorage.getItem("autoSaveInitialized")) {
+        setupAutoSaveListeners();
+        localStorage.setItem("autoSaveInitialized", "true");
+      }
     })
     .catch((error) => {
       console.error("Error loading character:", error);
       alert("Failed to load character.");
-      window._lastSavedCharacterName = selectedName;
-localStorage.setItem("autoSaveCharacterName", selectedName);
-disableCharacterInputs(false);
-setupAutoSaveListeners();
-localStorage.setItem("autoSaveInitialized", "true");
-
-
     });
 }
 
-function listenForDisplayImageUpdates() {
-  const display = document.getElementById("zoom-content");
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!display || !sessionId) return;
-
- // Watch display image itself
-db.collection("sessions").doc(sessionId).onSnapshot(doc => {
-  const data = doc.data();
-  const newImage = data?.currentDisplayImage || null;
-
-  const container = document.getElementById("zoom-content");
-  const existingImg = container.querySelector("img");
-
-  if (!newImage && existingImg) {
-    // ✅ The GM cleared the image
-    existingImg.remove();
-    zoomLevel = 1;
-    panX = 0;
-    panY = 0;
-    applyTransform();
-
-    localStorage.removeItem("gmDisplayImage");
-    latestDisplayImage = null;
-    console.log("🧼 Display image cleared by GM");
-  }
-
-  if (newImage && newImage !== latestDisplayImage) {
-    latestDisplayImage = newImage;
-    pushToDisplayArea(newImage, false);
-  }
-});
-}
-
-function createSession() {
-  const user = auth.currentUser;
-  if (!user) return alert("You must be logged in to create a session!");
-
-  const sessionName = document.getElementById("newSessionName").value.trim();
-  const invitedEmails = document.getElementById("inviteEmails").value.split(",").map(e => e.trim()).filter(e => e);
-  if (!sessionName) return document.getElementById("createSessionError").textContent = "Session name is required.";
-
-  const sessionId = db.collection("sessions").doc().id;
-  db.collection("sessions").doc(sessionId).set({
-    sessionName,
-    creatorUid: user.uid,
-    invitedUserEmails: invitedEmails,
-    roles: { [user.uid]: "gm" }
-  }).then(() => {
-    alert("Session created!");
-    document.getElementById("create-session-screen").style.display = "none";
-    loadSessionsForUser(user.uid);
-  });
-}
-
-function deleteSession(sessionId) {
-  const user = auth.currentUser;
-  if (!user) return;
-  db.collection("sessions").doc(sessionId).get()
-    .then((doc) => {
-      if (!doc.exists) return alert("Session does not exist.");
-      if (doc.data().creatorUid !== user.uid) return alert("Only the session creator can delete this session.");
-      if (confirm(`Are you sure you want to delete the session "${doc.data().sessionName}"?`)) {
-        db.collection("sessions").doc(sessionId).delete().then(() => loadSessionsForUser(user.uid));
-      }
-    });
-}
-
-function returnToSessions() {
-  document.getElementById("app-content").style.display = "none";
-  document.getElementById("session-screen").style.display = "flex";
-}
-// wire up the paste-handler as soon as the DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  const chatInput = document.getElementById('chatInput');
-  if (!chatInput) {
-    console.error('❌ chatInput element not found');
-    return;
-  }
-  chatInput.addEventListener('paste', handlePasteImage);
-});
-
-function setupChatListener(sessionId) {
-  const chatPanel = document.getElementById('chat-panel');
-  const chatMessages = document.getElementById('chat-messages');
-  chatPanel.style.display = 'flex';
-  db.collection('sessions').doc(sessionId).collection('chat')
-    .orderBy('timestamp')
-    .onSnapshot(snapshot => {
-      chatMessages.innerHTML = '';
-      snapshot.forEach(doc => {
-        const msg = doc.data();
-        const div = document.createElement('div');
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = msg.characterName + ": ";
-        nameSpan.style.color = msg.color || "#ffffff";
-        div.appendChild(nameSpan);
-        if (msg.text) {
-          const textSpan = document.createElement('span');
-          textSpan.textContent = msg.text;
-          div.appendChild(textSpan);
-        }
-        if (msg.imageUrl) {
-          const img = document.createElement('img');
-          img.src = msg.imageUrl;
-          img.style.maxWidth = '100%';
-          img.style.maxHeight = '300px';
-          img.style.display = 'block';
-          img.style.marginTop = '5px';
-          div.appendChild(img);
-        }
-        chatMessages.appendChild(div);
-      });
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-}
-
-function sendChatMessage() {
-  const input = document.getElementById('chatInput');
-  const text = input.innerText.trim();
-  const imgs = Array.from(input.querySelectorAll('img'));
-  
-  if (!selectedSessionId || !auth.currentUser) {
-    return alert('Must be logged in and in a session.');
-  }
-  // nothing to send?
-  if (!text && imgs.length === 0) {
-    input.innerHTML = '';
-    return;
-  }
-
-  const user = auth.currentUser;
-  const characterName = document.getElementById('player-name').value || user.email;
-
-  // fetch your saved color once
-  db.collection("users").doc(user.uid).get().then(userDoc => {
-    const color = userDoc.data()?.displayNameColor || "#ffffff";
-
-    // build an array of promises: one for the text message, one per image
-    const writes = [];
-
-    if (text) {
-      writes.push(
-        db.collection('sessions')
-          .doc(selectedSessionId)
-          .collection('chat')
-          .add({
-            characterName,
-            text,
-            color,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          })
-      );
-    }
-
-    imgs.forEach(img => {
-      writes.push(
-        db.collection('sessions')
-          .doc(selectedSessionId)
-          .collection('chat')
-          .add({
-            characterName,
-            imageUrl: img.src,
-            color,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          })
-      );
-    });
-
-    // once all writes finish, clear the input
-    return Promise.all(writes);
-  })
-  .then(() => {
-    input.innerHTML = '';
-  })
-  .catch(err => {
-    console.error("Failed to send chat message:", err);
-    alert("Failed to send chat message.");
-  });
-}
-
-
-function saveChatColor() {
-  const user = auth.currentUser;
-  if (!user) return;
-  const color = document.getElementById('chatColorPicker').value;
-  db.collection("users").doc(user.uid).set({ displayNameColor: color }, { merge: true });
-}
-
-function rollD6(count) {
-  const user = auth.currentUser;
-  if (!user || !selectedSessionId) return alert("You must be in a session and logged in.");
-  const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
-  const characterName = document.getElementById('player-name').value || user.email;
-  db.collection("users").doc(user.uid).get().then(doc => {
-    const color = doc.data()?.displayNameColor || "#ffffff";
-    db.collection('sessions').doc(selectedSessionId).collection('chat').add({
-      characterName,
-      text: `${count}🎲 ${rolls.join(", ")}`,
-      color,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  });
-}
-
-function handlePasteImage(event) {
-  console.log('📋 paste event fired!', event);
-
-  const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.type.startsWith('image/')) {
-      // **1)** Stop the browser from inserting the blob itself
-      
-
-      const file = item.getAsFile();
-      console.log('🖼️ got image file', file);
-
-      // **2)** Upload to Firebase Storage
-      const path = `chatImages/${Date.now()}_${file.name}`;
-      const storageRef = storage.ref(path);
-      storageRef.put(file)
-        .then(snapshot => snapshot.ref.getDownloadURL())
-        .then(url => {
-          console.log('✅ got download URL', url);
-
-          const user = auth.currentUser;
-          if (!user || !selectedSessionId) {
-            console.warn('🔒 no user or session, aborting');
-            return;
-          }
-
-          const characterName = document.getElementById('player-name').value || user.email;
-
-          // **3)** Send the message with imageUrl
-          return db.collection('sessions')
-                   .doc(selectedSessionId)
-                   .collection('chat')
-                   .add({
-                     characterName,
-                     imageUrl: url,
-                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                     color: "#ffffff"
-                   });
-        })
-        .then(() => console.log('📸 image message sent!'))
-        .catch(err => {
-          console.error('🔥 upload or Firestore write failed', err);
-          alert('Failed to upload image.');
-        });
-
-      // **4)** Only handle the first image
-      return;
-    }
-  }
-}
-function setupAutoSaveListeners() {
-  let debounceTimer;
-
-  const triggerSave = () => {
-    if (!localStorage.getItem("autoSaveCharacterName")) return;
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      silentAutoSaveCharacter();
-      console.log("💾 Autosave triggered");
-    }, 800);
-  };
-
-  const observeAndBind = () => {
-    const charForm = document.getElementById("char-form");
-    const triggerEvents = ["input", "change", "click"];
-
-    const attach = el => {
-      triggerEvents.forEach(event =>
-        el.addEventListener(event, triggerSave)
-      );
-    };
-
-    charForm.querySelectorAll("input, button, textarea, select").forEach(attach);
-  };
-
-  // First run
-  observeAndBind();
-
-  // Then re-run on DOM changes
-  new MutationObserver(observeAndBind).observe(document.getElementById("char-form"), {
-    childList: true,
-    subtree: true
-  });
-}
-
-
-function listenForDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) return;
-
-  db.collection("sessions").doc(sessionId).collection("drawings")
-    .onSnapshot(snapshot => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type === "added" || change.type === "modified") {
-          const { imageData } = change.doc.data();
-          const uid = change.doc.id;
-
-          if (imageData) {
-            const img = new Image();
-            img.onload = () => {
-              const tempCanvas = document.createElement("canvas");
-              tempCanvas.width = offscreenCanvas.width;
-              tempCanvas.height = offscreenCanvas.height;
-              const ctx = tempCanvas.getContext("2d");
-              ctx.drawImage(img, 0, 0);
-              userCanvases[uid] = tempCanvas;
-              drawFromBuffer();
-            };
-            img.src = imageData;
-          }
-        }
-
-        if (change.type === "removed") {
-          const uid = change.doc.id;
-          delete userCanvases[uid];
-          drawFromBuffer();
-        }
-      });
-    });
-}
-
-function disableCharacterInputs(disabled = true) {
-  const selectors = [
-    '#char-form input', '#char-form button', '#exp-minus', '#exp-plus',
-    '#luck-minus', '#luck-plus'
-  ];
-  selectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(el => {
-      if (!el.id.includes("player-name")) el.disabled = disabled;
-    });
-  });
-}
 function promptAndCreateCharacter() {
   const name = prompt("Enter your new character's name:");
   if (!name) return;
 
   const user = auth.currentUser;
-  const sessionId = localStorage.getItem("currentSessionId");
+  const sessionId = getSessionId();
+  if (!user) return;
 
   const emptyCharacter = {
     name: name,
@@ -866,6 +696,7 @@ function promptAndCreateCharacter() {
     .then(() => {
       console.log(`✅ New character '${name}' created.`);
       document.getElementById("player-name").value = name;
+
       localStorage.setItem("autoSaveCharacterName", name);
       localStorage.setItem("char_for_session_" + sessionId, name);
       window._lastSavedCharacterName = name;
@@ -878,20 +709,261 @@ function promptAndCreateCharacter() {
         console.log("✅ Autosave listeners activated.");
       }
 
-      document.getElementById("loadCharacterModal").style.display = "none";
+      hide("loadCharacterModal");
     })
     .catch((err) => {
       console.error("❌ Failed to create character:", err);
       alert("Failed to create character.");
     });
 }
-document.addEventListener("DOMContentLoaded", () => {
-  const saveBtn = document.getElementById("saveUsernameBtn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", submitUsername);
-  } else {
-    console.warn("❌ saveUsernameBtn not found in DOM.");
+
+// =====================
+// Autosave
+// =====================
+
+function setupAutoSaveListeners() {
+  let debounceTimer;
+
+  const triggerSave = () => {
+    if (!localStorage.getItem("autoSaveCharacterName")) return;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      silentAutoSaveCharacter();
+      console.log("💾 Autosave triggered");
+    }, 800);
+  };
+
+  const observeAndBind = () => {
+    const charForm = document.getElementById("char-form");
+    if (!charForm) return;
+
+    const triggerEvents = ["input", "change", "click"];
+
+    const attach = el => {
+      triggerEvents.forEach(event => el.addEventListener(event, triggerSave));
+    };
+
+    charForm.querySelectorAll("input, button, textarea, select").forEach(attach);
+  };
+
+  observeAndBind();
+
+  const form = document.getElementById("char-form");
+  if (form) {
+    new MutationObserver(observeAndBind).observe(form, { childList: true, subtree: true });
   }
+}
+
+// =====================
+// Show & Tell image listener
+// =====================
+
+function listenForDisplayImageUpdates() {
+  const sessionId = getSessionId();
+  if (!sessionId) return;
+
+  db.collection("sessions").doc(sessionId).onSnapshot(doc => {
+    const data = doc.data();
+    const newImage = data?.currentDisplayImage || null;
+
+    // If GM cleared the image
+    if (!newImage) {
+      latestDisplayImage = null;
+      localStorage.removeItem("gmDisplayImage");
+      console.log("🧼 Display image cleared by GM");
+      // Let script.js handle clearing the display (it already does via pushToDisplayArea/cleardisplay)
+      if (typeof pushToDisplayArea === "function") {
+        // Just clear visually without writing
+        pushToDisplayArea("", false);
+      }
+      return;
+    }
+
+    if (newImage && newImage !== latestDisplayImage) {
+      latestDisplayImage = newImage;
+      if (typeof pushToDisplayArea === "function") {
+        pushToDisplayArea(newImage, false);
+      }
+    }
+  });
+}
+
+// =====================
+// Chat + Paste Images
+// =====================
+
+// Wire up paste handler on DOM ready
+document.addEventListener("DOMContentLoaded", () => {
+  const chatInput = document.getElementById("chatInput");
+  if (!chatInput) return;
+
+  chatInput.addEventListener("paste", handlePasteImage);
 });
 
+function setupChatListener(sessionId) {
+  const chatPanel = document.getElementById("chat-panel");
+  const chatMessages = document.getElementById("chat-messages");
+  if (!chatMessages || !chatPanel) return;
 
+  chatPanel.style.display = "flex";
+
+  db.collection("sessions").doc(sessionId).collection("chat")
+    .orderBy("timestamp")
+    .onSnapshot(snapshot => {
+      chatMessages.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const div = document.createElement("div");
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = (msg.characterName || "Unknown") + ": ";
+        nameSpan.style.color = msg.color || "#ffffff";
+        div.appendChild(nameSpan);
+
+        if (msg.text) {
+          const textSpan = document.createElement("span");
+          textSpan.textContent = msg.text;
+          div.appendChild(textSpan);
+        }
+
+        if (msg.imageUrl) {
+          const img = document.createElement("img");
+          img.src = msg.imageUrl;
+          img.style.maxWidth = "100%";
+          img.style.maxHeight = "300px";
+          img.style.display = "block";
+          img.style.marginTop = "5px";
+          div.appendChild(img);
+        }
+
+        chatMessages.appendChild(div);
+      });
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+}
+
+function sendChatMessage() {
+  const input = document.getElementById("chatInput");
+  if (!input) return;
+
+  const text = input.innerText.trim();
+  const imgs = Array.from(input.querySelectorAll("img"));
+
+  if (!selectedSessionId || !auth.currentUser) {
+    return alert("Must be logged in and in a session.");
+  }
+
+  if (!text && imgs.length === 0) {
+    input.innerHTML = "";
+    return;
+  }
+
+  const user = auth.currentUser;
+  const characterName = document.getElementById("player-name")?.value || user.email || "Unknown";
+
+  db.collection("users").doc(user.uid).get().then(userDoc => {
+    const color = userDoc.data()?.displayNameColor || "#ffffff";
+    const writes = [];
+
+    if (text) {
+      writes.push(
+        db.collection("sessions").doc(selectedSessionId).collection("chat").add({
+          characterName,
+          text,
+          color,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+      );
+    }
+
+    imgs.forEach(img => {
+      writes.push(
+        db.collection("sessions").doc(selectedSessionId).collection("chat").add({
+          characterName,
+          imageUrl: img.src,
+          color,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+      );
+    });
+
+    return Promise.all(writes);
+  }).then(() => {
+    input.innerHTML = "";
+  }).catch(err => {
+    console.error("Failed to send chat message:", err);
+    alert("Failed to send chat message.");
+  });
+}
+
+function handlePasteImage(event) {
+  const items = (event.clipboardData || event.originalEvent.clipboardData)?.items || [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.startsWith("image/")) {
+      // ✅ IMPORTANT: stop browser pasting the raw blob
+      event.preventDefault();
+
+      const file = item.getAsFile();
+      if (!file) return;
+
+      const path = `chatImages/${Date.now()}_${file.name}`;
+      const storageRef = storage.ref(path);
+
+      storageRef.put(file)
+        .then(snapshot => snapshot.ref.getDownloadURL())
+        .then(url => {
+          const user = auth.currentUser;
+          if (!user || !selectedSessionId) return;
+
+          const characterName = document.getElementById("player-name")?.value || user.email || "Unknown";
+
+          return db.collection("sessions")
+            .doc(selectedSessionId)
+            .collection("chat")
+            .add({
+              characterName,
+              imageUrl: url,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              color: "#ffffff"
+            });
+        })
+        .catch(err => {
+          console.error("🔥 upload or Firestore write failed", err);
+          alert("Failed to upload image.");
+        });
+
+      return; // only handle first image
+    }
+  }
+}
+
+function saveChatColor() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const picker = document.getElementById("chatColorPicker");
+  const color = picker ? picker.value : "#ffffff";
+
+  db.collection("users").doc(user.uid).set({ displayNameColor: color }, { merge: true });
+}
+
+function rollD6(count) {
+  const user = auth.currentUser;
+  if (!user || !selectedSessionId) return alert("You must be in a session and logged in.");
+
+  const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
+  const characterName = document.getElementById("player-name")?.value || user.email || "Unknown";
+
+  db.collection("users").doc(user.uid).get().then(doc => {
+    const color = doc.data()?.displayNameColor || "#ffffff";
+    return db.collection("sessions").doc(selectedSessionId).collection("chat").add({
+      characterName,
+      text: `${count}🎲 ${rolls.join(", ")}`,
+      color,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+}

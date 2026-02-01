@@ -1009,13 +1009,18 @@ window.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   });
 
-  zoomContainer.addEventListener("mousedown", (e) => {
-    if (currentTool) return;
-    isPanning = true;
-    startX = e.clientX - panX;
-    startY = e.clientY - panY;
-    zoomContainer.style.cursor = "grabbing";
-  });
+zoomContainer.addEventListener("mousedown", (e) => {
+  if (currentTool) return;
+
+  // ✅ Don't pan when interacting with UI controls
+  if (e.target.closest("button, input, textarea, select, label, a")) return;
+
+  isPanning = true;
+  startX = e.clientX - panX;
+  startY = e.clientY - panY;
+  zoomContainer.style.cursor = "grabbing";
+});
+
 
   document.addEventListener("mousemove", (e) => {
     if (currentTool) return;

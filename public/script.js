@@ -344,27 +344,28 @@ window.addEventListener("load", () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('skills-container').children.length === 0) {
-    addSkill('Do anything');
-  }
-  if (document.getElementById('items-container').children.length === 0) {
-    addItem();
-  }
-  if (document.getElementById('conditions-container').children.length === 0) {
-    addCondition();
-  }
+  if (document.getElementById('skills-container').children.length === 0) addSkill('Do anything');
+  if (document.getElementById('items-container').children.length === 0) addItem();
+  if (document.getElementById('conditions-container').children.length === 0) addCondition();
 
-  const savedImageUrl = localStorage.getItem("gmDisplayImage");
+  const sessionId = localStorage.getItem("currentSessionId");
+  if (!sessionId) {
+    // No session selected yet; do nothing.
+    return;
+  }
 
   // 🔒 Only restore if Firestore still has a valid image
-  db.collection("sessions").doc(localStorage.getItem("currentSessionId")).get().then(doc => {
+  db.collection("sessions").doc(sessionId).get().then(doc => {
     if (doc.exists && doc.data()?.currentDisplayImage) {
       pushToDisplayArea(doc.data().currentDisplayImage, false);
     } else {
       localStorage.removeItem("gmDisplayImage");
     }
+  }).catch(err => {
+    console.warn("Failed to validate display image:", err);
   });
-}); 
+});
+
 
 function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");

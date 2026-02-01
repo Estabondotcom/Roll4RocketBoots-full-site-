@@ -1,5 +1,17 @@
 let gmUnsubscribe = null;
 
+function getActiveSessionId() {
+  return (localStorage.getItem("currentSessionId") || "").trim();
+}
+
+function requireSessionId() {
+  const id = getActiveSessionId();
+  if (!id) {
+    console.warn("❌ Missing currentSessionId in localStorage; refusing Firestore .doc() call.");
+  }
+  return id;
+}
+
 
 function createSkillInput(value = "", levels = [true, false, false, false]) {
   const container = document.createElement('div');
@@ -695,12 +707,20 @@ function createNewTab(name, imageUrl, updateFirestore = true) {
 
 function pushToChat(imageUrl, label) {
   const user = auth.currentUser;
-  const characterName = document.getElementById("player-name").value || user.email;
+  if (!user) return;
+
+  const sessionId = requireSessionId();
+  if (!sessionId) return;
+
+  const characterName = document.getElementById("player-name")?.value || user.email || "Unknown";
+
   db.collection("users").doc(user.uid).get().then(doc => {
     const color = doc.data()?.displayNameColor || "#ffffff";
-    return db.collection("sessions").doc(selectedSessionId).collection("chat").add({
+
+    return db.collection("sessions").doc(sessionId).collection("chat").add({
       characterName,
       imageUrl,
+      label: label || "",
       color,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });

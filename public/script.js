@@ -1,38 +1,40 @@
 /* =========================================================================
-   Roll 4 Rocket Boots - script.js (double-load safe)
-   Everything lives under window.RFRB to prevent redeclare crashes.
+   Roll for Rocket Boots - public/script.js (Robust / Double-load-safe)
+   - All state lives in window.RFRB to avoid redeclare crashes
+   - Exports all functions used by inline onclick buttons + login.js
+   - Pan/zoom + drawing overlay (sync only on pointerup)
    ========================================================================= */
 
 /* global firebase, db, auth */
 
 (function () {
-  // Create a single shared namespace
+  // Namespace
   const R = (window.RFRB = window.RFRB || {});
 
-  // If already initialized, do not re-bind handlers again
+  // Prevent double-binding
   if (R.__initialized) {
-    console.warn("RFRB script already initialized; skipping re-init.");
+    console.warn("RFRB: script already initialized; skipping re-init.");
     return;
   }
   R.__initialized = true;
 
   /* -----------------------------
-     Shared State (lives on R)
+     State (idempotent)
   ----------------------------- */
-  R.zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
-  R.panX = parseFloat(localStorage.getItem("panX")) || 0;
-  R.panY = parseFloat(localStorage.getItem("panY")) || 0;
+  R.zoomLevel = Number.isFinite(R.zoomLevel) ? R.zoomLevel : (parseFloat(localStorage.getItem("zoomLevel")) || 1);
+  R.panX = Number.isFinite(R.panX) ? R.panX : (parseFloat(localStorage.getItem("panX")) || 0);
+  R.panY = Number.isFinite(R.panY) ? R.panY : (parseFloat(localStorage.getItem("panY")) || 0);
 
-  R.isPanning = false;
-  R.startX = 0;
-  R.startY = 0;
+  R.isPanning = !!R.isPanning;
+  R.startX = R.startX || 0;
+  R.startY = R.startY || 0;
 
   R.latestDisplayImage = R.latestDisplayImage ?? null;
   R.currentTabId = R.currentTabId ?? null;
 
   R.currentTool = R.currentTool ?? null; // 'pen' | 'erase' | null
   R.penColor = R.penColor ?? "#ff0000";
-  R.drawing = false;
+  R.drawing = !!R.drawing;
 
   R.offscreenCanvas = R.offscreenCanvas ?? null;
   R.offscreenCtx = R.offscreenCtx ?? null;
@@ -43,23 +45,36 @@
   R.gmModeActive = R.gmModeActive ?? false;
   R.gmPanelUnsubscribes = R.gmPanelUnsubscribes ?? [];
 
+  // Optional tab state cache
+  R.tabs = R.tabs ?? [];
+  R.warned = R.warned ?? {}; // one-time warnings
+
   /* -----------------------------
      Helpers
   ----------------------------- */
-  function getSessionId() {
-    return localStorage.getItem("currentSessionId") || "";
+  function warnOnce(key, msg) {
+    if (R.warned[key]) return;
+    R.warned[key] = true;
+    console.warn(msg);
   }
-  function getUser() {
-    return firebase.auth().currentUser;
-  }
-  function clamp(n, min, max) {
-    return Math.min(Math.max(n, min), max);
-  }
+
   function qs(sel, root = document) {
     return root.querySelector(sel);
   }
   function qsa(sel, root = document) {
     return Array.from(root.querySelectorAll(sel));
+  }
+
+  function clamp(n, min, max) {
+    return Math.min(Math.max(n, min), max);
+  }
+
+  function getSessionId() {
+    return localStorage.getItem("currentSessionId") || "";
+  }
+
+  function getUser() {
+    return firebase?.auth?.().currentUser || null;
   }
 
   const EL = {
@@ -72,6 +87,14 @@
     mainContainer: () => document.getElementById("main-container"),
     showPanel: () => document.getElementById("show-panel"),
 
+    tabBar: () => document.getElementById("tab-bar"),
+    rulesModal: () => document.getElementById("rules-modal"),
+
+    gmToolsPanel: () => document.getElementById("gm-tools-panel"),
+    gmModePanel: () => document.getElementById("gm-mode-panel"),
+    gmModeToggle: () => document.getElementById("gm-mode-toggle"),
+    gmCharPanels: () => document.getElementById("gm-character-panels"),
+
     skills: () => document.getElementById("skills-container"),
     items: () => document.getElementById("items-container"),
     conditions: () => document.getElementById("conditions-container"),
@@ -82,89 +105,60 @@
     luckValue: () => document.getElementById("luck-value"),
 
     penBtn: () => document.getElementById("pen-tool-btn"),
-    eraseBtn: () => document.getElementById("eraser-tool-btn"),
+    eraserBtn: () => document.getElementById("eraser-tool-btn"),
     penColor: () => document.getElementById("pen-color"),
     strokeSlider: () => document.getElementById("stroke-width-slider"),
-
-    clearMyDrawingsBtn: () => document.getElementById("clear-button"),
+    clearButton: () => document.getElementById("clear-button"),
 
     chatInput: () => document.getElementById("chatInput"),
+    chatMessages: () => document.getElementById("chat-messages"),
 
-    gmToolsPanel: () => document.getElementById("gm-tools-panel"),
-    gmModePanel: () => document.getElementById("gm-mode-panel"),
-    gmModeToggle: () => document.getElementById("gm-mode-toggle"),
-    gmCharPanels: () => document.getElementById("gm-character-panels"),
+    gmGalleryModal: () => document.getElementById("gm-image-gallery-modal"),
+    gmUpload: () => document.getElementById("gm-image-upload"),
+    gmUploadFilename: () => document.getElementById("gm-upload-filename"),
+    gmFolderInput: () => document.getElementById("gm-folder-input"),
+    imageList: () => document.getElementById("image-list"),
 
-    tabBar: () => document.getElementById("tab-bar"),
-    rulesModal: () => document.getElementById("rules-modal"),
-    themeLink: () => document.getElementById("theme-link"),
+    themeLink: () => document.getElementById("theme-link") || document.querySelector("link[rel='stylesheet']"),
   };
 
   /* =========================================================================
-     Character sheet data + autosave
+     THEME (fixes setTheme is not defined)
      ========================================================================= */
-  function buildCharacterDataFromDOM() {
-    const name = EL.charName()?.value || "";
-    const exp = parseInt(EL.expValue()?.textContent || "0", 10);
-    const luck = parseInt(EL.luckValue()?.textContent || "1", 10);
+  function setTheme(theme) {
+    const link = EL.themeLink();
+    if (!link) return warnOnce("themeLinkMissing", "RFRB: theme link tag not found.");
 
-    const wounds = qsa(".wounds button").map(btn => btn.classList.contains("active"));
+    const map = {
+      dark: "style-dark.css",
+      lava: "style-lava.css",
+      forest: "style-forest.css",
+      ocean: "style-ocean.css",
+      sky: "style-sky.css",
+      default: "style-default.css"
+    };
 
-    const skills = qsa("#skills-container .input-wrapper").map(wrapper => {
-      const input = wrapper.querySelector(".skill-input");
-      if (!input) return null;
-      const levels = qsa(".skill-level", wrapper).map(cb => cb.checked);
-      const skillName = input.value.trim();
-      if (!skillName) return null;
-      return { name: skillName, levels };
-    }).filter(Boolean);
+    link.setAttribute("href", map[theme] || map.default);
 
-    const items = qsa(".item-input").map(i => i.value.trim()).filter(Boolean);
-
-    // ✅ Correct conditions serialization
-    const conditions = qsa(".condition-input").map(i => i.value.trim()).filter(Boolean).map(name => ({ name }));
-
-    return { name, exp, luck, wounds, skills, items, conditions };
+    // Persist like your old system did (best-effort)
+    try {
+      const formState = JSON.parse(localStorage.getItem("formState") || "{}");
+      formState.theme = link.getAttribute("href");
+      localStorage.setItem("formState", JSON.stringify(formState));
+    } catch {}
   }
 
-  function applyCharacterDataToDOM(data) {
-    if (EL.charName()) EL.charName().value = data.name || "";
-    if (EL.expValue()) EL.expValue().textContent = String(data.exp ?? 0);
-    if (EL.luckValue()) EL.luckValue().textContent = String(data.luck ?? 1);
-
-    const woundButtons = qsa(".wounds button");
-    (data.wounds || []).forEach((isActive, i) => {
-      if (woundButtons[i]) woundButtons[i].classList.toggle("active", !!isActive);
-    });
-
-    if (EL.skills()) {
-      EL.skills().innerHTML = "";
-      (data.skills || []).forEach(s => addSkill(s));
-      if (EL.skills().children.length === 0) addSkill("Do anything");
-    }
-
-    if (EL.items()) {
-      EL.items().innerHTML = "";
-      (data.items || []).forEach(item => addItem(item));
-      if (EL.items().children.length === 0) addItem("");
-    }
-
-    if (EL.conditions()) {
-      EL.conditions().innerHTML = "";
-      (data.conditions || []).forEach(c => addCondition(c?.name || c));
-      if (EL.conditions().children.length === 0) addCondition("");
-    }
-  }
+  /* =========================================================================
+     CHARACTER SHEET CORE (skills/items/conditions + exp/luck/wounds)
+     ========================================================================= */
 
   function silentAutoSaveCharacter() {
+    // Lightweight local backup to avoid loss; your Firestore autosave (if any) can stay in login.js
     try {
       localStorage.setItem("rfrbCharacterDraft", JSON.stringify(buildCharacterDataFromDOM()));
     } catch {}
   }
 
-  /* =========================================================================
-     Skills / Items / Conditions UI
-     ========================================================================= */
   function createSkillInput(value = "", levels = [true, false, false, false]) {
     const container = document.createElement("div");
     container.className = "input-wrapper";
@@ -182,7 +176,6 @@
       checkbox.type = "checkbox";
       checkbox.className = "skill-level";
       checkbox.dataset.level = String(i);
-
       checkbox.checked = anyChecked ? !!levels[i - 1] : i === 1;
 
       checkbox.addEventListener("change", () => {
@@ -210,10 +203,10 @@
     rollButton.textContent = "🎲";
     rollButton.style.marginTop = "4px";
 
+    // Optional roll-to-chat
     rollButton.addEventListener("click", async () => {
       const skillName = input.value.trim() || "Unnamed Skill";
       const allChecks = checkboxes.querySelectorAll(".skill-level");
-
       let diceCount = 0;
       allChecks.forEach((cb, idx) => { if (cb.checked) diceCount = idx + 2; });
       if (!diceCount) return alert("No dice level selected.");
@@ -221,9 +214,9 @@
       const rolls = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
       const total = rolls.reduce((a, b) => a + b, 0);
 
-      const sessionId = getSessionId();
       const user = getUser();
-      if (!sessionId || !user) return alert("You must be logged in and in a session.");
+      const sessionId = getSessionId();
+      if (!user || !sessionId) return alert("You must be logged in and in a session.");
 
       const characterName = EL.playerName()?.value || "Unknown";
 
@@ -235,11 +228,10 @@
           characterName,
           text: `${characterName}: ${skillName}: [${rolls.join(", ")}] = ${total}`,
           color,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch (err) {
-        console.error("Failed to send roll:", err);
-        alert("Failed to send roll to chat.");
+        console.error("RFRB: roll-to-chat failed", err);
       }
     });
 
@@ -266,7 +258,7 @@
       value = value.name || "";
     }
     const container = EL.skills();
-    if (!container) return;
+    if (!container) return warnOnce("skillsMissing", "RFRB: #skills-container missing.");
     container.appendChild(createSkillInput(value, levels));
     silentAutoSaveCharacter();
   }
@@ -299,7 +291,7 @@
 
   function addItem(value = "") {
     const container = EL.items();
-    if (!container) return;
+    if (!container) return warnOnce("itemsMissing", "RFRB: #items-container missing.");
     container.appendChild(createItemInput(value));
     silentAutoSaveCharacter();
   }
@@ -332,14 +324,14 @@
 
   function addCondition(value = "") {
     const container = EL.conditions();
-    if (!container) return;
+    if (!container) return warnOnce("conditionsMissing", "RFRB: #conditions-container missing.");
     container.appendChild(createConditionInput(value));
     silentAutoSaveCharacter();
   }
 
   function adjustExp(amount) {
     const expSpan = EL.expValue();
-    if (!expSpan) return;
+    if (!expSpan) return warnOnce("expMissing", "RFRB: #exp-value missing.");
     let current = parseInt(expSpan.textContent || "0", 10);
     current = Math.max(0, current + amount);
     expSpan.textContent = String(current);
@@ -348,7 +340,7 @@
 
   function adjustLuck(amount) {
     const luckSpan = EL.luckValue();
-    if (!luckSpan) return;
+    if (!luckSpan) return warnOnce("luckMissing", "RFRB: #luck-value missing.");
     let current = parseInt(luckSpan.textContent || "1", 10);
     current = Math.max(0, current + amount);
     luckSpan.textContent = String(current);
@@ -362,14 +354,273 @@
     silentAutoSaveCharacter();
   }
 
-  function toggleRules() {
-    const modal = EL.rulesModal();
-    if (!modal) return;
-    modal.style.display = (modal.style.display === "block") ? "none" : "block";
+  function buildCharacterDataFromDOM() {
+    const name = EL.charName()?.value || "";
+    const exp = parseInt(EL.expValue()?.textContent || "0", 10);
+    const luck = parseInt(EL.luckValue()?.textContent || "1", 10);
+    const wounds = qsa(".wounds button").map(btn => btn.classList.contains("active"));
+
+    const skills = qsa("#skills-container .input-wrapper").map(wrapper => {
+      const input = wrapper.querySelector(".skill-input");
+      if (!input) return null;
+      const levels = qsa(".skill-level", wrapper).map(cb => cb.checked);
+      const skillName = input.value.trim();
+      if (!skillName) return null;
+      return { name: skillName, levels };
+    }).filter(Boolean);
+
+    const items = qsa(".item-input").map(i => i.value.trim()).filter(Boolean);
+
+    // ✅ correct conditions (previously bugged in your old code)
+    const conditions = qsa(".condition-input")
+      .map(i => i.value.trim())
+      .filter(Boolean)
+      .map(name => ({ name }));
+
+    return { name, exp, luck, wounds, skills, items, conditions };
+  }
+
+  function applyCharacterDataToDOM(data) {
+    if (!data) return;
+
+    if (EL.charName()) EL.charName().value = data.name || "";
+    if (EL.expValue()) EL.expValue().textContent = String(data.exp ?? 0);
+    if (EL.luckValue()) EL.luckValue().textContent = String(data.luck ?? 1);
+
+    const woundButtons = qsa(".wounds button");
+    (data.wounds || []).forEach((isActive, i) => {
+      if (woundButtons[i]) woundButtons[i].classList.toggle("active", !!isActive);
+    });
+
+    if (EL.skills()) {
+      EL.skills().innerHTML = "";
+      (data.skills || []).forEach(s => addSkill(s));
+      if (EL.skills().children.length === 0) addSkill("Do anything");
+    }
+
+    if (EL.items()) {
+      EL.items().innerHTML = "";
+      (data.items || []).forEach(item => addItem(item));
+      if (EL.items().children.length === 0) addItem("");
+    }
+
+    if (EL.conditions()) {
+      EL.conditions().innerHTML = "";
+      (data.conditions || []).forEach(c => addCondition(c?.name || c));
+      if (EL.conditions().children.length === 0) addCondition("");
+    }
+  }
+
+  // Legacy local save/load buttons (if your sheet still uses them)
+  function saveData() {
+    localStorage.setItem("rfrbCharacter", JSON.stringify(buildCharacterDataFromDOM()));
+    alert("Character saved!");
+  }
+  function loadData() {
+    const data = JSON.parse(localStorage.getItem("rfrbCharacter") || "null");
+    if (!data) return alert("No saved character!");
+    applyCharacterDataToDOM(data);
+    alert("Character loaded!");
+  }
+  function clearData() {
+    localStorage.removeItem("rfrbCharacter");
+    // reset basic fields if present
+    if (EL.charName()) EL.charName().value = "";
+    if (EL.expValue()) EL.expValue().textContent = "0";
+    if (EL.luckValue()) EL.luckValue().textContent = "1";
+    qsa(".wounds button").forEach(btn => btn.classList.remove("active"));
+    if (EL.skills()) { EL.skills().innerHTML = ""; addSkill("Do anything"); }
+    if (EL.items()) { EL.items().innerHTML = ""; addItem(""); }
+    if (EL.conditions()) { EL.conditions().innerHTML = ""; addCondition(""); }
+    alert("Character cleared.");
   }
 
   /* =========================================================================
-     Pan/Zoom
+     GM TOOLS (fixes openGMTools is not defined)
+     ========================================================================= */
+  function openGMTools() {
+    const panel = EL.gmToolsPanel();
+    if (!panel) return warnOnce("gmToolsMissing", "RFRB: #gm-tools-panel missing.");
+    panel.style.display = "block";
+  }
+
+  function toggleGMTools() {
+    const panel = EL.gmToolsPanel();
+    if (!panel) return warnOnce("gmToolsMissing", "RFRB: #gm-tools-panel missing.");
+    panel.style.display = (panel.style.display === "none" || !panel.style.display) ? "block" : "none";
+  }
+
+  /* =========================================================================
+     SHOW & TELL PANEL
+     ========================================================================= */
+  function ensureTabImageExists() {
+    const container = EL.zoomContent();
+    if (!container) return;
+    if (EL.tabImage()) return;
+
+    const img = document.createElement("img");
+    img.id = "tab-image";
+    img.style.position = "absolute";
+    img.style.top = "0";
+    img.style.left = "0";
+    img.style.maxWidth = "none";
+    img.draggable = false;
+    container.appendChild(img);
+  }
+
+  function ensureDrawingCanvasExists() {
+    const container = EL.zoomContent();
+    if (!container) return;
+
+    let canvas = EL.drawingCanvas();
+    if (canvas) return;
+
+    canvas = document.createElement("canvas");
+    canvas.id = "drawing-canvas";
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.zIndex = "5";
+    canvas.style.pointerEvents = "none"; // ✅ default so UI remains clickable
+    container.appendChild(canvas);
+  }
+
+  function toggleShowAndTell() {
+    if (EL.characterPanel()) EL.characterPanel().style.display = "none";
+    if (EL.mainContainer()) EL.mainContainer().style.display = "none";
+    if (EL.showPanel()) EL.showPanel().style.display = "block";
+
+    ensureTabImageExists();
+    ensureDrawingCanvasExists();
+    setupDrawingCanvasSafe();
+
+    // If your login.js defines this, we’ll call it
+    if (typeof window.listenForDisplayImageUpdates === "function") {
+      window.listenForDisplayImageUpdates();
+    }
+  }
+
+  function toggleCharacterPanel() {
+    if (EL.characterPanel()) EL.characterPanel().style.display = "block";
+    if (EL.mainContainer()) EL.mainContainer().style.display = "block";
+    if (EL.showPanel()) EL.showPanel().style.display = "none";
+  }
+
+  /* =========================================================================
+     Tabs (basic render + persist)
+     ========================================================================= */
+  function renderTabs(tabs, activeTabId) {
+    const tabBar = EL.tabBar();
+    if (!tabBar) return warnOnce("tabBarMissing", "RFRB: #tab-bar missing (tabs won’t render).");
+
+    tabBar.innerHTML = "";
+    (tabs || []).forEach(tab => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = tab.title || tab.id || "Tab";
+      btn.classList.add("tab-button");
+      if (tab.id === activeTabId) btn.classList.add("active");
+
+      btn.addEventListener("click", () => {
+        R.currentTabId = tab.id;
+        showTabImage(tab.imageUrl);
+        renderTabs(tabs, tab.id);
+      });
+
+      tabBar.appendChild(btn);
+    });
+  }
+
+  function showTabImage(url) {
+    ensureTabImageExists();
+    const img = EL.tabImage();
+    if (!img) return;
+    img.src = url || "";
+  }
+
+  function createNewTab(name, imageUrl, updateFirestore = true) {
+    const sessionId = getSessionId();
+    if (!sessionId) return alert("No session selected.");
+
+    const tabId = name;
+    const tab = { id: tabId, title: name, imageUrl: imageUrl || "" };
+    R.tabs = R.tabs || [];
+    R.tabs.push(tab);
+    R.currentTabId = tabId;
+    renderTabs(R.tabs, tabId);
+    showTabImage(tab.imageUrl);
+
+    if (updateFirestore) {
+      db.collection("sessions").doc(sessionId).collection("tabs").doc(tabId).set({ imageUrl: tab.imageUrl });
+      db.collection("sessions").doc(sessionId).update({
+        tabOrder: firebase.firestore.FieldValue.arrayUnion(tabId),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  }
+
+  /* =========================================================================
+     Display Image push (GM) + restore
+     ========================================================================= */
+  function pushToDisplayArea(imageUrl, updateFirestore = true) {
+    ensureTabImageExists();
+    ensureDrawingCanvasExists();
+
+    const img = EL.tabImage();
+    const canvas = EL.drawingCanvas();
+    if (!img) return warnOnce("tabImageMissing", "RFRB: #tab-image missing.");
+    if (!imageUrl) return;
+
+    img.src = imageUrl;
+    R.latestDisplayImage = imageUrl;
+
+    img.onload = () => {
+      const zoomContainer = EL.zoomContainer();
+      if (!zoomContainer) return;
+
+      const box = zoomContainer.getBoundingClientRect();
+      const scaleX = box.width / img.naturalWidth;
+      const scaleY = box.height / img.naturalHeight;
+      const s = Math.min(scaleX, scaleY);
+
+      R.zoomLevel = s;
+      R.panX = (box.width - img.naturalWidth * s) / 2;
+      R.panY = (box.height - img.naturalHeight * s) / 2;
+
+      applyTransform();
+      setupDrawingCanvasSafe();
+      loadAllDrawings();
+    };
+
+    // Ensure canvas exists and is layered
+    if (canvas) canvas.style.pointerEvents = (R.currentTool ? "auto" : "none");
+
+    localStorage.setItem("gmDisplayImage", imageUrl);
+
+    if (updateFirestore) {
+      const sessionId = getSessionId();
+      if (!sessionId) return;
+      db.collection("sessions").doc(sessionId).update({
+        currentDisplayImage: imageUrl,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  }
+
+  function restoreDisplayIfSessionKnown() {
+    const sessionId = getSessionId();
+    if (!sessionId) return;
+
+    db.collection("sessions").doc(sessionId).get().then(doc => {
+      const url = doc.data()?.currentDisplayImage;
+      if (doc.exists && url) {
+        pushToDisplayArea(url, false);
+      }
+    }).catch(() => {});
+  }
+
+  /* =========================================================================
+     Pan/Zoom (won’t steal clicks from UI controls)
      ========================================================================= */
   function applyTransform() {
     const zoomContent = EL.zoomContent();
@@ -422,7 +673,10 @@
 
     zoomContainer.addEventListener("mousedown", (e) => {
       if (R.currentTool) return;
-      if (e.target.closest("button, input, textarea, select, label, a")) return; // ✅ don't steal UI clicks
+
+      // ✅ Don’t start panning if clicking any UI control
+      if (e.target.closest("button, input, textarea, select, label, a")) return;
+
       R.isPanning = true;
       R.startX = e.clientX - R.panX;
       R.startY = e.clientY - R.panY;
@@ -451,40 +705,8 @@
   }
 
   /* =========================================================================
-     Drawing (safe, sync on pointerup)
+     Drawing (per-user layers, sync only on pointerup)
      ========================================================================= */
-  function ensureDrawingCanvasExists() {
-    const container = EL.zoomContent();
-    if (!container) return;
-
-    let canvas = EL.drawingCanvas();
-    if (canvas) return;
-
-    canvas = document.createElement("canvas");
-    canvas.id = "drawing-canvas";
-    canvas.style.position = "absolute";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.zIndex = "5";
-    canvas.style.pointerEvents = "none"; // ✅ default: don't block UI
-    container.appendChild(canvas);
-  }
-
-  function ensureTabImageExists() {
-    const container = EL.zoomContent();
-    if (!container) return;
-    if (EL.tabImage()) return;
-
-    const img = document.createElement("img");
-    img.id = "tab-image";
-    img.style.position = "absolute";
-    img.style.top = "0";
-    img.style.left = "0";
-    img.style.maxWidth = "none";
-    img.draggable = false;
-    container.appendChild(img);
-  }
-
   function setupDrawingCanvasSafe() {
     const canvas = EL.drawingCanvas();
     const img = qs("#zoom-content img");
@@ -502,7 +724,7 @@
     const rect = canvas.getBoundingClientRect();
     return {
       x: (e.clientX - rect.left) / R.zoomLevel,
-      y: (e.clientY - rect.top) / R.zoomLevel,
+      y: (e.clientY - rect.top) / R.zoomLevel
     };
   }
 
@@ -511,11 +733,13 @@
     const img = qs("#zoom-content img");
     if (!canvas || !img) return;
 
+    // Create offscreen reference
     R.offscreenCanvas = document.createElement("canvas");
     R.offscreenCanvas.width = img.naturalWidth;
     R.offscreenCanvas.height = img.naturalHeight;
     R.offscreenCtx = R.offscreenCanvas.getContext("2d");
 
+    // Bind only once
     if (canvas.dataset.bound === "1") return;
     canvas.dataset.bound = "1";
 
@@ -572,11 +796,14 @@
 
       try { canvas.releasePointerCapture(e.pointerId); } catch {}
 
+      // ✅ Only write on stroke end
       await saveUserDrawingLayer(user.uid);
       drawFromBuffer();
     });
 
-    canvas.addEventListener("pointercancel", () => { R.drawing = false; });
+    canvas.addEventListener("pointercancel", () => {
+      R.drawing = false;
+    });
 
     loadAllDrawings();
     listenForDrawings();
@@ -600,6 +827,7 @@
     ctx.setTransform(dpr * R.zoomLevel, 0, 0, dpr * R.zoomLevel, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // deterministic draw order
     Object.keys(R.userCanvases).sort().forEach(uid => {
       ctx.drawImage(R.userCanvases[uid], 0, 0);
     });
@@ -613,13 +841,18 @@
     if (!layer) return;
 
     const imageData = layer.toDataURL("image/png");
+
     try {
-      await db.collection("sessions").doc(sessionId).collection("drawings").doc(uid).set({
-        imageData,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true });
+      await db.collection("sessions")
+        .doc(sessionId)
+        .collection("drawings")
+        .doc(uid)
+        .set({
+          imageData,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
     } catch (err) {
-      console.error("Failed to save drawing layer:", err);
+      console.error("RFRB: saveUserDrawingLayer failed", err);
     }
   }
 
@@ -647,7 +880,7 @@
           img.src = imageData;
         });
       })
-      .catch(err => console.error("loadAllDrawings error:", err));
+      .catch(err => console.error("RFRB: loadAllDrawings error", err));
   }
 
   function listenForDrawings() {
@@ -655,6 +888,7 @@
     if (!sessionId) return;
 
     if (R.drawingsUnsub) R.drawingsUnsub();
+
     R.drawingsUnsub = db.collection("sessions").doc(sessionId).collection("drawings")
       .onSnapshot(snapshot => {
         snapshot.docChanges().forEach(change => {
@@ -680,31 +914,31 @@
           };
           img.src = imageData;
         });
-      }, err => console.error("listenForDrawings error:", err));
+      }, err => console.error("RFRB: listenForDrawings error", err));
   }
 
   function setDrawingMode(mode) {
     ensureDrawingCanvasExists();
-
     const canvas = EL.drawingCanvas();
     const zoomContainer = EL.zoomContainer();
-    const penBtn = EL.penBtn();
-    const eraseBtn = EL.eraseBtn();
     if (!canvas || !zoomContainer) return;
+
+    const penBtn = EL.penBtn();
+    const eraserBtn = EL.eraserBtn();
 
     if (R.currentTool === mode) {
       R.currentTool = null;
       canvas.style.pointerEvents = "none";
       zoomContainer.classList.remove("no-pan");
       penBtn?.classList.remove("active-tool");
-      eraseBtn?.classList.remove("active-tool");
+      eraserBtn?.classList.remove("active-tool");
       canvas.style.cursor = "default";
     } else {
       R.currentTool = mode;
       canvas.style.pointerEvents = "auto";
       zoomContainer.classList.add("no-pan");
       penBtn?.classList.toggle("active-tool", mode === "pen");
-      eraseBtn?.classList.toggle("active-tool", mode === "erase");
+      eraserBtn?.classList.toggle("active-tool", mode === "erase");
       canvas.style.cursor = (mode === "pen") ? "crosshair" : "cell";
     }
   }
@@ -718,7 +952,7 @@
     drawFromBuffer();
 
     db.collection("sessions").doc(sessionId).collection("drawings").doc(user.uid).delete()
-      .catch(err => console.error("Failed to clear drawing:", err));
+      .catch(err => console.error("RFRB: clearMyDrawings failed", err));
   }
 
   function clearAllDrawings() {
@@ -732,85 +966,281 @@
     }).then(() => {
       R.userCanvases = {};
       drawFromBuffer();
+    }).catch(err => console.error("RFRB: clearAllDrawings failed", err));
+  }
+
+  /* =========================================================================
+     GM Image Gallery (safe, won’t crash if markup missing)
+     - If you’re not using it right now, it harmlessly no-ops.
+     ========================================================================= */
+  function openGMImageModal() {
+    const modal = EL.gmGalleryModal();
+    if (!modal) return warnOnce("gmModalMissing", "RFRB: #gm-image-gallery-modal missing.");
+    modal.style.display = "flex";
+    loadGMImages();
+  }
+
+  function closeGMImageModal() {
+    const modal = EL.gmGalleryModal();
+    if (!modal) return;
+    modal.style.display = "none";
+  }
+
+  function uploadGMImage() {
+    const fileInput = EL.gmUpload();
+    const file = fileInput?.files?.[0];
+    const sessionId = getSessionId();
+    const user = getUser();
+
+    if (!fileInput) return warnOnce("gmUploadMissing", "RFRB: #gm-image-upload missing.");
+    if (!file) return alert("Please select a file first.");
+    if (!user || !sessionId) return alert("User or session not found.");
+
+    const folder = (EL.gmFolderInput()?.value || "").trim() || "Unsorted";
+
+    const storageRef = firebase.storage().ref(`sessions/${sessionId}/gmimages/${file.name}`);
+    const uploadTask = storageRef.put(file);
+
+    uploadTask.on("state_changed", null, (error) => {
+      console.error("Upload failed:", error);
+      alert("Upload failed.");
+    }, () => {
+      uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+        return db.collection("sessions").doc(sessionId).collection("gmimages").add({
+          name: file.name,
+          url: downloadURL,
+          folder,
+          uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }).then(() => {
+        loadGMImages();
+      });
+    });
+  }
+
+  function loadGMImages() {
+    const gallery = EL.imageList();
+    const sessionId = getSessionId();
+    if (!gallery) return warnOnce("imageListMissing", "RFRB: #image-list missing (GM gallery won’t render).");
+    if (!sessionId) return;
+
+    gallery.innerHTML = "<p>Loading...</p>";
+
+    db.collection("sessions").doc(sessionId).collection("gmimages").get().then(snapshot => {
+      const folderMap = {};
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const folder = data.folder || "Unsorted";
+        if (!folderMap[folder]) folderMap[folder] = [];
+        folderMap[folder].push({ id: doc.id, ...data });
+      });
+
+      gallery.innerHTML = "";
+
+      Object.entries(folderMap).forEach(([folderName, images]) => {
+        const section = document.createElement("div");
+
+        const header = document.createElement("h3");
+        header.style.color = "white";
+        header.style.cursor = "pointer";
+        header.textContent = `📁 ${folderName}`;
+
+        const content = document.createElement("div");
+        content.style.display = "none";
+        content.style.marginLeft = "10px";
+
+        header.addEventListener("click", () => {
+          content.style.display = (content.style.display === "none") ? "block" : "none";
+        });
+
+        images.forEach(({ name, url, id }) => {
+          const wrapper = document.createElement("div");
+          wrapper.style = "display:flex;flex-direction:column;align-items:center;border:1px solid #555;padding:5px;background:#111;margin-bottom:6px;";
+
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = name;
+          img.style = "width:100px;height:auto;margin-bottom:5px;";
+
+          const label = document.createElement("div");
+          label.textContent = name;
+          label.style = "font-size:12px;color:white;";
+
+          const btnGroup = document.createElement("div");
+          btnGroup.style = "margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;";
+
+          const toDisplay = document.createElement("button");
+          toDisplay.type = "button";
+          toDisplay.textContent = "display";
+          toDisplay.onclick = () => {
+            toggleShowAndTell();
+            setTimeout(() => pushToDisplayArea(url, true), 50);
+          };
+
+          const toChat = document.createElement("button");
+          toChat.type = "button";
+          toChat.textContent = "Chat";
+          toChat.onclick = () => pushToChat(url, name);
+
+          const del = document.createElement("button");
+          del.type = "button";
+          del.textContent = "❌";
+          del.onclick = () => deleteGMImage(sessionId, id, name, wrapper);
+
+          [toDisplay, toChat, del].forEach(btn => {
+            btn.style.padding = "2px 6px";
+            btn.style.fontSize = "12px";
+            btn.style.borderRadius = "4px";
+            btn.style.backgroundColor = "#333";
+            btn.style.color = "#fff";
+            btn.style.border = "1px solid #666";
+            btn.style.cursor = "pointer";
+          });
+
+          btnGroup.appendChild(toDisplay);
+          btnGroup.appendChild(toChat);
+          btnGroup.appendChild(del);
+
+          wrapper.appendChild(img);
+          wrapper.appendChild(label);
+          wrapper.appendChild(btnGroup);
+          content.appendChild(wrapper);
+        });
+
+        section.appendChild(header);
+        section.appendChild(content);
+        gallery.appendChild(section);
+      });
+    }).catch(err => {
+      console.error("RFRB: loadGMImages failed", err);
+      gallery.innerHTML = "<p>Failed to load images.</p>";
+    });
+  }
+
+  function deleteGMImage(sessionId, docId, fileName, wrapper) {
+    if (!confirm(`Delete image "${fileName}"?`)) return;
+
+    const storagePath = `sessions/${sessionId}/gmimages/${fileName}`;
+    const storageRef = firebase.storage().ref(storagePath);
+
+    storageRef.delete().then(() => {
+      return db.collection("sessions").doc(sessionId).collection("gmimages").doc(docId).delete();
+    }).then(() => {
+      wrapper?.remove();
+    }).catch(err => {
+      console.error("RFRB: deleteGMImage failed", err);
+      alert("Failed to delete image.");
     });
   }
 
   /* =========================================================================
-     Show & Tell basics (kept light)
+     Chat helpers (safe)
      ========================================================================= */
-  function toggleShowAndTell() {
-    EL.characterPanel() && (EL.characterPanel().style.display = "none");
-    EL.mainContainer() && (EL.mainContainer().style.display = "none");
-    EL.showPanel() && (EL.showPanel().style.display = "block");
+  function pushToChat(imageUrl, label) {
+    const user = getUser();
+    const sessionId = getSessionId();
+    if (!user || !sessionId) return;
 
-    ensureTabImageExists();
-    ensureDrawingCanvasExists();
-    setupDrawingCanvasSafe();
-  }
+    const characterName = EL.playerName()?.value || user.email || "Player";
 
-  function toggleCharacterPanel() {
-    EL.characterPanel() && (EL.characterPanel().style.display = "block");
-    EL.mainContainer() && (EL.mainContainer().style.display = "block");
-    EL.showPanel() && (EL.showPanel().style.display = "none");
-  }
-
-  function pushToDisplayArea(imageUrl, updateFirestore = true) {
-    ensureTabImageExists();
-    ensureDrawingCanvasExists();
-
-    const img = EL.tabImage();
-    if (!img) return;
-
-    img.src = imageUrl;
-    R.latestDisplayImage = imageUrl;
-
-    img.onload = () => {
-      const zoomContainer = EL.zoomContainer();
-      if (!zoomContainer) return;
-
-      const box = zoomContainer.getBoundingClientRect();
-      const scaleX = box.width / img.naturalWidth;
-      const scaleY = box.height / img.naturalHeight;
-      const s = Math.min(scaleX, scaleY);
-
-      R.zoomLevel = s;
-      R.panX = (box.width - img.naturalWidth * s) / 2;
-      R.panY = (box.height - img.naturalHeight * s) / 2;
-
-      applyTransform();
-      setupDrawingCanvasSafe();
-      loadAllDrawings();
-    };
-
-    localStorage.setItem("gmDisplayImage", imageUrl);
-
-    if (updateFirestore) {
-      const sessionId = getSessionId();
-      if (!sessionId) return;
-      db.collection("sessions").doc(sessionId).update({
-        currentDisplayImage: imageUrl,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    db.collection("users").doc(user.uid).get().then(doc => {
+      const color = doc.data()?.displayNameColor || "#ffffff";
+      return db.collection("sessions").doc(sessionId).collection("chat").add({
+        characterName,
+        imageUrl,
+        label: label || "",
+        color,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
-    }
+    }).catch(err => console.error("RFRB: pushToChat failed", err));
+  }
+
+  function clearchat() {
+    const sessionId = getSessionId();
+    if (!sessionId) return alert("No session selected.");
+
+    const chatRef = db.collection("sessions").doc(sessionId).collection("chat");
+    chatRef.get().then(snapshot => {
+      const batch = db.batch();
+      snapshot.forEach(doc => batch.delete(doc.ref));
+      return batch.commit();
+    }).then(() => {
+      if (EL.chatMessages()) EL.chatMessages().innerHTML = "";
+      console.log("Chat cleared.");
+    }).catch(err => {
+      console.error("RFRB: clearchat failed", err);
+      alert("Failed to clear chat.");
+    });
+  }
+
+  function cleardisplay() {
+    // Clear tab image
+    const img = EL.tabImage();
+    if (img) img.src = "";
+
+    // Clear local tabs UI
+    const tabBar = EL.tabBar();
+    if (tabBar) tabBar.innerHTML = "";
+    R.tabs = [];
+    R.currentTabId = null;
+
+    // Clear drawings
+    R.userCanvases = {};
+    drawFromBuffer();
+
+    const sessionId = getSessionId();
+    if (!sessionId) return;
+
+    // Clear tabs subcollection if present
+    db.collection("sessions").doc(sessionId).collection("tabs").get().then(snapshot => {
+      const batch = db.batch();
+      snapshot.forEach(doc => batch.delete(doc.ref));
+      return batch.commit();
+    }).catch(() => {});
+
+    db.collection("sessions").doc(sessionId).update({
+      tabOrder: [],
+      currentDisplayImage: "",
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {});
+
+    console.log("Display cleared by GM");
   }
 
   /* =========================================================================
-     Bind UI
+     Rules modal
+     ========================================================================= */
+  function toggleRules() {
+    const modal = EL.rulesModal();
+    if (!modal) return warnOnce("rulesMissing", "RFRB: #rules-modal missing.");
+    modal.style.display = (modal.style.display === "block") ? "none" : "block";
+  }
+
+  /* =========================================================================
+     UI bindings (only once)
      ========================================================================= */
   function bindUI() {
-    // Ensure default lists exist
+    // Ensure baseline inputs exist
     if (EL.skills() && EL.skills().children.length === 0) addSkill("Do anything");
     if (EL.items() && EL.items().children.length === 0) addItem("");
     if (EL.conditions() && EL.conditions().children.length === 0) addCondition("");
 
-    // Clear drawings button
-    const clearBtn = EL.clearMyDrawingsBtn();
-    if (clearBtn) clearBtn.addEventListener("click", clearMyDrawings);
+    // Ensure GM upload filename display
+    if (EL.gmUpload()) {
+      EL.gmUpload().addEventListener("change", function () {
+        if (!EL.gmUploadFilename()) return;
+        EL.gmUploadFilename().textContent = (this.files && this.files.length > 0) ? this.files[0].name : "";
+      });
+    }
+
+    // Clear my drawings button
+    if (EL.clearButton()) {
+      EL.clearButton().addEventListener("click", clearMyDrawings);
+    }
 
     // Chat enter-to-send (if sendChatMessage exists)
-    const chatInput = EL.chatInput();
-    if (chatInput) {
-      chatInput.addEventListener("keydown", (e) => {
+    if (EL.chatInput()) {
+      EL.chatInput().addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           if (typeof window.sendChatMessage === "function") window.sendChatMessage();
@@ -818,43 +1248,36 @@
       });
     }
 
-    // Pen color binding
-    const picker = EL.penColor();
-    if (picker) {
-      R.penColor = picker.value || R.penColor;
-      picker.addEventListener("input", () => { R.penColor = picker.value; });
-      picker.addEventListener("change", () => { R.penColor = picker.value; });
+    // Pen color sync
+    if (EL.penColor()) {
+      R.penColor = EL.penColor().value || R.penColor;
+      EL.penColor().addEventListener("input", () => { R.penColor = EL.penColor().value; });
+      EL.penColor().addEventListener("change", () => { R.penColor = EL.penColor().value; });
     }
   }
 
-  function restoreDisplayIfSessionKnown() {
-    const sessionId = getSessionId();
-    if (!sessionId) return;
-
-    db.collection("sessions").doc(sessionId).get().then(doc => {
-      const url = doc.data()?.currentDisplayImage;
-      if (doc.exists && url) {
-        pushToDisplayArea(url, false);
-      }
-    }).catch(() => {});
-  }
-
+  /* =========================================================================
+     Init
+     ========================================================================= */
   function init() {
     bindUI();
     bindPanZoom();
-    ensureDrawingCanvasExists();
     ensureTabImageExists();
+    ensureDrawingCanvasExists();
     restoreDisplayIfSessionKnown();
     setupDrawingCanvasSafe();
-    console.log("✅ Script loaded (double-load safe).");
+
+    console.log("✅ RFRB script loaded (robust).");
   }
 
-  // Start
   window.addEventListener("DOMContentLoaded", init);
 
   /* =========================================================================
-     Export to window (so inline onclick and login.js can call them)
+     EXPORTS (this is what fixes inline onclick + login.js calls)
      ========================================================================= */
+
+  // Character UI
+  window.createSkillInput = createSkillInput; // not usually called directly, but safe
   window.addSkill = addSkill;
   window.addItem = addItem;
   window.addCondition = addCondition;
@@ -863,17 +1286,45 @@
   window.adjustLuck = adjustLuck;
   window.toggleWound = toggleWound;
 
+  window.saveData = saveData;
+  window.loadData = loadData;
+  window.clearData = clearData;
+
+  // Theme + rules + panels
+  window.setTheme = setTheme;
   window.toggleRules = toggleRules;
+
+  window.openGMTools = openGMTools;
+  window.toggleGMTools = toggleGMTools;
 
   window.toggleShowAndTell = toggleShowAndTell;
   window.toggleCharacterPanel = toggleCharacterPanel;
-  window.pushToDisplayArea = pushToDisplayArea;
 
+  // Display / tabs
+  window.pushToDisplayArea = pushToDisplayArea;
+  window.createNewTab = createNewTab;
+  window.renderTabs = renderTabs;
+  window.showTabImage = showTabImage;
+
+  // Drawing
   window.setDrawingMode = setDrawingMode;
   window.clearMyDrawings = clearMyDrawings;
   window.clearAllDrawings = clearAllDrawings;
+  window.loadAllDrawings = loadAllDrawings;
 
-  // Useful for debugging
+  // GM images
+  window.openGMImageModal = openGMImageModal;
+  window.closeGMImageModal = closeGMImageModal;
+  window.uploadGMImage = uploadGMImage;
+  window.loadGMImages = loadGMImages;
+  window.deleteGMImage = deleteGMImage;
+
+  // Chat helpers
+  window.pushToChat = pushToChat;
+  window.clearchat = clearchat;
+  window.cleardisplay = cleardisplay;
+
+  // Debug helpers
   window.applyTransform = applyTransform;
-  window.RFRB = R;
 })();
+

@@ -1,5 +1,4 @@
 let gmUnsubscribe = null;
-let userCanvases = {}; // uid => canvas
 
 
 function createSkillInput(value = "", levels = [true, false, false, false]) {
@@ -368,33 +367,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function applyTransform() {
   const zoomContent = document.getElementById("zoom-content");
-  const canvas = document.getElementById("drawing-canvas");
-  const img = zoomContent.querySelector("img");
+  const img = zoomContent?.querySelector("img");
 
-  if (!canvas || !img) return;
+  if (!zoomContent || !img) return;
 
-  // Apply pan manually
+  // Apply pan
   zoomContent.style.left = `${panX}px`;
   zoomContent.style.top = `${panY}px`;
 
-  // Apply zoom by resizing both the image and canvas
+  // Apply zoom by resizing the image (keep overlay elements aligned via the same container transform)
   const displayWidth = img.naturalWidth * zoomLevel;
   const displayHeight = img.naturalHeight * zoomLevel;
 
   img.style.width = `${displayWidth}px`;
   img.style.height = `${displayHeight}px`;
-
-  canvas.style.width = `${displayWidth}px`;
-  canvas.style.height = `${displayHeight}px`;
-
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = displayWidth * dpr;
-  canvas.height = displayHeight * dpr;
-
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  drawFromBuffer();
 }
 
 function toggleShowAndTell() {
@@ -402,36 +388,22 @@ function toggleShowAndTell() {
   document.getElementById("main-container").style.display = "none";
   document.getElementById("show-panel").style.display = "block";
 
+  // Ensure an image element exists in the zoom-content container for tab display
+  ensureTabImageExists();
+
   const container = document.getElementById("zoom-content");
   if (container && latestDisplayImage) {
     pushToDisplayArea(latestDisplayImage, false);
   }
 
-  listenForDisplayImageUpdates(); 
-  syncPenColorFromPicker();
-
-  const existingCanvas = document.getElementById("drawing-canvas");
-  if (!existingCanvas) {
-    const canvas = document.createElement("canvas");
-    canvas.id = "drawing-canvas";
-    canvas.style.position = "absolute";
-    canvas.style.top = 0;
-    canvas.style.left = 0;
-    canvas.style.zIndex = 5;
-    canvas.style.pointerEvents = "none";
-    document.getElementById("zoom-content").appendChild(canvas);
-    setupDrawingCanvas();
-  }
+  // Keep the Show & Tell image in sync with GM pushes / session state
+  listenForDisplayImageUpdates();
 }
 
   function toggleCharacterPanel() {
   document.getElementById("character-panel").style.display = "block";
   document.getElementById("main-container").style.display = "block";
   document.getElementById("show-panel").style.display = "none";
-}
-
-function openGMTools() {
-  alert("🛠️ GM Tools coming soon!");
 }
 
 function toggleGMTools() {
@@ -648,20 +620,17 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const tabButtons = tabBar?.children || [];
   ensureTabImageExists();
 
-  // 🔍 If no tabs exist, prompt to create one and stop here
+  // If no tabs exist, prompt to create one and stop here
   if (tabButtons.length === 0) {
     const newTabName = prompt("No tabs exist. Enter a name for the new tab:");
-    if (!newTabName) return; // cancel if nothing entered
+    if (!newTabName) return;
 
     createNewTab(newTabName, imageUrl, updateFirestore);
     return;
   }
 
-  // ✅ Proceed with showing image in current display
-  const container = document.getElementById("zoom-content");
+  // Show image in current display
   const img = document.getElementById("tab-image");
-  const canvas = document.getElementById("drawing-canvas");
-
   if (img) {
     img.src = imageUrl;
 
@@ -676,24 +645,9 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
       panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
 
       applyTransform();
-      drawFromBuffer();
-      loadAllDrawings();
     };
   } else {
     console.warn("⚠️ tab-image not found.");
-  }
-
-  // 🔧 Ensure canvas exists
-  if (!canvas) {
-    const newCanvas = document.createElement("canvas");
-    newCanvas.id = "drawing-canvas";
-    newCanvas.style.position = "absolute";
-    newCanvas.style.top = 0;
-    newCanvas.style.left = 0;
-    newCanvas.style.zIndex = 5;
-    newCanvas.style.pointerEvents = "none";
-    container.appendChild(newCanvas);
-    setupDrawingCanvas();
   }
 
   localStorage.setItem("gmDisplayImage", imageUrl);
@@ -785,27 +739,14 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
 function cleardisplay() {
   // Clear the tab image visually
   const img = document.getElementById("tab-image");
-  if (img) {
-    img.src = "";
-  }
-
-  // Clear canvas
-  const canvas = document.getElementById("drawing-canvas");
-  if (canvas) {
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
+  if (img) img.src = "";
 
   // Clear all tab buttons
   const tabBar = document.getElementById("tab-bar");
-  if (tabBar) {
-    tabBar.innerHTML = "";
-  }
+  if (tabBar) tabBar.innerHTML = "";
 
   // Clear local tab data
-  if (window.tabs) {
-    window.tabs = [];
-  }
+  if (window.tabs) window.tabs = [];
 
   // Clear tab data in Firestore
   const sessionId = localStorage.getItem("currentSessionId");
@@ -813,15 +754,13 @@ function cleardisplay() {
     const tabsRef = db.collection("sessions").doc(sessionId).collection("tabs");
     tabsRef.get().then(snapshot => {
       const batch = db.batch();
-      snapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
+      snapshot.forEach(doc => batch.delete(doc.ref));
       return batch.commit();
     });
 
     db.collection("sessions").doc(sessionId).update({
       tabOrder: [],
-      currentDisplayImage: "", // Optional: clear global display image too
+      currentDisplayImage: "",
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
@@ -972,8 +911,6 @@ function viewGMCharacterLive(sessionId, charId) {
   let isPanning = false;
   let startX = 0;
   let startY = 0;
-let offscreenCanvas = null;
-let offscreenCtx = null;
 
 window.addEventListener("DOMContentLoaded", () => {
   const zoomContainer = document.getElementById("zoom-container");
@@ -989,7 +926,6 @@ window.addEventListener("DOMContentLoaded", () => {
   applyTransform();
 
   zoomContainer.addEventListener("wheel", (e) => {
-    if (currentTool) return;
     e.preventDefault();
 
     const rect = zoomContainer.getBoundingClientRect();
@@ -1009,7 +945,6 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   zoomContainer.addEventListener("mousedown", (e) => {
-    if (currentTool) return;
     isPanning = true;
     startX = e.clientX - panX;
     startY = e.clientY - panY;
@@ -1017,7 +952,6 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("mousemove", (e) => {
-    if (currentTool) return;
     if (!isPanning) return;
     panX = e.clientX - startX;
     panY = e.clientY - startY;
@@ -1025,7 +959,6 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("mouseup", () => {
-    if (currentTool) return;
     isPanning = false;
     zoomContainer.style.cursor = "grab";
   });
@@ -1038,408 +971,26 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 
+
 document.addEventListener("DOMContentLoaded", () => {
-  if (localStorage.getItem("autoSaveInitialized")) {
-    const hint = document.getElementById("autosave-hint");
-    if (hint) hint.style.display = "none";
-  }
-});
-
-function makeDraggable(el) {
-  let startX, startY, initialLeft, initialTop;
-
-  el.onmousedown = function (e) {
-    e.preventDefault();
-
-    const zoomContent = document.getElementById("zoom-content");
-    const rect = zoomContent.getBoundingClientRect();
-    const zoom = zoomLevel || 1;
-
-    startX = (e.clientX - rect.left) / zoom;
-    startY = (e.clientY - rect.top) / zoom;
-
-    initialLeft = parseFloat(el.style.left) || 0;
-    initialTop = parseFloat(el.style.top) || 0;
-
-    document.onmousemove = function (e) {
-      const currentX = (e.clientX - rect.left) / zoom;
-      const currentY = (e.clientY - rect.top) / zoom;
-
-      const dx = currentX - startX;
-      const dy = currentY - startY;
-
-      el.style.left = (initialLeft + dx) + "px";
-      el.style.top = (initialTop + dy) + "px";
-    };
-
-    document.onmouseup = () => {
-      document.onmousemove = null;
-      document.onmouseup = null;
-
-      // ✅ Firestore write only when dropped
-      const id = el.dataset.id;
-      if (id && currentSessionId) {
-        const newX = parseFloat(el.style.left);
-        const newY = parseFloat(el.style.top);
-        db.collection("sessions").doc(currentSessionId)
-          .update({ x: newX, y: newY });
+  const chatInput = document.getElementById('chatInput');
+  if (chatInput) {
+    chatInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
       }
-    };
-  };
-}
-
-function loadAllDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) return;
-
-  db.collection("sessions").doc(sessionId).collection("drawings")
-    .get()
-    .then(snapshot => {
-      userCanvases = {};
-      snapshot.forEach(doc => {
-        const { imageData } = doc.data();
-        const userId = doc.id;
-
-        if (imageData) {
-          const img = new Image();
-          img.onload = () => {
-            const tempCanvas = document.createElement("canvas");
-            tempCanvas.width = offscreenCanvas.width;
-            tempCanvas.height = offscreenCanvas.height;
-            const ctx = tempCanvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            userCanvases[userId] = tempCanvas;
-            drawFromBuffer(); // refresh after each
-          };
-          img.src = imageData;
-        }
-      });
     });
-}
-
-function setupDrawingCanvas() {
-  const canvas = document.getElementById("drawing-canvas");
-  const zoomContent = document.getElementById("zoom-content");
-  const img = zoomContent.querySelector("img");
-
-  if (!canvas || !img) return;
-
-  // Set up main canvas
-  canvas.style.position = "absolute";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.zIndex = "5";
-  canvas.style.pointerEvents = "auto";
-
-  // Create offscreen buffer
-  offscreenCanvas = document.createElement("canvas");
-  offscreenCanvas.width = img.naturalWidth;
-  offscreenCanvas.height = img.naturalHeight;
-  offscreenCtx = offscreenCanvas.getContext("2d");
-
-  const ctx = canvas.getContext("2d");
-  loadAllDrawings();
-  listenForDrawings();
-
-  function getTrueCoords(e) {
-    const zoomContent = document.getElementById("zoom-content");
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoomLevel;
-    const y = (e.clientY - rect.top) / zoomLevel;
-    return { x, y };
   }
 
-canvas.addEventListener("pointerdown", async (e) => {
-  if (!currentTool) return;
-  drawing = true;
-
-  const { x, y } = getTrueCoords(e);
-
-  const user = firebase.auth().currentUser;
-  if (!user) return;
-
-  // Make sure user has a canvas layer
-  if (!userCanvases[user.uid]) {
-    userCanvases[user.uid] = document.createElement("canvas");
-    userCanvases[user.uid].width = offscreenCanvas.width;
-    userCanvases[user.uid].height = offscreenCanvas.height;
-  }
-
-  const myCtx = userCanvases[user.uid].getContext("2d");
-  myCtx.beginPath();
-  myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('stroke-width-slider')?.value || 4);
-  myCtx.strokeStyle = penColor;
-  myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
-  myCtx.moveTo(x, y);
-});
-
-
-canvas.addEventListener("pointermove", (e) => {
-  if (!drawing || !currentTool) return;
-
-  const { x, y } = getTrueCoords(e);
-  const user = firebase.auth().currentUser;
-  if (!user || !userCanvases[user.uid]) return;
-
-  const myCtx = userCanvases[user.uid].getContext("2d");
-  myCtx.strokeStyle = penColor;
-  myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
- myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('stroke-width-slider')?.value || 4);
-  myCtx.lineTo(x, y);
-  myCtx.stroke();
-  drawFromBuffer(); // Re-draw everything
-});
-
-
-canvas.addEventListener("pointerup", () => {
-  drawing = false;
-  if (!currentTool) return;
-
-  const user = firebase.auth().currentUser;
-  if (!user || !userCanvases[user.uid]) return;
-
-  // ✅ 1. Clear offscreen before applying new layer
-  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-
-  // ✅ 2. Copy from user's canvas to shared buffer
-  const userLayer = userCanvases[user.uid];
-  offscreenCtx.drawImage(userLayer, 0, 0);
-
-  // ✅ 3. Save to Firestore
-  saveDrawingToFirestore();
-
-  // ✅ 4. Redraw visible canvas
-  drawFromBuffer();
-});
-}
-
-function drawFromBuffer() {
-  const canvas = document.getElementById("drawing-canvas");
-  const ctx = canvas.getContext("2d");
-
-  // Resize canvas
-  const img = document.querySelector("#zoom-content img");
-  if (!img || !offscreenCanvas) return;
-
-  const width = img.naturalWidth * zoomLevel;
-  const height = img.naturalHeight * zoomLevel;
-  canvas.width = width;
-  canvas.height = height;
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-
-  ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw all user layers
-  for (const uid in userCanvases) {
-    ctx.drawImage(userCanvases[uid], 0, 0);
-  }
-}
-
-
-function saveDrawingToFirestore() {
-  if (!offscreenCanvas) return;
-  const sessionId = localStorage.getItem("currentSessionId");
-  const user = firebase.auth().currentUser;
-  if (!sessionId || !user) return;
-
-  const imageData = offscreenCanvas.toDataURL("image/png", 0.6); // 60% quality to save space
-
-  db.collection("sessions")
-    .doc(sessionId)
-    .collection("drawings")
-    .doc(user.uid)
-    .set({
-      imageData,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  const gmUpload = document.getElementById("gm-image-upload");
+  if (gmUpload) {
+    gmUpload.addEventListener("change", function () {
+      const filenameSpan = document.getElementById("gm-upload-filename");
+      if (!filenameSpan) return;
+      filenameSpan.textContent = (this.files && this.files.length > 0) ? this.files[0].name : "";
     });
-}
-let currentTool = null; // 'pen', 'erase', or null
-let penColor = '#ff0000';
-let drawing = false;
-
-function setDrawingMode(mode) {
-  const canvas = document.getElementById('drawing-canvas');
-  const penBtn = document.getElementById('pen-tool-btn');
-  const eraseBtn = document.getElementById('eraser-tool-btn');
-  const zoomContainer = document.getElementById('zoom-container');
-
-  if (currentTool === mode) {
-    // Deselect tool
-    currentTool = null;
-    canvas.style.pointerEvents = "none";
-    zoomContainer.classList.remove("no-pan");
-    penBtn.classList.remove("active-tool");
-    eraseBtn.classList.remove("active-tool");
-    canvas.style.cursor = "default";
-  } else {
-    currentTool = mode;
-    canvas.style.pointerEvents = "auto";
-    zoomContainer.classList.add("no-pan");
-
-    // Update button styles
-    penBtn.classList.toggle("active-tool", mode === 'pen');
-    eraseBtn.classList.toggle("active-tool", mode === 'erase');
-
-    // Set appropriate cursor
-    canvas.style.cursor = mode === 'pen' ? 'crosshair' : 'cell';
   }
-}
-
-function clearCanvas() {
-  const user = firebase.auth().currentUser;
-  const sessionId = localStorage.getItem("currentSessionId");
-
-  if (!user || !sessionId) return;
-
-  // 🔥 Remove local layer
-  delete userCanvases[user.uid];
-
-  // 🔥 Clear offscreenCanvas (so stale pixels aren't saved later)
-  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-
-  // 🔁 Redraw visible canvas
-  drawFromBuffer();
-
-  // 🔥 Delete from Firestore
-  db.collection("sessions")
-    .doc(sessionId)
-    .collection("drawings")
-    .doc(user.uid)
-    .delete()
-    .then(() => console.log("✅ Drawing cleared from Firestore"))
-    .catch(err => console.error("❌ Failed to clear drawing:", err));
-}
-
-document.getElementById('pen-color').addEventListener('input', (e) => {
-  penColor = e.target.value;
-});
-
-function clearAllDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) return;
-
-  db.collection("sessions").doc(sessionId).collection("drawings").get().then(snapshot => {
-    const batch = db.batch();
-    snapshot.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-    return batch.commit();
-  }).then(() => {
-    console.log("🧼 Cleared all drawing layers (GM action)");
-    userCanvases = {};
-    drawFromBuffer();
-  });
-}
-
-let penWidth = 4; // Default width
-
-function togglePenWidthSlider() {
-  const slider = document.getElementById("stroke-width-slider");
-  slider.style.display = slider.style.display === "none" ? "block" : "none";
-}
-
-function updatePenWidth(value) {
-  penWidth = parseInt(value);
-}
-
-function syncPenColorFromPicker() {
-  const picker = document.getElementById('pen-color');
-  const slider = document.getElementById('stroke-width-slider');
-  if (picker) {
-    penColor = picker.value;
-    if (slider) {
-      slider.style.setProperty('--track-color', penColor);
-    }
-    console.log("🎨 Synced penColor to:", penColor);
-  }
-}
-const strokeSlider = document.getElementById('stroke-width-slider');
-const penColorPicker = document.getElementById('pen-color');
-
-function updateSliderFill() {
-  const value = strokeSlider.value;
-  const min = strokeSlider.min || 1;
-  const max = strokeSlider.max || 20;
-  const percent = ((value - min) / (max - min)) * 100;
-  const color = penColorPicker.value;
-
-  // Apply CSS gradient to simulate "filled" portion
-  strokeSlider.style.setProperty(
-    '--slider-fill',
-    `linear-gradient(to right, ${color} 0%, ${color} ${percent}%, white ${percent}%, white 100%)`
-  );
-
-  // Also set the thumb color
-  strokeSlider.style.setProperty('--track-color', color);
-}
-
-// Bind updates
-strokeSlider.addEventListener('input', updateSliderFill);
-penColorPicker.addEventListener('input', updateSliderFill);
-penColorPicker.addEventListener('change', () => {
-  syncPenColorFromPicker(); // or however you're applying the color
-  updateSliderFill();       // update fill on final pick too
-});
-
-
-function clearMyDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  const user = firebase.auth().currentUser;
-  if (!user || !sessionId) return;
-
-  const uid = user.uid;
-
-  // 1. Remove from Firestore
-  db.collection("sessions").doc(sessionId).collection("drawings").doc(uid).delete().then(() => {
-    console.log("🧼 Cleared drawing layer for user:", uid);
-
-    // 2. Remove from local canvas buffer
-    delete userCanvases[uid];
-
-    // 3. Redraw buffer
-    drawFromBuffer();
-  });
-}
-function showUsernamePrompt() {
-  document.getElementById("usernamePrompt").style.display = "block";
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  syncPenColorFromPicker();         // sets penColor and updates CSS variable
-  updateSliderFill();              // fills the slider based on current width & color
-
-  document.getElementById('pen-color').addEventListener('change', () => {
-    syncPenColorFromPicker();
-    updateSliderFill();            // update fill only on change (not input)
-  });
-
-  document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
-
-  const clearBtn = document.getElementById("clear-button");
-  if (clearBtn) {
-    clearBtn.onclick = clearMyDrawings;
-  } else {
-    console.warn("❌ Could not find #clear-button to assign clearMyDrawings");
-  }
-
-  document.getElementById('chatInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendChatMessage();
-    }
-  });
-
-  document.getElementById("gm-image-upload").addEventListener("change", function () {
-    const filenameSpan = document.getElementById("gm-upload-filename");
-    if (this.files && this.files.length > 0) {
-      filenameSpan.textContent = this.files[0].name;
-    } else {
-      filenameSpan.textContent = "";
-    }
-  });
 });
 
 let currentTabId = null;
@@ -1448,11 +999,9 @@ let currentTabId = null;
 
 
 
-window.loadAllDrawings = loadAllDrawings;
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;
 window.pushToDisplayArea = pushToDisplayArea;
 window.applyTransform = applyTransform;
-window.clearAllDrawings = clearAllDrawings;
 console.log("✅ Script loaded.");

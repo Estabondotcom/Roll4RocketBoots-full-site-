@@ -444,3 +444,10 @@ label[for="player-name"] {
   border: 2px solid #ccc;
   border-radius: 8px;
 }
+#show-panel {
+  pointer-events: none;
+}
+#show-panel[style*="display: block"] {
+  pointer-events: auto;
+}
+

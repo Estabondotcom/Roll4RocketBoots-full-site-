@@ -387,22 +387,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function applyTransform() {
-  const zoomContent = document.getElementById("zoom-content");
-  const img = zoomContent?.querySelector("img");
+  const layer = document.getElementById("panzoom-layer");
+  if (!layer) return;
 
-  if (!zoomContent || !img) return;
-
-  // Apply pan
-  zoomContent.style.left = `${panX}px`;
-  zoomContent.style.top = `${panY}px`;
-
-  // Apply zoom by resizing the image (keep overlay elements aligned via the same container transform)
-  const displayWidth = img.naturalWidth * zoomLevel;
-  const displayHeight = img.naturalHeight * zoomLevel;
-
-  img.style.width = `${displayWidth}px`;
-  img.style.height = `${displayHeight}px`;
+  // panX / panY are in screen pixels; zoomLevel is a scalar
+  layer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
 }
+
 
 function toggleShowAndTell() {
   document.getElementById("character-panel").style.display = "none";

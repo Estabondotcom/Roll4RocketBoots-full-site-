@@ -318,7 +318,6 @@ label, h2 {
    (SAFE: does not affect the sheet)
    ========================= */
 
-/* Show panel should be self-contained */
 #show-panel {
   width: 73%;
   height: 100%;
@@ -328,24 +327,21 @@ label, h2 {
   overflow: hidden;
 }
 
-/* Zoom is only relative INSIDE show panel */
+/* These wrappers can stay, but they should NOT be what we transform */
 #zoom-container {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  user-select: none;
-  -webkit-user-drag: none;
 }
 
 #zoom-content {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative; /* ✅ changed from absolute */
   width: 100%;
   height: 100%;
 }
 
+/* Tabs */
 #tab-container {
   display: flex;
   flex-direction: column;
@@ -377,27 +373,49 @@ label, h2 {
   color: #000;
 }
 
-/* Display image */
+/* =========================
+   Image viewport + panzoom
+   ========================= */
+
+/* ✅ Make this a fixed viewport (no scrollbars, no resizing) */
 #image-display-area {
+  position: relative;
   width: 95%;
   height: 80vh;
-  background-color: #111;
-  padding: 30px;
-  overflow: auto;
-  position: relative;
   margin: 0 auto;
+
+  overflow: hidden;      /* ✅ changed from auto */
+  padding: 0;            /* ✅ remove padding so math is clean */
+  background-color: #111;
   border: 2px solid #333;
+
+  cursor: grab;
+  user-select: none;
 }
 
+/* ✅ This is the only element that moves/scales */
+#panzoom-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* ✅ Let JS scale it; don't constrain it */
 #tab-image {
-  max-width: 100%;
-  max-height: 60vh;
-  object-fit: contain;
   display: block;
-  margin: 0 auto;
+  max-width: none;       /* ✅ changed */
+  max-height: none;      /* ✅ changed */
+  object-fit: unset;     /* ✅ changed */
+  margin: 0;
   border: 2px solid #ccc;
   border-radius: 8px;
+
+  pointer-events: none;  /* ✅ prevent drag-image behavior */
+  -webkit-user-drag: none;
 }
+
 
 /* =========================
    Chat panel basics

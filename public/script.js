@@ -1,34 +1,140 @@
-let gmUnsubscribe = null;
-let userCanvases = {}; // uid => canvas
+/* =========================================================================
+   Roll 4 Rocket Boots - script.js (rewritten)
+   Goals:
+   - Character sheet UI always responds
+   - Pan/zoom stays smooth
+   - Drawing stays aligned and syncs only on pointerup
+   - Reload-safe deterministic reconstruction
+   - Avoid "dead buttons" due to scope / module / inline onclick
+   ========================================================================= */
 
+/* global firebase, db, auth */
+
+/* -----------------------------
+   Global-ish shared state
+----------------------------- */
+let zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
+let panX = parseFloat(localStorage.getItem("panX")) || 0;
+let panY = parseFloat(localStorage.getItem("panY")) || 0;
+
+let isPanning = false;
+let startX = 0;
+let startY = 0;
+
+let latestDisplayImage = null; // optional - if you set it elsewhere
+let currentTabId = null;
+
+let currentTool = null; // 'pen' | 'erase' | null
+let penColor = "#ff0000";
+let drawing = false;
+
+let offscreenCanvas = null; // used only for compositing / sizing reference
+let offscreenCtx = null;
+
+let userCanvases = {}; // uid => HTMLCanvasElement
+let drawingsUnsub = null;
+
+let gmModeActive = false;
+let gmPanelUnsubscribes = [];
+
+/* -----------------------------
+   Element lookup helpers
+----------------------------- */
+const EL = {
+  zoomContainer: () => document.getElementById("zoom-container"),
+  zoomContent: () => document.getElementById("zoom-content"),
+  tabImage: () => document.getElementById("tab-image"),
+  drawingCanvas: () => document.getElementById("drawing-canvas"),
+
+  characterPanel: () => document.getElementById("character-panel"),
+  mainContainer: () => document.getElementById("main-container"),
+  showPanel: () => document.getElementById("show-panel"),
+
+  skills: () => document.getElementById("skills-container"),
+  items: () => document.getElementById("items-container"),
+  conditions: () => document.getElementById("conditions-container"),
+
+  charName: () => document.getElementById("char-name"),
+  playerName: () => document.getElementById("player-name"),
+  expValue: () => document.getElementById("exp-value"),
+  luckValue: () => document.getElementById("luck-value"),
+
+  penBtn: () => document.getElementById("pen-tool-btn"),
+  eraseBtn: () => document.getElementById("eraser-tool-btn"),
+  penColor: () => document.getElementById("pen-color"),
+  strokeSlider: () => document.getElementById("stroke-width-slider"),
+
+  clearMyDrawingsBtn: () => document.getElementById("clear-button"),
+
+  chatInput: () => document.getElementById("chatInput"),
+  gmUpload: () => document.getElementById("gm-image-upload"),
+  gmUploadFilename: () => document.getElementById("gm-upload-filename"),
+  gmFolderInput: () => document.getElementById("gm-folder-input"),
+  imageList: () => document.getElementById("image-list"),
+  gmGalleryModal: () => document.getElementById("gm-image-gallery-modal"),
+
+  gmToolsPanel: () => document.getElementById("gm-tools-panel"),
+  gmModePanel: () => document.getElementById("gm-mode-panel"),
+  gmModeToggle: () => document.getElementById("gm-mode-toggle"),
+  gmCharPanels: () => document.getElementById("gm-character-panels"),
+
+  tabBar: () => document.getElementById("tab-bar"),
+  rulesModal: () => document.getElementById("rules-modal"),
+
+  themeLink: () => document.getElementById("theme-link"),
+};
+
+/* -----------------------------
+   Utility
+----------------------------- */
+function getSessionId() {
+  return localStorage.getItem("currentSessionId") || "";
+}
+function getUser() {
+  return firebase.auth().currentUser;
+}
+function clamp(n, min, max) {
+  return Math.min(Math.max(n, min), max);
+}
+function qs(sel, root = document) {
+  return root.querySelector(sel);
+}
+function qsa(sel, root = document) {
+  return Array.from(root.querySelectorAll(sel));
+}
+
+/* =========================================================================
+   Character Sheet (skills/items/conditions + exp/luck/wounds)
+   NOTE: These are safe to be used via event listeners OR inline onclick.
+   ========================================================================= */
 
 function createSkillInput(value = "", levels = [true, false, false, false]) {
-  const container = document.createElement('div');
-  container.className = 'input-wrapper';
+  const container = document.createElement("div");
+  container.className = "input-wrapper";
 
-  const checkboxes = document.createElement('div');
-  checkboxes.className = 'skill-levels';
+  const checkboxes = document.createElement("div");
+  checkboxes.className = "skill-levels";
 
-  let anyChecked = levels.includes(true);
+  const anyChecked = levels.includes(true);
 
   for (let i = 1; i <= 4; i++) {
-    const label = document.createElement('label');
-    label.className = 'level-label';
+    const label = document.createElement("label");
+    label.className = "level-label";
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'skill-level';
-    checkbox.dataset.level = i;
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "skill-level";
+    checkbox.dataset.level = String(i);
 
-    checkbox.checked = anyChecked ? levels[i - 1] : i === 1;
+    checkbox.checked = anyChecked ? !!levels[i - 1] : i === 1;
 
-    checkbox.addEventListener('change', () => {
-      if (checkbox.checked) {
-        const all = checkboxes.querySelectorAll('.skill-level');
-        all.forEach(cb => {
-          if (cb !== checkbox) cb.checked = false;
-        });
-      }
+    checkbox.addEventListener("change", () => {
+      if (!checkbox.checked) return;
+      const all = checkboxes.querySelectorAll(".skill-level");
+      all.forEach(cb => {
+        if (cb !== checkbox) cb.checked = false;
+      });
+      silentAutoSaveCharacter();
     });
 
     label.appendChild(checkbox);
@@ -36,58 +142,62 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
     checkboxes.appendChild(label);
   }
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'skill-input';
-  input.placeholder = 'New skill...';
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "skill-input";
+  input.placeholder = "New skill...";
   input.value = value;
   input.maxLength = 20;
+  input.addEventListener("input", silentAutoSaveCharacter);
 
-  const rollButton = document.createElement('button');
-  rollButton.type = 'button';
-  rollButton.textContent = '🎲';
-  rollButton.style.marginTop = '4px';
-  rollButton.onclick = () => {
+  const rollButton = document.createElement("button");
+  rollButton.type = "button";
+  rollButton.textContent = "🎲";
+  rollButton.style.marginTop = "4px";
+
+  rollButton.addEventListener("click", async () => {
     const skillName = input.value.trim() || "Unnamed Skill";
-    const allChecks = checkboxes.querySelectorAll('.skill-level');
+    const allChecks = checkboxes.querySelectorAll(".skill-level");
+
     let diceCount = 0;
     allChecks.forEach((cb, idx) => {
       if (cb.checked) diceCount = idx + 2;
     });
-
-    if (diceCount === 0) {
-      alert("No dice level selected.");
-      return;
-    }
+    if (!diceCount) return alert("No dice level selected.");
 
     const rolls = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
     const total = rolls.reduce((a, b) => a + b, 0);
-    const characterName = document.getElementById("player-name").value || "Unknown";
 
-    const sessionId = localStorage.getItem("currentSessionId");
-    const user = firebase.auth().currentUser;
+    const sessionId = getSessionId();
+    const user = getUser();
+    if (!sessionId || !user) return alert("You must be logged in and in a session.");
 
-    if (!sessionId || !user) {
-      alert("You must be logged in and in a session.");
-      return;
-    }
+    const characterName = EL.playerName()?.value || "Unknown";
 
-    db.collection("users").doc(user.uid).get().then(doc => {
+    try {
+      const doc = await db.collection("users").doc(user.uid).get();
       const color = doc.data()?.displayNameColor || "#ffffff";
-      db.collection("sessions").doc(sessionId).collection("chat").add({
+
+      await db.collection("sessions").doc(sessionId).collection("chat").add({
         characterName,
         text: `${characterName}: ${skillName}: [${rolls.join(", ")}] = ${total}`,
         color,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       });
-    });
-  };
+    } catch (err) {
+      console.error("Failed to send roll to chat:", err);
+      alert("Failed to send roll to chat.");
+    }
+  });
 
-  const deleteButton = document.createElement('button');
-  deleteButton.type = 'button';
-  deleteButton.textContent = '✕';
-  deleteButton.className = 'delete-button';
-  deleteButton.onclick = () => container.remove();
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.textContent = "✕";
+  deleteButton.className = "delete-button";
+  deleteButton.addEventListener("click", () => {
+    container.remove();
+    silentAutoSaveCharacter();
+  });
 
   container.appendChild(checkboxes);
   container.appendChild(input);
@@ -98,16 +208,19 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
 }
 
 function addSkill(value = "", levels = [true, false, false, false]) {
-  if (typeof value === 'object') {
+  // supports calling with object {name, levels}
+  if (typeof value === "object" && value) {
     levels = value.levels || [true, false, false, false];
     value = value.name || "";
   }
-  const container = document.getElementById('skills-container');
+  const container = EL.skills();
+  if (!container) return;
   container.appendChild(createSkillInput(value, levels));
+  silentAutoSaveCharacter();
 }
 
 function createItemInput(value = "") {
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.className = "input-wrapper";
 
   const input = document.createElement("input");
@@ -116,786 +229,839 @@ function createItemInput(value = "") {
   input.placeholder = "Enter item";
   input.maxLength = 30;
   input.value = value;
+  input.addEventListener("input", silentAutoSaveCharacter);
 
   const deleteButton = document.createElement("button");
   deleteButton.type = "button";
   deleteButton.textContent = "✕";
   deleteButton.className = "delete-button";
-  deleteButton.onclick = () => div.remove();
+  deleteButton.addEventListener("click", () => {
+    div.remove();
+    silentAutoSaveCharacter();
+  });
 
   div.appendChild(input);
   div.appendChild(deleteButton);
-
   return div;
 }
 
 function addItem(value = "") {
-  const container = document.getElementById('items-container');
+  const container = EL.items();
+  if (!container) return;
   container.appendChild(createItemInput(value));
+  silentAutoSaveCharacter();
 }
-function addCondition(value = "") {
-  const container = document.getElementById('conditions-container');
-  const div = document.createElement('div');
+
+function createConditionInput(value = "") {
+  const div = document.createElement("div");
   div.className = "input-wrapper";
 
-  const input = document.createElement('input');
+  const input = document.createElement("input");
   input.type = "text";
   input.className = "condition-input";
   input.placeholder = "Enter condition";
   input.maxLength = 20;
-  input.value = typeof value === 'object' ? value.name : value;
+  input.value = typeof value === "object" && value ? (value.name || "") : value;
+  input.addEventListener("input", silentAutoSaveCharacter);
 
-  const delButton = document.createElement('button');
+  const delButton = document.createElement("button");
+  delButton.type = "button";
   delButton.className = "delete-button";
   delButton.textContent = "✕";
-  delButton.onclick = () => div.remove();
+  delButton.addEventListener("click", () => {
+    div.remove();
+    silentAutoSaveCharacter();
+  });
 
   div.appendChild(input);
   div.appendChild(delButton);
-  container.appendChild(div);
+  return div;
 }
 
-function saveData() {
-  const name = document.getElementById('char-name').value;
-  const exp = parseInt(document.getElementById('exp-value').textContent);
-  const luck = parseInt(document.getElementById('luck-value').textContent);
-  const woundButtons = document.querySelectorAll('.wounds button');
-  const wounds = Array.from(woundButtons).map(button => button.classList.contains('active'));
-
-  const skills = Array.from(document.querySelectorAll('.input-wrapper .skill-input')).map(input => {
-    const container = input.parentElement;
-    const levels = Array.from(container.querySelectorAll('.skill-level')).map(cb => cb.checked);
-    return { name: input.value.trim(), levels };
-  }).filter(s => s.name !== "");
-
-  const items = Array.from(document.querySelectorAll('.item-input')).map(input => input.value.trim()).filter(Boolean);
-
-  const conditions = Array.from(document.querySelectorAll('#conditions-container .input-wrapper')).map(wrapper => ({
-    name: wrapper.querySelector('.skill-input').value,
-    levels: Array.from(wrapper.querySelectorAll('.skill-level')).map(cb => cb.checked)
-  }));
-
-  const data = { name, exp, luck, wounds, skills, items, conditions };
-  localStorage.setItem('rfrbCharacter', JSON.stringify(data));
-  alert('Character saved!');
-}
-
-
-function loadData() {
-  const data = JSON.parse(localStorage.getItem('rfrbCharacter'));
-  if (!data) return alert('No saved character!');
-
-  document.getElementById('char-name').value = data.name || "";
-  document.getElementById('exp-value').textContent = data.exp ?? 0;
-  document.getElementById('luck-value').textContent = data.luck ?? 1;
-
-  const woundButtons = document.querySelectorAll('.wounds button');
-  if (data.wounds) {
-    data.wounds.forEach((isActive, i) => {
-      if (woundButtons[i]) {
-        woundButtons[i].classList.toggle('active', isActive);
-      }
-    });
-  }
-
-  const skillContainer = document.getElementById('skills-container');
-  skillContainer.innerHTML = '';
-  data.skills?.forEach(skill => addSkill(skill.name, skill.levels));
-
-  const itemContainer = document.getElementById('items-container');
-  itemContainer.innerHTML = '';
-  data.items?.forEach(item => addItem(item));
-
-  if (data.conditions) data.conditions.forEach(name => addCondition(name));;
-
-  alert('Character loaded!');
-}
-
-function clearData() {
-  localStorage.removeItem('rfrbCharacter');
-  document.getElementById('char-form').reset();
-  document.getElementById('exp-value').textContent = '0';
-  document.getElementById('luck-value').textContent = '1';
-
-  document.querySelectorAll('.wounds button').forEach(btn => btn.classList.remove('active'));
-
-  document.getElementById('skills-container').innerHTML = '';
-  addSkill('Do anything');
-
-  document.getElementById('items-container').innerHTML = '';
-  document.getElementById('conditions-container').innerHTML = '';
-
-  alert('Character cleared.');
+function addCondition(value = "") {
+  const container = EL.conditions();
+  if (!container) return;
+  container.appendChild(createConditionInput(value));
+  silentAutoSaveCharacter();
 }
 
 function adjustExp(amount) {
-  const expSpan = document.getElementById('exp-value');
-  let current = parseInt(expSpan.textContent);
-  current += amount;
-  if (current < 0) current = 0;
-  expSpan.textContent = current;
+  const expSpan = EL.expValue();
+  if (!expSpan) return;
+  let current = parseInt(expSpan.textContent || "0", 10);
+  current = Math.max(0, current + amount);
+  expSpan.textContent = String(current);
   silentAutoSaveCharacter();
 }
 
 function adjustLuck(amount) {
-  const luckSpan = document.getElementById('luck-value');
-  let current = parseInt(luckSpan.textContent);
-  current += amount;
-  if (current < 0) current = 0;
-  luckSpan.textContent = current;
+  const luckSpan = EL.luckValue();
+  if (!luckSpan) return;
+  let current = parseInt(luckSpan.textContent || "1", 10);
+  current = Math.max(0, current + amount);
+  luckSpan.textContent = String(current);
   silentAutoSaveCharacter();
 }
- 
+
 function toggleWound(index) {
-  const woundButtons = document.querySelectorAll('.wounds button');
-  if (woundButtons[index]) {
-    woundButtons[index].classList.toggle('active');
-  }
+  const woundButtons = qsa(".wounds button");
+  if (!woundButtons[index]) return;
+  woundButtons[index].classList.toggle("active");
+  silentAutoSaveCharacter();
 }
 
-function toggleRules() {
-  const modal = document.getElementById('rules-modal');
-  if (modal.style.display === "block") {
-    modal.style.display = "none";
-  } else {
-    modal.style.display = "block";
-  }
+/* -----------------------------
+   Local-only Save/Load (legacy)
+   Keeping these in case your UI calls them.
+----------------------------- */
+function saveData() {
+  localStorage.setItem("rfrbCharacter", JSON.stringify(buildCharacterDataFromDOM()));
+  alert("Character saved!");
+}
+function loadData() {
+  const data = JSON.parse(localStorage.getItem("rfrbCharacter") || "null");
+  if (!data) return alert("No saved character!");
+  applyCharacterDataToDOM(data);
+  alert("Character loaded!");
+}
+function clearData() {
+  localStorage.removeItem("rfrbCharacter");
+  resetCharacterDOM();
+  alert("Character cleared.");
 }
 
-function setTheme(theme) {
-  const link = document.querySelector('link[rel="stylesheet"]');
-  if (theme === 'dark') {
-    link.href = 'style-dark.css';
-  } else if (theme === 'lava') {
-    link.href = 'style-lava.css';
-  } else if (theme === 'forest') {
-    link.href = 'style-forest.css';
-  } else if (theme === 'ocean') {
-    link.href = 'style-ocean.css';
-  } else if (theme === 'sky') {
-    link.href = 'style-sky.css';
-  } else {
-    link.href = 'style-default.css';
-  }
-}
-
-// === Auto-Save and Load ===
+/* =========================================================================
+   Autosave formState (your theme + input persistence)
+   ========================================================================= */
 
 function loadFormState() {
   const saved = localStorage.getItem("formState");
   if (!saved) return;
+
   const data = JSON.parse(saved);
   Object.keys(data).forEach(id => {
     const el = document.getElementById(id);
-    if (el) {
-      if (el.type === "checkbox") {
-        el.checked = data[id];
-      } else if (el.type === "file") {
-        // ❌ Skip setting file inputs like image upload
-        return;
-      } else {
-        el.value = data[id];
-      }
-    }
+    if (!el) return;
+
+    if (el.type === "checkbox") el.checked = !!data[id];
+    else if (el.type === "file") return;
+    else el.value = data[id];
   });
 
-  if (data["theme"]) {
-    const themeLink = document.getElementById("theme-link");
-    if (themeLink) {
-      themeLink.setAttribute("href", data["theme"]);
-    }
+  if (data.theme) {
+    const themeLink = EL.themeLink();
+    if (themeLink) themeLink.setAttribute("href", data.theme);
   }
 }
 
 function saveFormState() {
-  const elements = document.querySelectorAll("input, textarea, select");
+  const elements = qsa("input, textarea, select");
   const data = {};
   elements.forEach(el => {
-    if (el.type === "file") return; // ❌ Skip file inputs
-    if (el.type === "checkbox") {
-      data[el.id] = el.checked;
-    } else {
-      data[el.id] = el.value;
-    }
+    if (!el.id) return;
+    if (el.type === "file") return;
+    data[el.id] = (el.type === "checkbox") ? el.checked : el.value;
   });
-  data["theme"] = document.getElementById("theme-link")?.getAttribute("href");
+
+  data.theme = EL.themeLink()?.getAttribute("href") || "";
   localStorage.setItem("formState", JSON.stringify(data));
 }
 
+/* =========================================================================
+   Character Data DOM <-> Object
+   ========================================================================= */
 
-window.addEventListener("load", () => {
-    loadFormState();
-    document.querySelectorAll("input, textarea, select").forEach(el => {
-        el.addEventListener("input", saveFormState);
-        el.addEventListener("change", saveFormState);
+function buildCharacterDataFromDOM() {
+  const name = EL.charName()?.value || "";
+  const exp = parseInt(EL.expValue()?.textContent || "0", 10);
+  const luck = parseInt(EL.luckValue()?.textContent || "1", 10);
+
+  const wounds = qsa(".wounds button").map(btn => btn.classList.contains("active"));
+
+  const skills = qsa(".input-wrapper").map(wrapper => {
+    const input = wrapper.querySelector(".skill-input");
+    if (!input) return null;
+    const levels = qsa(".skill-level", wrapper).map(cb => cb.checked);
+    const skillName = input.value.trim();
+    if (!skillName) return null;
+    return { name: skillName, levels };
+  }).filter(Boolean);
+
+  const items = qsa(".item-input").map(i => i.value.trim()).filter(Boolean);
+
+  // ✅ FIX: conditions were previously reading .skill-input (wrong)
+  const conditions = qsa(".condition-input").map(i => i.value.trim()).filter(Boolean).map(name => ({ name }));
+
+  return { name, exp, luck, wounds, skills, items, conditions };
+}
+
+function applyCharacterDataToDOM(data) {
+  if (EL.charName()) EL.charName().value = data.name || "";
+  if (EL.expValue()) EL.expValue().textContent = String(data.exp ?? 0);
+  if (EL.luckValue()) EL.luckValue().textContent = String(data.luck ?? 1);
+
+  const woundButtons = qsa(".wounds button");
+  (data.wounds || []).forEach((isActive, i) => {
+    if (woundButtons[i]) woundButtons[i].classList.toggle("active", !!isActive);
+  });
+
+  // skills
+  if (EL.skills()) {
+    EL.skills().innerHTML = "";
+    (data.skills || []).forEach(s => addSkill(s));
+    if (EL.skills().children.length === 0) addSkill("Do anything");
+  }
+
+  // items
+  if (EL.items()) {
+    EL.items().innerHTML = "";
+    (data.items || []).forEach(item => addItem(item));
+    if (EL.items().children.length === 0) addItem("");
+  }
+
+  // conditions
+  if (EL.conditions()) {
+    EL.conditions().innerHTML = "";
+    (data.conditions || []).forEach(c => addCondition(c?.name || c));
+    if (EL.conditions().children.length === 0) addCondition("");
+  }
+}
+
+function resetCharacterDOM() {
+  if (EL.charName()) EL.charName().value = "";
+  if (EL.expValue()) EL.expValue().textContent = "0";
+  if (EL.luckValue()) EL.luckValue().textContent = "1";
+  qsa(".wounds button").forEach(btn => btn.classList.remove("active"));
+
+  if (EL.skills()) { EL.skills().innerHTML = ""; addSkill("Do anything"); }
+  if (EL.items()) { EL.items().innerHTML = ""; addItem(""); }
+  if (EL.conditions()) { EL.conditions().innerHTML = ""; addCondition(""); }
+}
+
+/* =========================================================================
+   Silent autosave placeholder
+   (You likely have real Firestore autosave elsewhere. This keeps UI responsive.)
+   ========================================================================= */
+function silentAutoSaveCharacter() {
+  // If you already have Firestore autosave in login.js, keep it there.
+  // Here we can keep a lightweight local backup to avoid data loss.
+  try {
+    localStorage.setItem("rfrbCharacterDraft", JSON.stringify(buildCharacterDataFromDOM()));
+  } catch (e) {
+    // ignore
+  }
+}
+
+/* =========================================================================
+   Theme
+   ========================================================================= */
+function setTheme(theme) {
+  const link = EL.themeLink() || qs("link[rel='stylesheet']");
+  if (!link) return;
+
+  const map = {
+    dark: "style-dark.css",
+    lava: "style-lava.css",
+    forest: "style-forest.css",
+    ocean: "style-ocean.css",
+    sky: "style-sky.css",
+    default: "style-default.css",
+  };
+
+  link.href = map[theme] || map.default;
+  saveFormState();
+}
+
+/* =========================================================================
+   Show & Tell / Tabs
+   ========================================================================= */
+
+function ensureTabImageExists() {
+  const container = EL.zoomContent();
+  if (!container) return;
+  if (EL.tabImage()) return;
+
+  const img = document.createElement("img");
+  img.id = "tab-image";
+  img.style.position = "absolute";
+  img.style.top = "0";
+  img.style.left = "0";
+  img.style.maxWidth = "none";
+  img.draggable = false;
+  container.appendChild(img);
+}
+
+function toggleShowAndTell() {
+  if (EL.characterPanel()) EL.characterPanel().style.display = "none";
+  if (EL.mainContainer()) EL.mainContainer().style.display = "none";
+  if (EL.showPanel()) EL.showPanel().style.display = "block";
+
+  ensureTabImageExists();
+  syncPenColorFromPicker();
+  ensureDrawingCanvasExists();
+  setupDrawingCanvasSafe(); // safe init (wait for image)
+  // You likely have listenForDisplayImageUpdates() elsewhere; call if it exists.
+  if (typeof window.listenForDisplayImageUpdates === "function") window.listenForDisplayImageUpdates();
+}
+
+function toggleCharacterPanel() {
+  if (EL.characterPanel()) EL.characterPanel().style.display = "block";
+  if (EL.mainContainer()) EL.mainContainer().style.display = "block";
+  if (EL.showPanel()) EL.showPanel().style.display = "none";
+}
+
+function showTabImage(url) {
+  ensureTabImageExists();
+  const img = EL.tabImage();
+  if (img) img.src = url || "";
+}
+
+function renderTabs(tabs, activeTabId) {
+  const tabBar = EL.tabBar();
+  if (!tabBar) return;
+
+  tabBar.innerHTML = "";
+  tabs.forEach(tab => {
+    const btn = document.createElement("button");
+    btn.textContent = tab.title;
+    btn.classList.add("tab-button");
+    if (tab.id === activeTabId) btn.classList.add("active");
+    btn.type = "button";
+    btn.addEventListener("click", () => {
+      currentTabId = tab.id;
+      showTabImage(tab.imageUrl);
+      renderTabs(tabs, tab.id);
     });
+    tabBar.appendChild(btn);
+  });
+}
 
-    const themeButtons = document.querySelectorAll("button[data-theme]");
-    themeButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const themeHref = btn.getAttribute("data-theme");
-            const themeLink = document.getElementById("theme-link");
-            if (themeLink && themeHref) {
-                themeLink.setAttribute("href", themeHref);
-                saveFormState();
-            }
-        });
+function createNewTab(name, imageUrl, updateFirestore = true) {
+  const tabBar = EL.tabBar();
+  if (!tabBar) return;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = name;
+  button.addEventListener("click", () => showTabImage(imageUrl));
+  tabBar.appendChild(button);
+
+  showTabImage(imageUrl);
+
+  if (updateFirestore) {
+    const sessionId = getSessionId();
+    if (!sessionId) return;
+
+    const tabRef = db.collection("sessions").doc(sessionId).collection("tabs").doc(name);
+    tabRef.set({ imageUrl });
+
+    db.collection("sessions").doc(sessionId).update({
+      tabOrder: firebase.firestore.FieldValue.arrayUnion(name),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-});
+  }
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('skills-container').children.length === 0) addSkill('Do anything');
-  if (document.getElementById('items-container').children.length === 0) addItem();
-  if (document.getElementById('conditions-container').children.length === 0) addCondition();
+function pushToDisplayArea(imageUrl, updateFirestore = true) {
+  ensureTabImageExists();
+  ensureDrawingCanvasExists();
 
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) {
-    // No session selected yet; do nothing.
+  const tabBar = EL.tabBar();
+  const tabButtons = tabBar ? Array.from(tabBar.children) : [];
+
+  // If no tabs exist, force-create one
+  if (tabButtons.length === 0) {
+    const newTabName = prompt("No tabs exist. Enter a name for the new tab:");
+    if (!newTabName) return;
+    createNewTab(newTabName, imageUrl, updateFirestore);
     return;
   }
 
-  // 🔒 Only restore if Firestore still has a valid image
-  db.collection("sessions").doc(sessionId).get().then(doc => {
-    if (doc.exists && doc.data()?.currentDisplayImage) {
-      pushToDisplayArea(doc.data().currentDisplayImage, false);
-    } else {
-      localStorage.removeItem("gmDisplayImage");
-    }
-  }).catch(err => {
-    console.warn("Failed to validate display image:", err);
-  });
-});
+  const img = EL.tabImage();
+  if (!img) return;
 
+  img.src = imageUrl;
+  latestDisplayImage = imageUrl;
+
+  img.onload = () => {
+    const zoomContainer = EL.zoomContainer();
+    if (!zoomContainer) return;
+
+    const containerBox = zoomContainer.getBoundingClientRect();
+    const scaleX = containerBox.width / img.naturalWidth;
+    const scaleY = containerBox.height / img.naturalHeight;
+    const initialScale = Math.min(scaleX, scaleY);
+
+    zoomLevel = initialScale;
+    panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
+    panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
+
+    applyTransform();
+    drawFromBuffer();
+    loadAllDrawings(); // will no-op if no session
+  };
+
+  localStorage.setItem("gmDisplayImage", imageUrl);
+
+  if (updateFirestore) {
+    const sessionId = getSessionId();
+    if (!sessionId) return;
+    db.collection("sessions").doc(sessionId).update({
+      currentDisplayImage: imageUrl,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+}
+
+function cleardisplay() {
+  const img = EL.tabImage();
+  if (img) img.src = "";
+
+  const tabBar = EL.tabBar();
+  if (tabBar) tabBar.innerHTML = "";
+
+  userCanvases = {};
+  drawFromBuffer();
+
+  const sessionId = getSessionId();
+  if (!sessionId) return;
+
+  // clear tabs subcollection
+  const tabsRef = db.collection("sessions").doc(sessionId).collection("tabs");
+  tabsRef.get().then(snapshot => {
+    const batch = db.batch();
+    snapshot.forEach(doc => batch.delete(doc.ref));
+    return batch.commit();
+  });
+
+  db.collection("sessions").doc(sessionId).update({
+    tabOrder: [],
+    currentDisplayImage: "",
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+/* =========================================================================
+   Pan/Zoom
+   ========================================================================= */
 
 function applyTransform() {
-  const zoomContent = document.getElementById("zoom-content");
-  const canvas = document.getElementById("drawing-canvas");
-  const img = zoomContent.querySelector("img");
+  const zoomContent = EL.zoomContent();
+  const canvas = EL.drawingCanvas();
+  const img = qs("#zoom-content img"); // your image is #tab-image usually
 
-  if (!canvas || !img) return;
+  if (!zoomContent || !img) return;
 
-  // Apply pan manually
+  // pan
   zoomContent.style.left = `${panX}px`;
   zoomContent.style.top = `${panY}px`;
 
-  // Apply zoom by resizing both the image and canvas
+  // zoom by resizing image + canvas CSS size
   const displayWidth = img.naturalWidth * zoomLevel;
   const displayHeight = img.naturalHeight * zoomLevel;
 
   img.style.width = `${displayWidth}px`;
   img.style.height = `${displayHeight}px`;
 
-  canvas.style.width = `${displayWidth}px`;
-  canvas.style.height = `${displayHeight}px`;
-
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = displayWidth * dpr;
-  canvas.height = displayHeight * dpr;
-
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (canvas) {
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+  }
 
   drawFromBuffer();
 }
 
-function toggleShowAndTell() {
-  document.getElementById("character-panel").style.display = "none";
-  document.getElementById("main-container").style.display = "none";
-  document.getElementById("show-panel").style.display = "block";
+/* =========================================================================
+   Drawing (per-user layers, sync on pointerup only)
+   ========================================================================= */
 
-  const container = document.getElementById("zoom-content");
-  if (container && latestDisplayImage) {
-    pushToDisplayArea(latestDisplayImage, false);
-  }
+function ensureDrawingCanvasExists() {
+  const container = EL.zoomContent();
+  if (!container) return;
 
-  listenForDisplayImageUpdates(); 
-  syncPenColorFromPicker();
+  let canvas = EL.drawingCanvas();
+  if (canvas) return;
 
-  const existingCanvas = document.getElementById("drawing-canvas");
-  if (!existingCanvas) {
-    const canvas = document.createElement("canvas");
-    canvas.id = "drawing-canvas";
-    canvas.style.position = "absolute";
-    canvas.style.top = 0;
-    canvas.style.left = 0;
-    canvas.style.zIndex = 5;
-    canvas.style.pointerEvents = "none";
-    document.getElementById("zoom-content").appendChild(canvas);
-    setupDrawingCanvas();
-  }
+  canvas = document.createElement("canvas");
+  canvas.id = "drawing-canvas";
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.zIndex = "5";
+  canvas.style.pointerEvents = "none"; // ✅ default: do NOT block UI
+  container.appendChild(canvas);
 }
 
-  function toggleCharacterPanel() {
-  document.getElementById("character-panel").style.display = "block";
-  document.getElementById("main-container").style.display = "block";
-  document.getElementById("show-panel").style.display = "none";
-}
+function setupDrawingCanvasSafe() {
+  const canvas = EL.drawingCanvas();
+  const img = qs("#zoom-content img");
+  if (!canvas || !img) return;
 
-function openGMTools() {
-  alert("🛠️ GM Tools coming soon!");
-}
-
-function toggleGMTools() {
-  const panel = document.getElementById("gm-tools-panel");
-  panel.style.display = (panel.style.display === "none" || !panel.style.display) ? "block" : "none";
-}
-
-function openGMTools() {
-  document.getElementById("gm-tools-panel").style.display = "block";
-}
-
-function uploadGMImage() {
-  const fileInput = document.getElementById("gm-image-upload");
-  const file = fileInput.files[0];
-  const status = document.getElementById("upload-status");
-
-  if (!file) {
-    status.textContent = "Please select a file first.";
+  // Wait until image is loaded so naturalWidth/Height are valid
+  if (!img.complete || !img.naturalWidth) {
+    img.addEventListener("load", () => setupDrawingCanvasSafe(), { once: true });
     return;
   }
 
-  const user = firebase.auth().currentUser;
-  const sessionId = localStorage.getItem("currentSessionId"); // already used in your app
-
-  if (!user || !sessionId) {
-    status.textContent = "User or session not found.";
-    return;
-  }
-
-  const storageRef = firebase.storage().ref(`sessions/${sessionId}/gmimages/${file.name}`);
-  const uploadTask = storageRef.put(file);
-
-  status.textContent = "Uploading...";
-
-  uploadTask.on(
-    "state_changed",
-    null,
-    (error) => {
-      console.error("Upload failed:", error);
-      status.textContent = "Upload failed.";
-    },
-    () => {
-      uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-        status.textContent = "✅ Upload complete!";
-        console.log("File available at", downloadURL);
-const folder = document.getElementById("gm-folder-input").value.trim() || "Unsorted";
-
-firebase.firestore()
-  .collection("sessions")
-  .doc(sessionId)
-  .collection("gmimages")
-  .add({
-    name: file.name,
-    url: downloadURL,
-    folder,
-    uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
-  })
-  .then(() => {
-    loadGMImages(); // refresh display
-        });
-    });
-  }
-);
+  setupDrawingCanvas();
 }
 
-function loadGMImages() {
-  const gallery = document.getElementById("image-list");
-  gallery.innerHTML = "<p>Loading...</p>";
+function setupDrawingCanvas() {
+  const canvas = EL.drawingCanvas();
+  const img = qs("#zoom-content img");
+  if (!canvas || !img) return;
 
-  const sessionId = localStorage.getItem("currentSessionId");
+  // Offscreen buffer just for sizing reference (not saved directly)
+  offscreenCanvas = document.createElement("canvas");
+  offscreenCanvas.width = img.naturalWidth;
+  offscreenCanvas.height = img.naturalHeight;
+  offscreenCtx = offscreenCanvas.getContext("2d");
 
-  db.collection("sessions").doc(sessionId).collection("gmimages").get().then(snapshot => {
-    const folderMap = {};
+  // Bind events once
+  if (canvas.dataset.bound === "1") return;
+  canvas.dataset.bound = "1";
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const folder = data.folder || "Unsorted";
-      if (!folderMap[folder]) folderMap[folder] = [];
-      folderMap[folder].push({ id: doc.id, ...data });
-    });
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!currentTool) return;
+    drawing = true;
 
-    gallery.innerHTML = "";
+    const user = getUser();
+    if (!user) return;
 
-    Object.entries(folderMap).forEach(([folderName, images]) => {
-  const section = document.createElement("div");
+    const { x, y } = getTrueCoords(canvas, e);
 
-  // Create folder header (clickable)
-  const header = document.createElement("h3");
-  header.style.color = "white";
-  header.style.cursor = "pointer";
-  header.textContent = `📁 ${folderName}`;
-  
-  // Create a collapsible content container
-  const content = document.createElement("div");
-  content.style.display = "none"; // collapsed by default
-  content.style.marginLeft = "10px";
-
-  header.addEventListener("click", () => {
-    content.style.display = content.style.display === "none" ? "block" : "none";
-  });
-
-  images.forEach(({ name, url, id }) => {
-    const wrapper = document.createElement("div");
-    wrapper.style = "display: flex; flex-direction: column; align-items: center; border: 1px solid #555; padding: 5px; background: #111; margin-bottom: 6px;";
-
-    const img = document.createElement("img");
-    img.src = url;
-    img.alt = name;
-    img.style = "width: 100px; height: auto; margin-bottom: 5px;";
-
-    const label = document.createElement("div");
-    label.textContent = name;
-    label.style = "font-size: 12px; color: white;";
-
-    const btnGroup = document.createElement("div");
-    btnGroup.style = "margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;";
-
-    const toDisplay = document.createElement("button");
-    toDisplay.textContent = "display";
-    toDisplay.onclick = () => {
-  toggleShowAndTell(); // Show & Tell panel must be visible
-  setTimeout(() => {
-     ensureTabImageExists();
-    pushToDisplayArea(url);
-  }, 100); // Wait briefly to ensure DOM is ready
-};
-
-    const toChat = document.createElement("button");
-    toChat.textContent = "Chat";
-    toChat.onclick = () => pushToChat(url, name);
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "❌";
-    deleteBtn.onclick = () => deleteGMImage(sessionId, id, name, wrapper);
-
-    [toDisplay, toChat, deleteBtn].forEach(btn => {
-      btn.style.padding = "2px 6px";
-      btn.style.fontSize = "12px";
-      btn.style.borderRadius = "4px";
-      btn.style.backgroundColor = "#333";
-      btn.style.color = "#fff";
-      btn.style.border = "1px solid #666";
-      btn.style.cursor = "pointer";
-    });
-
-    btnGroup.appendChild(toDisplay);
-    btnGroup.appendChild(toChat);
-    btnGroup.appendChild(deleteBtn);
-
-    wrapper.appendChild(img);
-    wrapper.appendChild(label);
-    wrapper.appendChild(btnGroup);
-
-    content.appendChild(wrapper);
-  });
-
-  section.appendChild(header);
-  section.appendChild(content);
-  gallery.appendChild(section);
-  });
- });
-}
-
- function resizeCanvasSmart() {
-  applyTransform();
-}
-
-function renderTabs(tabs, activeTabId) {
-  const tabBar = document.getElementById("tab-bar");
-  tabBar.innerHTML = "";
-
-  tabs.forEach(tab => {
-    const btn = document.createElement("button");
-    btn.textContent = tab.title;
-    btn.classList.add("tab-button");
-    if (tab.id === activeTabId) btn.classList.add("active");
-
-    btn.addEventListener("click", () => {
-      currentTabId = tab.id;
-      showTabImage(tab.imageUrl);
-      renderTabs(tabs, tab.id); // Re-render to update active state
-    });
-
-    tabBar.appendChild(btn);
-  });
-}
-
-function showTabImage(url) {
-  const img = document.getElementById("tab-image");
-  if (img) {
-    img.src = url || "";
-  } else {
-    console.warn("⚠️ Tried to show image, but #tab-image is missing.");
-  }
-}
-
- function ensureTabImageExists() {
-  const container = document.getElementById("zoom-content");
-  if (!document.getElementById("tab-image") && container) {
-    const img = document.createElement("img");
-    img.id = "tab-image";
-    img.style.position = "absolute";
-    img.style.top = "0";
-    img.style.left = "0";
-    img.style.maxWidth = "none";
-    img.draggable = false;
-    container.appendChild(img);
-  }
-}
-
-
-function pushToDisplayArea(imageUrl, updateFirestore = true) {
-  const tabBar = document.getElementById("tab-bar");
-  const tabButtons = tabBar?.children || [];
-  ensureTabImageExists();
-
-  // 🔍 If no tabs exist, prompt to create one and stop here
-  if (tabButtons.length === 0) {
-    const newTabName = prompt("No tabs exist. Enter a name for the new tab:");
-    if (!newTabName) return; // cancel if nothing entered
-
-    createNewTab(newTabName, imageUrl, updateFirestore);
-    return;
-  }
-
-  // ✅ Proceed with showing image in current display
-  const container = document.getElementById("zoom-content");
-  const img = document.getElementById("tab-image");
-  const canvas = document.getElementById("drawing-canvas");
-
-  if (img) {
-    img.src = imageUrl;
-
-    img.onload = () => {
-      const containerBox = document.getElementById("zoom-container").getBoundingClientRect();
-      const scaleX = containerBox.width / img.naturalWidth;
-      const scaleY = containerBox.height / img.naturalHeight;
-      const initialScale = Math.min(scaleX, scaleY);
-      zoomLevel = initialScale;
-
-      panX = (containerBox.width - img.naturalWidth * initialScale) / 2;
-      panY = (containerBox.height - img.naturalHeight * initialScale) / 2;
-
-      applyTransform();
-      drawFromBuffer();
-      loadAllDrawings();
-    };
-  } else {
-    console.warn("⚠️ tab-image not found.");
-  }
-
-  // 🔧 Ensure canvas exists
-  if (!canvas) {
-    const newCanvas = document.createElement("canvas");
-    newCanvas.id = "drawing-canvas";
-    newCanvas.style.position = "absolute";
-    newCanvas.style.top = 0;
-    newCanvas.style.left = 0;
-    newCanvas.style.zIndex = 5;
-    newCanvas.style.pointerEvents = "none";
-    container.appendChild(newCanvas);
-    setupDrawingCanvas();
-  }
-
-  localStorage.setItem("gmDisplayImage", imageUrl);
-
-  if (typeof window.resizeCanvasSmart === "function") {
-    window.resizeCanvasSmart();
-  }
-
-  if (updateFirestore) {
-    const sessionId = localStorage.getItem("currentSessionId");
-    if (sessionId) {
-      db.collection("sessions").doc(sessionId).update({
-        currentDisplayImage: imageUrl,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+    if (!userCanvases[user.uid]) {
+      userCanvases[user.uid] = document.createElement("canvas");
+      userCanvases[user.uid].width = offscreenCanvas.width;
+      userCanvases[user.uid].height = offscreenCanvas.height;
     }
-  }
+
+    const myCtx = userCanvases[user.uid].getContext("2d");
+    myCtx.beginPath();
+    myCtx.lineWidth = (currentTool === "erase")
+      ? 20
+      : parseInt(EL.strokeSlider()?.value || "4", 10);
+
+    myCtx.strokeStyle = penColor;
+    myCtx.globalCompositeOperation = (currentTool === "erase") ? "destination-out" : "source-over";
+    myCtx.moveTo(x, y);
+
+    // Capture pointer to avoid losing strokes
+    try { canvas.setPointerCapture(e.pointerId); } catch {}
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (!drawing || !currentTool) return;
+
+    const user = getUser();
+    if (!user || !userCanvases[user.uid]) return;
+
+    const { x, y } = getTrueCoords(canvas, e);
+
+    const myCtx = userCanvases[user.uid].getContext("2d");
+    myCtx.strokeStyle = penColor;
+    myCtx.globalCompositeOperation = (currentTool === "erase") ? "destination-out" : "source-over";
+    myCtx.lineWidth = (currentTool === "erase")
+      ? 20
+      : parseInt(EL.strokeSlider()?.value || "4", 10);
+
+    myCtx.lineTo(x, y);
+    myCtx.stroke();
+
+    drawFromBuffer();
+  });
+
+  canvas.addEventListener("pointerup", async (e) => {
+    if (!currentTool) return;
+    drawing = false;
+
+    const user = getUser();
+    if (!user || !userCanvases[user.uid]) return;
+
+    try { canvas.releasePointerCapture(e.pointerId); } catch {}
+
+    // ✅ Firestore write only when stroke ends
+    await saveUserDrawingLayer(user.uid);
+
+    drawFromBuffer();
+  });
+
+  canvas.addEventListener("pointercancel", () => {
+    drawing = false;
+  });
+
+  // Initial load + live sync
+  loadAllDrawings();
+  listenForDrawings();
 }
 
-
-function createNewTab(name, imageUrl, updateFirestore = true) {
-  const tabBar = document.getElementById("tab-bar");
-
-  const button = document.createElement("button");
-  button.textContent = name;
-  button.onclick = () => showTabImage(imageUrl);
-  tabBar.appendChild(button);
-
-  showTabImage(imageUrl); // immediately show the image
-
-  if (updateFirestore) {
-    const sessionId = localStorage.getItem("currentSessionId");
-    if (sessionId) {
-      const tabRef = db.collection("sessions").doc(sessionId).collection("tabs").doc(name);
-      tabRef.set({ imageUrl });
-
-      db.collection("sessions").doc(sessionId).update({
-        tabOrder: firebase.firestore.FieldValue.arrayUnion(name),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
-  }
+function getTrueCoords(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  // Convert from displayed coords back to image-space using zoomLevel
+  const x = (e.clientX - rect.left) / zoomLevel;
+  const y = (e.clientY - rect.top) / zoomLevel;
+  return { x, y };
 }
 
+function drawFromBuffer() {
+  const canvas = EL.drawingCanvas();
+  const img = qs("#zoom-content img");
+  if (!canvas || !img || !img.naturalWidth || !offscreenCanvas) return;
 
-function pushToChat(imageUrl, label) {
-  const user = auth.currentUser;
-  const characterName = document.getElementById("player-name").value || user.email;
-  db.collection("users").doc(user.uid).get().then(doc => {
-    const color = doc.data()?.displayNameColor || "#ffffff";
-    return db.collection("sessions").doc(selectedSessionId).collection("chat").add({
-      characterName,
-      imageUrl,
-      color,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
+  // Resize actual canvas to match display size * devicePixelRatio
+  const displayW = img.naturalWidth * zoomLevel;
+  const displayH = img.naturalHeight * zoomLevel;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = `${displayW}px`;
+  canvas.style.height = `${displayH}px`;
+  canvas.width = Math.floor(displayW * dpr);
+  canvas.height = Math.floor(displayH * dpr);
+
+  const ctx = canvas.getContext("2d");
+  // Map image-space to screen-space
+  ctx.setTransform(dpr * zoomLevel, 0, 0, dpr * zoomLevel, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw all user layers in deterministic order (uid sort)
+  Object.keys(userCanvases).sort().forEach(uid => {
+    ctx.drawImage(userCanvases[uid], 0, 0);
   });
 }
 
-function openGMImageModal() {
-  document.getElementById("gm-image-gallery-modal").style.display = "flex";
-  loadGMImages();
+async function saveUserDrawingLayer(uid) {
+  const sessionId = getSessionId();
+  if (!sessionId || !uid) return;
+
+  const layer = userCanvases[uid];
+  if (!layer) return;
+
+  const imageData = layer.toDataURL("image/png"); // keep alpha
+
+  try {
+    await db.collection("sessions")
+      .doc(sessionId)
+      .collection("drawings")
+      .doc(uid)
+      .set({
+        imageData,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+  } catch (err) {
+    console.error("Failed to save drawing layer:", err);
+  }
 }
 
-function closeGMImageModal() {
-  document.getElementById("gm-image-gallery-modal").style.display = "none";
-}
+function loadAllDrawings() {
+  const sessionId = getSessionId();
+  if (!sessionId) return;
 
-function deleteGMImage(sessionId, docId, fileName, wrapper) {
-  if (!confirm(`Delete image "${fileName}"?`)) return;
-  const storagePath = `sessions/${sessionId}/gmimages/${fileName}`;
-  const storageRef = firebase.storage().ref(storagePath);
-  // Delete from Storage
-  storageRef.delete()
-    .then(() => {
-      // Then delete Firestore doc
-      return db.collection("sessions").doc(sessionId).collection("gmimages").doc(docId).delete();
-    })
-    .then(() => {
-      wrapper.remove();
-      alert(`Deleted "${fileName}"`);
-    })
-    .catch((error) => {
-      console.error("❌ Delete failed:", error);
-      alert("Failed to delete image.");
-    });
-}
-
-function cleardisplay() {
-  // Clear the tab image visually
-  const img = document.getElementById("tab-image");
-  if (img) {
-    img.src = "";
-  }
-
-  // Clear canvas
-  const canvas = document.getElementById("drawing-canvas");
-  if (canvas) {
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-
-  // Clear all tab buttons
-  const tabBar = document.getElementById("tab-bar");
-  if (tabBar) {
-    tabBar.innerHTML = "";
-  }
-
-  // Clear local tab data
-  if (window.tabs) {
-    window.tabs = [];
-  }
-
-  // Clear tab data in Firestore
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (sessionId) {
-    const tabsRef = db.collection("sessions").doc(sessionId).collection("tabs");
-    tabsRef.get().then(snapshot => {
-      const batch = db.batch();
+  db.collection("sessions")
+    .doc(sessionId)
+    .collection("drawings")
+    .get()
+    .then(snapshot => {
+      userCanvases = {};
       snapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      return batch.commit();
-    });
+        const uid = doc.id;
+        const imageData = doc.data()?.imageData;
+        if (!imageData) return;
 
-    db.collection("sessions").doc(sessionId).update({
-      tabOrder: [],
-      currentDisplayImage: "", // Optional: clear global display image too
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+        const img = new Image();
+        img.onload = () => {
+          // We must have offscreenCanvas sized already
+          if (!offscreenCanvas) return;
+
+          const layer = document.createElement("canvas");
+          layer.width = offscreenCanvas.width;
+          layer.height = offscreenCanvas.height;
+          const ctx = layer.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          userCanvases[uid] = layer;
+          drawFromBuffer();
+        };
+        img.src = imageData;
+      });
+    })
+    .catch(err => console.error("loadAllDrawings error:", err));
+}
+
+function listenForDrawings() {
+  const sessionId = getSessionId();
+  if (!sessionId) return;
+
+  if (drawingsUnsub) drawingsUnsub();
+  drawingsUnsub = db.collection("sessions")
+    .doc(sessionId)
+    .collection("drawings")
+    .onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const uid = change.doc.id;
+
+        if (change.type === "removed") {
+          delete userCanvases[uid];
+          drawFromBuffer();
+          return;
+        }
+
+        const imageData = change.doc.data()?.imageData;
+        if (!imageData || !offscreenCanvas) return;
+
+        const img = new Image();
+        img.onload = () => {
+          const layer = document.createElement("canvas");
+          layer.width = offscreenCanvas.width;
+          layer.height = offscreenCanvas.height;
+          layer.getContext("2d").drawImage(img, 0, 0);
+          userCanvases[uid] = layer;
+          drawFromBuffer();
+        };
+        img.src = imageData;
+      });
+    }, err => console.error("listenForDrawings error:", err));
+}
+
+function setDrawingMode(mode) {
+  ensureDrawingCanvasExists();
+  const canvas = EL.drawingCanvas();
+  const penBtn = EL.penBtn();
+  const eraseBtn = EL.eraseBtn();
+  const zoomContainer = EL.zoomContainer();
+
+  if (!canvas || !zoomContainer) return;
+
+  if (currentTool === mode) {
+    currentTool = null;
+    canvas.style.pointerEvents = "none";
+    zoomContainer.classList.remove("no-pan");
+    if (penBtn) penBtn.classList.remove("active-tool");
+    if (eraseBtn) eraseBtn.classList.remove("active-tool");
+    canvas.style.cursor = "default";
+  } else {
+    currentTool = mode;
+    canvas.style.pointerEvents = "auto";
+    zoomContainer.classList.add("no-pan");
+    if (penBtn) penBtn.classList.toggle("active-tool", mode === "pen");
+    if (eraseBtn) eraseBtn.classList.toggle("active-tool", mode === "erase");
+    canvas.style.cursor = (mode === "pen") ? "crosshair" : "cell";
   }
 }
 
+function clearMyDrawings() {
+  const sessionId = getSessionId();
+  const user = getUser();
+  if (!user || !sessionId) return;
 
-function clearchat() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) {
-    alert("No session selected.");
-    return;
-  }
+  const uid = user.uid;
 
-  const chatRef = db.collection("sessions").doc(sessionId).collection("chat");
+  delete userCanvases[uid];
+  drawFromBuffer();
 
-  chatRef.get().then(snapshot => {
+  db.collection("sessions").doc(sessionId).collection("drawings").doc(uid).delete()
+    .catch(err => console.error("Failed to clear drawing:", err));
+}
+
+function clearAllDrawings() {
+  const sessionId = getSessionId();
+  if (!sessionId) return;
+
+  db.collection("sessions").doc(sessionId).collection("drawings").get().then(snapshot => {
     const batch = db.batch();
     snapshot.forEach(doc => batch.delete(doc.ref));
     return batch.commit();
   }).then(() => {
-    const chatMessages = document.getElementById("chat-messages");
-    if (chatMessages) chatMessages.innerHTML = "";
-    console.log("Chat cleared.");
-  }).catch(err => {
-    console.error("Error clearing chat:", err);
-    alert("Failed to clear chat.");
-  });
+    userCanvases = {};
+    drawFromBuffer();
+  }).catch(err => console.error("clearAllDrawings error:", err));
 }
-let gmModeActive = false;
+
+/* =========================================================================
+   Pen color + slider fill
+   ========================================================================= */
+
+function syncPenColorFromPicker() {
+  const picker = EL.penColor();
+  const slider = EL.strokeSlider();
+  if (!picker) return;
+  penColor = picker.value;
+
+  if (slider) {
+    slider.style.setProperty("--track-color", penColor);
+  }
+  updateSliderFill();
+}
+
+function updateSliderFill() {
+  const slider = EL.strokeSlider();
+  const picker = EL.penColor();
+  if (!slider || !picker) return;
+
+  const value = parseFloat(slider.value || "4");
+  const min = parseFloat(slider.min || "1");
+  const max = parseFloat(slider.max || "20");
+  const percent = ((value - min) / (max - min)) * 100;
+  const color = picker.value;
+
+  slider.style.setProperty(
+    "--slider-fill",
+    `linear-gradient(to right, ${color} 0%, ${color} ${percent}%, white ${percent}%, white 100%)`
+  );
+  slider.style.setProperty("--track-color", color);
+}
+
+/* =========================================================================
+   GM Tools / GM Mode (kept, but safer)
+   ========================================================================= */
+
+function toggleGMTools() {
+  const panel = EL.gmToolsPanel();
+  if (!panel) return;
+  panel.style.display = (panel.style.display === "none" || !panel.style.display) ? "block" : "none";
+}
 
 function toggleGMMode() {
   gmModeActive = !gmModeActive;
 
-  const characterPanel = document.getElementById("character-panel");
-  const gmPanel = document.getElementById("gm-mode-panel");
-  const gmButton = document.getElementById("gm-mode-toggle");
-  const maincontainer = document.getElementById("main-container");
+  const characterPanel = EL.characterPanel();
+  const gmPanel = EL.gmModePanel();
+  const gmButton = EL.gmModeToggle();
+  const maincontainer = EL.mainContainer();
 
   if (gmModeActive) {
-    maincontainer.style.display = "none";
-    characterPanel.style.display = "none";
-    gmPanel.style.display = "block";
-    gmButton.textContent = "Exit GM Mode";
+    if (maincontainer) maincontainer.style.display = "none";
+    if (characterPanel) characterPanel.style.display = "none";
+    if (gmPanel) gmPanel.style.display = "block";
+    if (gmButton) gmButton.textContent = "Exit GM Mode";
     loadAllGMCharacterPanels();
   } else {
-    characterPanel.style.display = "block";
-    gmPanel.style.display = "none";
-    gmButton.textContent = "GM Mode";
-    maincontainer.style.display = "block";
+    if (characterPanel) characterPanel.style.display = "block";
+    if (gmPanel) gmPanel.style.display = "none";
+    if (gmButton) gmButton.textContent = "GM Mode";
+    if (maincontainer) maincontainer.style.display = "block";
+    // cleanup listeners
+    gmPanelUnsubscribes.forEach(u => u());
+    gmPanelUnsubscribes = [];
   }
 }
 
-let gmTabsUnsubscribe = null;
-
-let gmPanelUnsubscribes = [];
-
 function loadAllGMCharacterPanels() {
-  const sessionId = localStorage.getItem("currentSessionId");
+  const sessionId = getSessionId();
   if (!sessionId) return;
 
-  // Clear any previous listeners
-  gmPanelUnsubscribes.forEach(unsub => unsub());
+  gmPanelUnsubscribes.forEach(u => u());
   gmPanelUnsubscribes = [];
 
-  const container = document.getElementById("gm-character-panels");
+  const container = EL.gmCharPanels();
+  if (!container) return;
   container.innerHTML = "<p>Loading characters...</p>";
 
-  db.collection("sessions").doc(sessionId).collection("characters")
+  const unsub = db.collection("sessions").doc(sessionId).collection("characters")
     .onSnapshot(snapshot => {
       container.innerHTML = "";
 
       snapshot.forEach(doc => {
         const charId = doc.id;
+
         const panel = document.createElement("div");
         panel.id = `char-${charId}`;
         panel.style = "min-width: 250px; max-width: 300px; background: #111; color: white; border: 2px solid #555; padding: 10px;";
@@ -903,27 +1069,27 @@ function loadAllGMCharacterPanels() {
         panel.innerHTML = `<h3>${charId}</h3><p>Loading...</p>`;
         container.appendChild(panel);
 
-        const unsub = db.collection("sessions").doc(sessionId).collection("characters").doc(charId)
+        const u2 = db.collection("sessions").doc(sessionId).collection("characters").doc(charId)
           .onSnapshot(docSnap => {
             const data = docSnap.data();
             if (!data) return;
 
             const wounds = (data.wounds || []).map(active => active ? "❤️" : "🖤").join(" ");
             const skills = (data.skills || []).map(s => {
-              const name = typeof s === 'string' ? s : s.name;
-              const dice = typeof s === 'object' && Array.isArray(s.levels)
-                ? s.levels.filter(l => l).length + 1
+              const name = (typeof s === "string") ? s : s.name;
+              const dice = (typeof s === "object" && Array.isArray(s.levels))
+                ? (s.levels.filter(Boolean).length + 1)
                 : 2;
               return `• ${name} (${dice}🎲)`;
             }).join("<br>");
 
-            const conditions = (data.conditions || []).map(c => `• ${c.name || c}`).join("<br>");
+            const conditions = (data.conditions || []).map(c => `• ${(c?.name || c)}`).join("<br>");
             const items = (data.items || []).map(i => `• ${i}`).join("<br>");
 
             panel.innerHTML = `
               <h3>${data.name || charId}</h3>
-              <p><strong>EXP:</strong> ${data.exp}</p>
-              <p><strong>LUCK:</strong> ${data.luck}</p>
+              <p><strong>EXP:</strong> ${data.exp ?? 0}</p>
+              <p><strong>LUCK:</strong> ${data.luck ?? 1}</p>
               <p><strong>WOUNDS:</strong> ${wounds}</p>
               <p><strong>SKILLS:</strong><br>${skills}</p>
               <p><strong>ITEMS:</strong><br>${items || "."}</p>
@@ -931,61 +1097,57 @@ function loadAllGMCharacterPanels() {
             `;
           });
 
-        gmPanelUnsubscribes.push(unsub);
+        gmPanelUnsubscribes.push(u2);
       });
 
-      if (snapshot.empty) {
-        container.innerHTML = "<p>No characters found.</p>";
-      }
+      if (snapshot.empty) container.innerHTML = "<p>No characters found.</p>";
     });
+
+  gmPanelUnsubscribes.push(unsub);
 }
 
-function viewGMCharacterLive(sessionId, charId) {
-  if (gmUnsubscribe) gmUnsubscribe(); // clear previous listener
+/* =========================================================================
+   Chat helpers (only if your app defines sendChatMessage elsewhere)
+   ========================================================================= */
 
-  const display = document.getElementById("gm-character-display");
-  display.innerHTML = "<p>Loading...</p>";
+function clearchat() {
+  const sessionId = getSessionId();
+  if (!sessionId) return alert("No session selected.");
 
-  gmUnsubscribe = db.collection("sessions").doc(sessionId)
-    .collection("characters").doc(charId)
-    .onSnapshot(doc => {
-      const data = doc.data();
-      if (!data) {
-        display.innerHTML = "<p>No data found.</p>";
-        return;
-      }
-
-      display.innerHTML = `
-        <h3>${data.name || charId}</h3>
-        <p><strong>Exp:</strong> ${data.exp}</p>
-        <p><strong>Luck:</strong> ${data.luck}</p>
-        <p><strong>Wounds:</strong> ${(data.wounds || []).map(w => w ? '❤️' : '🖤').join(' ')}</p>
-        <p><strong>Skills:</strong><br>${(data.skills || []).map(s => `• ${s.name} (${s.levels?.filter(l => l).length + 1}🎲)`).join("<br>")}</p>
-        <p><strong>Items:</strong><br>${(data.items || []).map(i => `• ${i}`).join("<br>")}</p>
-        <p><strong>Conditions:</strong><br>${(data.conditions || []).map(c => `• ${c.name}`).join("<br>")}</p>
-      `;
-    });
+  const chatRef = db.collection("sessions").doc(sessionId).collection("chat");
+  chatRef.get().then(snapshot => {
+    const batch = db.batch();
+    snapshot.forEach(doc => batch.delete(doc.ref));
+    return batch.commit();
+  }).then(() => {
+    const chatMessages = document.getElementById("chat-messages");
+    if (chatMessages) chatMessages.innerHTML = "";
+  }).catch(err => {
+    console.error("Error clearing chat:", err);
+    alert("Failed to clear chat.");
+  });
 }
 
-  let zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
-  let panX = parseFloat(localStorage.getItem("panX")) || 0;
-  let panY = parseFloat(localStorage.getItem("panY")) || 0;
-  let isPanning = false;
-  let startX = 0;
-  let startY = 0;
-let offscreenCanvas = null;
-let offscreenCtx = null;
+/* =========================================================================
+   Rules modal
+   ========================================================================= */
+function toggleRules() {
+  const modal = EL.rulesModal();
+  if (!modal) return;
+  modal.style.display = (modal.style.display === "block") ? "none" : "block";
+}
 
-window.addEventListener("DOMContentLoaded", () => {
-  const zoomContainer = document.getElementById("zoom-container");
-  const zoomContent = document.getElementById("zoom-content");
+/* =========================================================================
+   Init / Bindings
+   ========================================================================= */
 
+function bindPanZoom() {
+  const zoomContainer = EL.zoomContainer();
+  const zoomContent = EL.zoomContent();
   if (!zoomContainer || !zoomContent) {
     console.warn("❌ Zoom container or content not found.");
     return;
   }
-
-  window.applyTransform = applyTransform;
 
   applyTransform();
 
@@ -998,33 +1160,33 @@ window.addEventListener("DOMContentLoaded", () => {
     const offsetY = e.clientY - rect.top;
 
     const zoomFactor = 0.1;
-    const scaleChange = e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
+    const scaleChange = (e.deltaY < 0) ? 1 + zoomFactor : 1 - zoomFactor;
+    const newZoom = clamp(zoomLevel * scaleChange, 0.01, 4);
 
-    const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.01), 4);
+    // zoom around cursor
+    panX = offsetX - (offsetX - panX) * (newZoom / zoomLevel);
+    panY = offsetY - (offsetY - panY) * (newZoom / zoomLevel);
 
-    panX = offsetX - (offsetX - panX) * (newZoomLevel / zoomLevel);
-    panY = offsetY - (offsetY - panY) * (newZoomLevel / zoomLevel);
-
-    zoomLevel = newZoomLevel;
+    zoomLevel = newZoom;
     applyTransform();
+  }, { passive: false });
+
+  zoomContainer.addEventListener("mousedown", (e) => {
+    if (currentTool) return;
+
+    // ✅ do not pan when clicking UI
+    if (e.target.closest("button, input, textarea, select, label, a")) return;
+
+    isPanning = true;
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+    zoomContainer.style.cursor = "grabbing";
   });
-
-zoomContainer.addEventListener("mousedown", (e) => {
-  if (currentTool) return;
-
-  // ✅ Don't pan when interacting with UI controls
-  if (e.target.closest("button, input, textarea, select, label, a")) return;
-
-  isPanning = true;
-  startX = e.clientX - panX;
-  startY = e.clientY - panY;
-  zoomContainer.style.cursor = "grabbing";
-});
-
 
   document.addEventListener("mousemove", (e) => {
     if (currentTool) return;
     if (!isPanning) return;
+
     panX = e.clientX - startX;
     panY = e.clientY - startY;
     applyTransform();
@@ -1037,428 +1199,142 @@ zoomContainer.addEventListener("mousedown", (e) => {
   });
 
   window.addEventListener("beforeunload", () => {
-    localStorage.setItem("zoomLevel", zoomLevel);
-    localStorage.setItem("panX", panX);
-    localStorage.setItem("panY", panY);
+    localStorage.setItem("zoomLevel", String(zoomLevel));
+    localStorage.setItem("panX", String(panX));
+    localStorage.setItem("panY", String(panY));
   });
-});
+}
 
+function bindUI() {
+  // formState autosave
+  loadFormState();
+  qsa("input, textarea, select").forEach(el => {
+    el.addEventListener("input", saveFormState);
+    el.addEventListener("change", saveFormState);
+  });
 
-document.addEventListener("DOMContentLoaded", () => {
-  if (localStorage.getItem("autoSaveInitialized")) {
-    const hint = document.getElementById("autosave-hint");
-    if (hint) hint.style.display = "none";
+  // theme buttons (data-theme is a href in your old code)
+  qsa("button[data-theme]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const href = btn.getAttribute("data-theme");
+      if (!href) return;
+      const link = EL.themeLink();
+      if (!link) return;
+      link.setAttribute("href", href);
+      saveFormState();
+    });
+  });
+
+  // Pen / slider bindings
+  if (EL.penColor()) {
+    EL.penColor().addEventListener("input", () => {
+      syncPenColorFromPicker();
+    });
+    EL.penColor().addEventListener("change", () => {
+      syncPenColorFromPicker();
+    });
   }
-});
 
-function makeDraggable(el) {
-  let startX, startY, initialLeft, initialTop;
+  if (EL.strokeSlider()) {
+    EL.strokeSlider().addEventListener("input", updateSliderFill);
+    EL.strokeSlider().addEventListener("change", updateSliderFill);
+  }
 
-  el.onmousedown = function (e) {
-    e.preventDefault();
+  // clear-my-drawings button
+  const clearBtn = EL.clearMyDrawingsBtn();
+  if (clearBtn) clearBtn.addEventListener("click", clearMyDrawings);
 
-    const zoomContent = document.getElementById("zoom-content");
-    const rect = zoomContent.getBoundingClientRect();
-    const zoom = zoomLevel || 1;
-
-    startX = (e.clientX - rect.left) / zoom;
-    startY = (e.clientY - rect.top) / zoom;
-
-    initialLeft = parseFloat(el.style.left) || 0;
-    initialTop = parseFloat(el.style.top) || 0;
-
-    document.onmousemove = function (e) {
-      const currentX = (e.clientX - rect.left) / zoom;
-      const currentY = (e.clientY - rect.top) / zoom;
-
-      const dx = currentX - startX;
-      const dy = currentY - startY;
-
-      el.style.left = (initialLeft + dx) + "px";
-      el.style.top = (initialTop + dy) + "px";
-    };
-
-    document.onmouseup = () => {
-      document.onmousemove = null;
-      document.onmouseup = null;
-
-      // ✅ Firestore write only when dropped
-      const id = el.dataset.id;
-      if (id && currentSessionId) {
-        const newX = parseFloat(el.style.left);
-        const newY = parseFloat(el.style.top);
-        db.collection("sessions").doc(currentSessionId)
-          .update({ x: newX, y: newY });
+  // chat enter-to-send (if sendChatMessage exists)
+  if (EL.chatInput()) {
+    EL.chatInput().addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (typeof window.sendChatMessage === "function") window.sendChatMessage();
       }
-    };
-  };
+    });
+  }
+
+  // GM upload filename label
+  if (EL.gmUpload()) {
+    EL.gmUpload().addEventListener("change", function () {
+      const span = EL.gmUploadFilename();
+      if (!span) return;
+      span.textContent = (this.files && this.files.length > 0) ? this.files[0].name : "";
+    });
+  }
+
+  // Ensure baseline lists exist
+  if (EL.skills() && EL.skills().children.length === 0) addSkill("Do anything");
+  if (EL.items() && EL.items().children.length === 0) addItem("");
+  if (EL.conditions() && EL.conditions().children.length === 0) addCondition("");
+
+  // sync pen color once
+  syncPenColorFromPicker();
+  updateSliderFill();
 }
 
-function loadAllDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
+function restoreDisplayImageIfSessionKnown() {
+  const sessionId = getSessionId();
   if (!sessionId) return;
 
-  db.collection("sessions").doc(sessionId).collection("drawings")
-    .get()
-    .then(snapshot => {
-      userCanvases = {};
-      snapshot.forEach(doc => {
-        const { imageData } = doc.data();
-        const userId = doc.id;
-
-        if (imageData) {
-          const img = new Image();
-          img.onload = () => {
-            const tempCanvas = document.createElement("canvas");
-            tempCanvas.width = offscreenCanvas.width;
-            tempCanvas.height = offscreenCanvas.height;
-            const ctx = tempCanvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            userCanvases[userId] = tempCanvas;
-            drawFromBuffer(); // refresh after each
-          };
-          img.src = imageData;
-        }
-      });
-    });
-}
-
-function setupDrawingCanvas() {
-  const canvas = document.getElementById("drawing-canvas");
-  const zoomContent = document.getElementById("zoom-content");
-  const img = zoomContent.querySelector("img");
-
-  if (!canvas || !img) return;
-
-  // Set up main canvas
-  canvas.style.position = "absolute";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.zIndex = "5";
-  canvas.style.pointerEvents = "auto";
-
-  // Create offscreen buffer
-  offscreenCanvas = document.createElement("canvas");
-  offscreenCanvas.width = img.naturalWidth;
-  offscreenCanvas.height = img.naturalHeight;
-  offscreenCtx = offscreenCanvas.getContext("2d");
-
-  const ctx = canvas.getContext("2d");
-  loadAllDrawings();
-  listenForDrawings();
-
-  function getTrueCoords(e) {
-    const zoomContent = document.getElementById("zoom-content");
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoomLevel;
-    const y = (e.clientY - rect.top) / zoomLevel;
-    return { x, y };
-  }
-
-canvas.addEventListener("pointerdown", async (e) => {
-  if (!currentTool) return;
-  drawing = true;
-
-  const { x, y } = getTrueCoords(e);
-
-  const user = firebase.auth().currentUser;
-  if (!user) return;
-
-  // Make sure user has a canvas layer
-  if (!userCanvases[user.uid]) {
-    userCanvases[user.uid] = document.createElement("canvas");
-    userCanvases[user.uid].width = offscreenCanvas.width;
-    userCanvases[user.uid].height = offscreenCanvas.height;
-  }
-
-  const myCtx = userCanvases[user.uid].getContext("2d");
-  myCtx.beginPath();
-  myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('stroke-width-slider')?.value || 4);
-  myCtx.strokeStyle = penColor;
-  myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
-  myCtx.moveTo(x, y);
-});
-
-
-canvas.addEventListener("pointermove", (e) => {
-  if (!drawing || !currentTool) return;
-
-  const { x, y } = getTrueCoords(e);
-  const user = firebase.auth().currentUser;
-  if (!user || !userCanvases[user.uid]) return;
-
-  const myCtx = userCanvases[user.uid].getContext("2d");
-  myCtx.strokeStyle = penColor;
-  myCtx.globalCompositeOperation = currentTool === 'erase' ? 'destination-out' : 'source-over';
- myCtx.lineWidth = currentTool === 'erase' ? 20 : parseInt(document.getElementById('stroke-width-slider')?.value || 4);
-  myCtx.lineTo(x, y);
-  myCtx.stroke();
-  drawFromBuffer(); // Re-draw everything
-});
-
-
-canvas.addEventListener("pointerup", () => {
-  drawing = false;
-  if (!currentTool) return;
-
-  const user = firebase.auth().currentUser;
-  if (!user || !userCanvases[user.uid]) return;
-
-  // ✅ 1. Clear offscreen before applying new layer
-  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-
-  // ✅ 2. Copy from user's canvas to shared buffer
-  const userLayer = userCanvases[user.uid];
-  offscreenCtx.drawImage(userLayer, 0, 0);
-
-  // ✅ 3. Save to Firestore
-  saveDrawingToFirestore();
-
-  // ✅ 4. Redraw visible canvas
-  drawFromBuffer();
-});
-}
-
-function drawFromBuffer() {
-  const canvas = document.getElementById("drawing-canvas");
-  const ctx = canvas.getContext("2d");
-
-  // Resize canvas
-  const img = document.querySelector("#zoom-content img");
-  if (!img || !offscreenCanvas) return;
-
-  const width = img.naturalWidth * zoomLevel;
-  const height = img.naturalHeight * zoomLevel;
-  canvas.width = width;
-  canvas.height = height;
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-
-  ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw all user layers
-  for (const uid in userCanvases) {
-    ctx.drawImage(userCanvases[uid], 0, 0);
-  }
-}
-
-
-function saveDrawingToFirestore() {
-  if (!offscreenCanvas) return;
-  const sessionId = localStorage.getItem("currentSessionId");
-  const user = firebase.auth().currentUser;
-  if (!sessionId || !user) return;
-
-  const imageData = offscreenCanvas.toDataURL("image/png", 0.6); // 60% quality to save space
-
-  db.collection("sessions")
-    .doc(sessionId)
-    .collection("drawings")
-    .doc(user.uid)
-    .set({
-      imageData,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-}
-let currentTool = null; // 'pen', 'erase', or null
-let penColor = '#ff0000';
-let drawing = false;
-
-function setDrawingMode(mode) {
-  const canvas = document.getElementById('drawing-canvas');
-  const penBtn = document.getElementById('pen-tool-btn');
-  const eraseBtn = document.getElementById('eraser-tool-btn');
-  const zoomContainer = document.getElementById('zoom-container');
-
-  if (currentTool === mode) {
-    // Deselect tool
-    currentTool = null;
-    canvas.style.pointerEvents = "none";
-    zoomContainer.classList.remove("no-pan");
-    penBtn.classList.remove("active-tool");
-    eraseBtn.classList.remove("active-tool");
-    canvas.style.cursor = "default";
-  } else {
-    currentTool = mode;
-    canvas.style.pointerEvents = "auto";
-    zoomContainer.classList.add("no-pan");
-
-    // Update button styles
-    penBtn.classList.toggle("active-tool", mode === 'pen');
-    eraseBtn.classList.toggle("active-tool", mode === 'erase');
-
-    // Set appropriate cursor
-    canvas.style.cursor = mode === 'pen' ? 'crosshair' : 'cell';
-  }
-}
-
-function clearCanvas() {
-  const user = firebase.auth().currentUser;
-  const sessionId = localStorage.getItem("currentSessionId");
-
-  if (!user || !sessionId) return;
-
-  // 🔥 Remove local layer
-  delete userCanvases[user.uid];
-
-  // 🔥 Clear offscreenCanvas (so stale pixels aren't saved later)
-  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-
-  // 🔁 Redraw visible canvas
-  drawFromBuffer();
-
-  // 🔥 Delete from Firestore
-  db.collection("sessions")
-    .doc(sessionId)
-    .collection("drawings")
-    .doc(user.uid)
-    .delete()
-    .then(() => console.log("✅ Drawing cleared from Firestore"))
-    .catch(err => console.error("❌ Failed to clear drawing:", err));
-}
-
-document.getElementById('pen-color').addEventListener('input', (e) => {
-  penColor = e.target.value;
-});
-
-function clearAllDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  if (!sessionId) return;
-
-  db.collection("sessions").doc(sessionId).collection("drawings").get().then(snapshot => {
-    const batch = db.batch();
-    snapshot.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-    return batch.commit();
-  }).then(() => {
-    console.log("🧼 Cleared all drawing layers (GM action)");
-    userCanvases = {};
-    drawFromBuffer();
-  });
-}
-
-let penWidth = 4; // Default width
-
-function togglePenWidthSlider() {
-  const slider = document.getElementById("stroke-width-slider");
-  slider.style.display = slider.style.display === "none" ? "block" : "none";
-}
-
-function updatePenWidth(value) {
-  penWidth = parseInt(value);
-}
-
-function syncPenColorFromPicker() {
-  const picker = document.getElementById('pen-color');
-  const slider = document.getElementById('stroke-width-slider');
-  if (picker) {
-    penColor = picker.value;
-    if (slider) {
-      slider.style.setProperty('--track-color', penColor);
-    }
-    console.log("🎨 Synced penColor to:", penColor);
-  }
-}
-const strokeSlider = document.getElementById('stroke-width-slider');
-const penColorPicker = document.getElementById('pen-color');
-
-function updateSliderFill() {
-  const value = strokeSlider.value;
-  const min = strokeSlider.min || 1;
-  const max = strokeSlider.max || 20;
-  const percent = ((value - min) / (max - min)) * 100;
-  const color = penColorPicker.value;
-
-  // Apply CSS gradient to simulate "filled" portion
-  strokeSlider.style.setProperty(
-    '--slider-fill',
-    `linear-gradient(to right, ${color} 0%, ${color} ${percent}%, white ${percent}%, white 100%)`
-  );
-
-  // Also set the thumb color
-  strokeSlider.style.setProperty('--track-color', color);
-}
-
-// Bind updates
-strokeSlider.addEventListener('input', updateSliderFill);
-penColorPicker.addEventListener('input', updateSliderFill);
-penColorPicker.addEventListener('change', () => {
-  syncPenColorFromPicker(); // or however you're applying the color
-  updateSliderFill();       // update fill on final pick too
-});
-
-
-function clearMyDrawings() {
-  const sessionId = localStorage.getItem("currentSessionId");
-  const user = firebase.auth().currentUser;
-  if (!user || !sessionId) return;
-
-  const uid = user.uid;
-
-  // 1. Remove from Firestore
-  db.collection("sessions").doc(sessionId).collection("drawings").doc(uid).delete().then(() => {
-    console.log("🧼 Cleared drawing layer for user:", uid);
-
-    // 2. Remove from local canvas buffer
-    delete userCanvases[uid];
-
-    // 3. Redraw buffer
-    drawFromBuffer();
-  });
-}
-function showUsernamePrompt() {
-  document.getElementById("usernamePrompt").style.display = "block";
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  syncPenColorFromPicker();         // sets penColor and updates CSS variable
-  updateSliderFill();              // fills the slider based on current width & color
-
-  document.getElementById('pen-color').addEventListener('change', () => {
-    syncPenColorFromPicker();
-    updateSliderFill();            // update fill only on change (not input)
-  });
-
-  document.getElementById('stroke-width-slider').addEventListener('input', updateSliderFill);
-
-  const clearBtn = document.getElementById("clear-button");
-  if (clearBtn) {
-    clearBtn.onclick = clearMyDrawings;
-  } else {
-    console.warn("❌ Could not find #clear-button to assign clearMyDrawings");
-  }
-
-  document.getElementById('chatInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendChatMessage();
-    }
-  });
-
-  document.getElementById("gm-image-upload").addEventListener("change", function () {
-    const filenameSpan = document.getElementById("gm-upload-filename");
-    if (this.files && this.files.length > 0) {
-      filenameSpan.textContent = this.files[0].name;
+  // Only restore if Firestore still has it
+  db.collection("sessions").doc(sessionId).get().then(doc => {
+    const url = doc.data()?.currentDisplayImage;
+    if (doc.exists && url) {
+      ensureTabImageExists();
+      pushToDisplayArea(url, false);
     } else {
-      filenameSpan.textContent = "";
+      localStorage.removeItem("gmDisplayImage");
     }
-  });
-});
+  }).catch(err => console.warn("Failed to validate display image:", err));
+}
 
-let currentTabId = null;
+function init() {
+  bindUI();
+  bindPanZoom();
+  restoreDisplayImageIfSessionKnown();
+  ensureDrawingCanvasExists();
+  setupDrawingCanvasSafe();
+  console.log("✅ Script loaded (rewritten).");
+}
 
-
-
-
-
-window.loadAllDrawings = loadAllDrawings;
+/* =========================================================================
+   Export to window
+   - This makes inline onclick work if your HTML uses it.
+   ========================================================================= */
 window.addSkill = addSkill;
 window.addItem = addItem;
 window.addCondition = addCondition;
+
+window.saveData = saveData;
+window.loadData = loadData;
+window.clearData = clearData;
+
+window.adjustExp = adjustExp;
+window.adjustLuck = adjustLuck;
+window.toggleWound = toggleWound;
+
+window.toggleRules = toggleRules;
+window.setTheme = setTheme;
+
+window.toggleShowAndTell = toggleShowAndTell;
+window.toggleCharacterPanel = toggleCharacterPanel;
 window.pushToDisplayArea = pushToDisplayArea;
-window.applyTransform = applyTransform;
+
+window.setDrawingMode = setDrawingMode;
+window.clearMyDrawings = clearMyDrawings;
 window.clearAllDrawings = clearAllDrawings;
-console.log("✅ Script loaded.");
+
+window.toggleGMTools = toggleGMTools;
+window.toggleGMMode = toggleGMMode;
+
+window.clearchat = clearchat;
+window.cleardisplay = cleardisplay;
+
+window.applyTransform = applyTransform;
+
+/* =========================================================================
+   Start
+   ========================================================================= */
+window.addEventListener("DOMContentLoaded", init);
+

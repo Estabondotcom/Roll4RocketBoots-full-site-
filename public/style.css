@@ -1,13 +1,40 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap');
+
+/* =========================
+   Base / Layout
+   ========================= */
+
+* { box-sizing: border-box; }
 
 body {
   background: url('background/br1.png') repeat;
   font-family: 'Bungee', cursive;
   color: #222;
-  padding: 20px;
   margin: 0;
+  padding: 20px;
 }
+
+#app-content {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#main-container {
+  background-color: rgba(144, 238, 144, 0.7);
+  padding: 10px;
+  padding-top: 60px;
+  border-radius: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow-y: auto;
+  flex: 3;
+}
+
+/* Character + Show panels should not overlap by CSS */
+#character-panel { display: block; }
+#show-panel { display: none; }
 
 h1 {
   text-align: center;
@@ -15,14 +42,18 @@ h1 {
   padding: 10px 15px;
   background-color: #00e5ff;
   box-shadow: 4px 4px #000;
-  padding: 10px;
   border-radius: 0;
   font-size: 3.1em;
-  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
   color: #ff00ff;
   text-shadow: 2px 2px 0 #000;
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
 }
+
+.title-wrapper { text-align: center; }
+
+/* =========================
+   Buttons / Inputs
+   ========================= */
 
 button {
   font-family: 'Press Start 2P', cursive;
@@ -43,15 +74,28 @@ button:hover {
   transform: scale(1.05);
 }
 
-input[type="text"], textarea {
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
   font-family: monospace;
   font-size: 16px;
   padding: 6px;
   border: 2px solid #000;
   background-color: #fff6d1;
-  width: 250px;
   margin-bottom: 8px;
   box-shadow: inset 2px 2px #888;
+  outline: none;
 }
 
 textarea {
@@ -59,8 +103,50 @@ textarea {
   height: 100px;
 }
 
+/* Make your NAME input big */
+#player-name {
+  font-family: monospace;
+  font-size: 30px;
+  font-weight: bold;
+  padding: 8px;
+  height: 48px;
+  border: 2px solid #000;
+  background-color: #fff6d1;
+  width: 300px;
+  box-shadow: inset 2px 2px #888;
+}
+
+/* =========================
+   Labels / Section styling
+   ========================= */
+
+label, h2 {
+  background-color: rgba(255, 255, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.section-label {
+  font-size: 2em;
+  font-family: 'Bungee', cursive;
+  background-color: rgba(255, 255, 0, 0.7);
+  padding: 4px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  margin: 6px 0;
+}
+
+.section-title { font-size: 1.95em; }
+.skills-title { font-size: 2.535em; }
+
+/* =========================
+   Skills / Items / Conditions
+   ========================= */
+
 #skills-container,
-#items-container {
+#items-container,
+#conditions-container {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -79,8 +165,19 @@ textarea {
   margin-bottom: 4px;
 }
 
-.skill-level {
-  accent-color: #ff00ff;
+.skill-level { accent-color: #ff00ff; }
+
+.skill-input,
+.item-input,
+.condition-input {
+  width: 250px;
+  font-size: 16px;
+  padding: 6px;
+  font-family: monospace;
+  border: 2px solid #000;
+  background-color: #fff6d1;
+  box-shadow: inset 2px 2px #888;
+  margin: 4px 0;
 }
 
 .delete-button {
@@ -88,15 +185,24 @@ textarea {
   background-color: #ff0000;
   color: white;
   font-size: 14px;
-  border: none;
+  border: 3px solid #000;
   padding: 4px 8px;
   box-shadow: 2px 2px #000;
 }
+
+.delete-button:hover {
+  background-color: #b30000;
+}
+
+/* =========================
+   Counters / Wounds
+   ========================= */
 
 #counters-section {
   display: flex;
   gap: 30px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .counter-block h2 {
@@ -114,6 +220,12 @@ textarea {
   padding-top: 5px;
 }
 
+.wounds-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .wounds {
   display: flex;
   gap: 6px;
@@ -129,12 +241,17 @@ textarea {
   font-weight: bold;
   border: 2px solid #000;
   cursor: pointer;
+  box-shadow: 2px 2px #000;
 }
 
 .wounds button.active {
   background-color: darkred;
   color: white;
 }
+
+/* =========================
+   Rules modal
+   ========================= */
 
 #rules-button {
   margin-bottom: 10px;
@@ -147,9 +264,11 @@ textarea {
 .modal {
   display: none;
   position: fixed;
-  z-index: 10;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
+  z-index: 3000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
   overflow: auto;
   background-color: rgba(0,0,0,0.7);
 }
@@ -163,6 +282,8 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
+  border: 3px solid #000;
+  box-shadow: 6px 6px #000;
 }
 
 .modal-content img {
@@ -177,138 +298,10 @@ textarea {
   cursor: pointer;
 }
 
-#main-container {
-  background-color: rgba(144, 238, 144, 0.7);
-  padding: 10px;
-  padding-top: 60px;
-  border-radius: 12px;
-  max-width: 900px;
-  margin: 0 auto;
-}
+/* =========================
+   GM tools button
+   ========================= */
 
-label, h2 {
-  background-color: rgba(255, 255, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-block;
-}
-
-  font-size: 1.5em;
-  background-color: rgba(255, 255, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-block;
-}
-label[for="player-name"] {
-  font-size: 1.5em;
-  background-color: rgba(255, 255, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-block;
-  font-family: 'Bungee', cursive;
-  margin-right: 10px;
-}
-
-
-.section-label {
-  font-size: 2em;
-  font-family: 'Bungee', cursive;
-  background-color: rgba(255, 255, 0, 0.7);
-  padding: 4px 12px;
-  border-radius: 6px;
-  display: inline-block;
-  margin: 6px 0;
-}
-
-
-#player-name {
-  font-family: monospace;
-  font-size: 30px;
-  font-weight: bold;
-  padding: 8px;
-  height: 38px;
-  border: 2px solid #000;
-  background-color: #fff6d1;
-  width: 300px;
-  box-shadow: inset 2px 2px #888;
-}
-
-
-
-
-.add-button {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 12px;
-  padding: 10px 14px;
-  margin: 5px;
-  border: 3px solid #000;
-  background-color: #00e5ff;
-  color: #000;
-  box-shadow: 3px 3px #000;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.condition-input {
-  width: 250px;
-  font-size: 16px;
-  padding: 6px;
-  font-family: monospace;
-  border: 2px solid #000;
-  background-color: #fff6d1;
-  box-shadow: inset 2px 2px #888;
-  margin: 4px 0;
-}
-
-.section-title {
-  font-size: 1.95em;
-}
-
-.skills-title {
-  font-size: 2.535em;
-}
-
-.wounds-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.exp-section, .luck-section {
-  display: grid;
-  grid-template-columns: auto auto auto;
-  grid-template-rows: auto auto;
-  gap: 4px;
-  align-items: center;
-  justify-items: center;
-}
-
-.exp-label, .luck-label {
-  grid-column: 2 / 3;
-  font-weight: bold;
-  font-size: 1.2em;
-  background: #ff0;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.exp-section h2,
-.luck-section h2 {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-.center-label {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  font-size: 1.4em;
-  font-family: 'Bungee', cursive;
-  background-color: #444;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  box-shadow: 2px 2px 4px #000;
-  z-index: 5;
-}
 #gm-tools-button {
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
@@ -319,11 +312,30 @@ label[for="player-name"] {
   color: black;
   cursor: pointer;
 }
+
+/* =========================
+   Show & Tell / Tabs / Zoom
+   (SAFE: does not affect the sheet)
+   ========================= */
+
+/* Show panel should be self-contained */
+#show-panel {
+  width: 73%;
+  height: 100%;
+  background-color: #111;
+  padding: 20px;
+  padding-top: 40px;
+  overflow: hidden;
+}
+
+/* Zoom is only relative INSIDE show panel */
 #zoom-container {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  position: absolute;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 #zoom-content {
@@ -332,76 +344,8 @@ label[for="player-name"] {
   left: 0;
   width: 100%;
   height: 100%;
-  will-change: transform;
 }
 
-#zoom-container {
-  user-select: none;
-  -webkit-user-drag: none;
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-#zoom-content img {
-  z-index: 1;
-  position: absolute;
-}
-
-#drawing-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 5; /* Make sure it's above the image but below emojis if needed */
-  pointer-events: auto; /* We'll toggle this when drawing */
-}
-
-#drawing-toolbar button.active-tool {
-  background-color: #00bcd4;
-  color: black;
-  font-weight: bold;
-  border: 2px solid #00acc1;
-}
-
-.no-pan {
-  pointer-events: none; /* Prevents zoomContainer interaction while drawing */
-}
-#stroke-width-slider {
-  appearance: none;
-  width: 150px;
-  height: 8px;
-  background: var(--slider-fill, #fff); /* Will be set by JS */
-  margin: 10px;
-  border-radius: 4px;
-  outline: none;
-}
-
-#stroke-width-slider::-webkit-slider-thumb {
-  appearance: none;
-  background: var(--track-color);
-  border: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  cursor: pointer;
-  margin-top: -4px; /* vertically centers the thumb */
-}
-
-#stroke-width-slider::-moz-range-thumb {
-  background: var(--track-color);
-  border: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* optional fallback */
-#stroke-width-slider::-webkit-slider-runnable-track {
-  background-color: #fff;
-  height: 8px;
-  border-radius: 4px;
-}
 #tab-container {
   display: flex;
   flex-direction: column;
@@ -420,34 +364,58 @@ label[for="player-name"] {
 .tab-button {
   background: #444;
   color: white;
-  border: none;
+  border: 2px solid #000;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  box-shadow: 2px 2px #000;
 }
 
 .tab-button.active {
   background: #ffa500;
+  color: #000;
 }
 
-#tab-content {
-  max-width: 80%;
-  display: flex;
-  justify-content: center;
+/* Display image */
+#image-display-area {
+  width: 95%;
+  height: 80vh;
+  background-color: #111;
+  padding: 30px;
+  overflow: auto;
+  position: relative;
+  margin: 0 auto;
+  border: 2px solid #333;
 }
 
 #tab-image {
   max-width: 100%;
   max-height: 60vh;
   object-fit: contain;
+  display: block;
+  margin: 0 auto;
   border: 2px solid #ccc;
   border-radius: 8px;
 }
-#show-panel {
-  pointer-events: none;
-}
-#show-panel[style*="display: block"] {
-  pointer-events: auto;
+
+/* =========================
+   Chat panel basics
+   ========================= */
+
+#chat-panel {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #222;
+  color: white;
+  border-left: 2px solid #555;
+  overflow: hidden;
 }
 
+/* (Optional) make chat input readable */
+#chatInput {
+  background: #111;
+  color: #fff;
+}

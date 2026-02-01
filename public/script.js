@@ -932,43 +932,54 @@ function viewGMCharacterLive(sessionId, charId) {
   let startX = 0;
   let startY = 0;
 
-window.addEventListener("DOMContentLoaded", () => {
-  const zoomContainer = document.getElementById("zoom-container");
-  const zoomContent = document.getElementById("zoom-content");
 
-  if (!zoomContainer || !zoomContent) {
-    console.warn("❌ Zoom container or content not found.");
+window.addEventListener("DOMContentLoaded", () => {
+  const area = document.getElementById("image-display-area");
+  if (!area) {
+    console.warn("❌ image-display-area not found.");
     return;
   }
 
+  // optional, for debugging from console
   window.applyTransform = applyTransform;
 
   applyTransform();
+  area.style.cursor = "grab";
 
-  zoomContainer.addEventListener("wheel", (e) => {
+  // ✅ Wheel zoom ONLY on the image viewport
+  area.addEventListener("wheel", (e) => {
     e.preventDefault();
+    e.stopPropagation();
 
-    const rect = zoomContainer.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
+    const rect = area.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
-    const zoomFactor = 0.1;
-    const scaleChange = e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
+    const zoomFactor = 0.12;
+    const scaleChange = e.deltaY < 0 ? (1 + zoomFactor) : (1 - zoomFactor);
+    const newZoom = Math.min(Math.max(zoomLevel * scaleChange, 0.1), 6);
 
-    const newZoomLevel = Math.min(Math.max(zoomLevel * scaleChange, 0.01), 4);
+    // zoom around cursor
+    const worldX = (mouseX - panX) / zoomLevel;
+    const worldY = (mouseY - panY) / zoomLevel;
 
-    panX = offsetX - (offsetX - panX) * (newZoomLevel / zoomLevel);
-    panY = offsetY - (offsetY - panY) * (newZoomLevel / zoomLevel);
+    zoomLevel = newZoom;
+    panX = mouseX - worldX * zoomLevel;
+    panY = mouseY - worldY * zoomLevel;
 
-    zoomLevel = newZoomLevel;
     applyTransform();
-  });
 
-  zoomContainer.addEventListener("mousedown", (e) => {
+    localStorage.setItem("zoomLevel", zoomLevel);
+    localStorage.setItem("panX", panX);
+    localStorage.setItem("panY", panY);
+  }, { passive: false }); // ✅ critical
+
+  // ✅ Drag pan ONLY on the image viewport
+  area.addEventListener("mousedown", (e) => {
     isPanning = true;
     startX = e.clientX - panX;
     startY = e.clientY - panY;
-    zoomContainer.style.cursor = "grabbing";
+    area.style.cursor = "grabbing";
   });
 
   document.addEventListener("mousemove", (e) => {
@@ -979,11 +990,10 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("mouseup", () => {
+    if (!isPanning) return;
     isPanning = false;
-    zoomContainer.style.cursor = "grab";
-  });
+    area.style.cursor = "grab";
 
-  window.addEventListener("beforeunload", () => {
     localStorage.setItem("zoomLevel", zoomLevel);
     localStorage.setItem("panX", panX);
     localStorage.setItem("panY", panY);

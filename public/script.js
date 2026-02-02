@@ -546,24 +546,34 @@ function createNewTab(name, imageUrl, updateFirestore = true) {
 function setupDrawingCanvasToImage() {
   const img = document.getElementById("tab-image");
   const canvas = getDrawingCanvasEl();
-
   if (!img || !canvas) return;
 
-  // if no image loaded, keep tiny
+  // If no image loaded, keep tiny
   if (!img.naturalWidth || !img.naturalHeight) {
-    canvas.width = 1;
-    canvas.height = 1;
+    if (canvas.width !== 1 || canvas.height !== 1) {
+      canvas.width = 1;
+      canvas.height = 1;
+    }
     drawCanvas = canvas;
     drawCtx = canvas.getContext("2d");
     return;
   }
 
-  // ✅ If canvas size changes, it clears. We preserve by reloading layers afterwards.
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
+  const targetW = img.naturalWidth;
+  const targetH = img.naturalHeight;
 
-  canvas.style.width = img.naturalWidth + "px";
-  canvas.style.height = img.naturalHeight + "px";
+  // ✅ Only resize display canvas if needed (resizing clears it)
+  const displayNeedsResize = canvas.width !== targetW || canvas.height !== targetH;
+  if (displayNeedsResize) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+    canvas.style.width = targetW + "px";
+    canvas.style.height = targetH + "px";
+  } else {
+    // keep CSS sizing correct in case
+    canvas.style.width = targetW + "px";
+    canvas.style.height = targetH + "px";
+  }
 
   drawCanvas = canvas;
   drawCtx = canvas.getContext("2d");
@@ -573,13 +583,31 @@ function setupDrawingCanvasToImage() {
     myLayerCtx = myLayerCanvas.getContext("2d");
   }
 
-  // Always keep my layer matching image size (this clears my layer, so we restore from Firestore listener)
-  myLayerCanvas.width = canvas.width;
-  myLayerCanvas.height = canvas.height;
+  // ✅ Only resize my layer if needed; preserve content if it changes
+  const myNeedsResize = myLayerCanvas.width !== targetW || myLayerCanvas.height !== targetH;
+  if (myNeedsResize) {
+    // preserve existing drawing
+    const old = document.createElement("canvas");
+    old.width = myLayerCanvas.width;
+    old.height = myLayerCanvas.height;
+    old.getContext("2d").drawImage(myLayerCanvas, 0, 0);
+
+    myLayerCanvas.width = targetW;
+    myLayerCanvas.height = targetH;
+
+    // draw old content back, scaled (usually same size anyway)
+    myLayerCtx.clearRect(0, 0, targetW, targetH);
+    myLayerCtx.drawImage(old, 0, 0, targetW, targetH);
+  }
 
   // ✅ Always keep my layer registered so compositor never “forgets me”
   const me = auth?.currentUser?.uid;
   if (me) userLayers[me] = myLayerCanvas;
+
+  // If display canvas resized, redraw composite so it doesn't look blank
+  if (displayNeedsResize) {
+    redrawAllLayers();
+  }
 }
 
 function getDrawPointFromEvent(e) {

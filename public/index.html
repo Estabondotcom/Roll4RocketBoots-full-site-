@@ -221,6 +221,21 @@
             <div id="tab-bar" style="display: flex; gap: 6px; padding-bottom: 10px;"></div>
           </div>
 
+          <div id="drawing-toolbar" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+            <label style="color:white; font-size:12px;">✏️ Width</label>
+            <input id="draw-width" type="range" min="1" max="30" value="4" step="1">
+          
+            <input id="draw-color" type="color" value="#ff0000" title="Pen color">
+          
+            <button id="tool-pen" type="button">✏️ Pen</button>
+            <button id="tool-eraser" type="button">🧽 Eraser</button>
+          
+            <button id="clear-mine" type="button">Clear Mine</button>
+          
+            <!-- GM only (we’ll hide/show in JS) -->
+            <button id="clear-all" type="button" style="display:none;">🧹 GM Clear All</button>
+          </div>
+
           <!-- Image Display -->
           <div id="image-display-area">
             <div id="panzoom-layer">

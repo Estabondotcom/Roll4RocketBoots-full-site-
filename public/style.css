@@ -6,14 +6,19 @@
 
 * { box-sizing: border-box; }
 
+html, body {
+  height: 100%;
+}
+
 body {
   background: url('background/br1.png') repeat;
   font-family: 'Bungee', cursive;
   color: #222;
   margin: 0;
-  padding: 20px;
+  padding: 0; /* ✅ important: don't fight 100vh layouts */
 }
 
+/* The main app split (sheet + chat) */
 #app-content {
   display: flex;
   flex-direction: row;
@@ -21,20 +26,50 @@ body {
   overflow: hidden;
 }
 
+/* ✅ Sheet takes 75% and can scroll */
 #main-container {
+  flex: 1 1 75%;
+  max-width: 75%;
   background-color: rgba(144, 238, 144, 0.7);
   padding: 10px;
   padding-top: 60px;
   border-radius: 12px;
-  max-width: 900px;
-  margin: 0 auto;
   overflow-y: auto;
-  flex: 3;
+}
+
+/* ✅ Show panel is ALSO a flex child (same lane as sheet) */
+#show-panel {
+  display: none;        /* shown via JS */
+  flex: 1 1 75%;
+  max-width: 75%;
+  height: 100vh;
+  background-color: #111;
+  padding: 20px;
+  padding-top: 40px;
+  overflow: hidden;
+}
+
+/* Chat is 25% */
+#chat-panel {
+  flex: 0 0 25%;
+  max-width: 25%;
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #222;
+  color: white;
+  border-left: 2px solid #555;
+  overflow: hidden;
+}
+
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
 }
 
 /* Character + Show panels should not overlap by CSS */
 #character-panel { display: block; }
-#show-panel { display: none; }
 
 h1 {
   text-align: center;
@@ -103,7 +138,7 @@ textarea {
   height: 100px;
 }
 
-/* Make your NAME input big */
+/* NAME input big */
 #player-name {
   font-family: monospace;
   font-size: 30px;
@@ -190,9 +225,7 @@ label, h2 {
   box-shadow: 2px 2px #000;
 }
 
-.delete-button:hover {
-  background-color: #b30000;
-}
+.delete-button:hover { background-color: #b30000; }
 
 /* =========================
    Counters / Wounds
@@ -315,30 +348,23 @@ label, h2 {
 
 /* =========================
    Show & Tell / Tabs / Zoom
-   (SAFE: does not affect the sheet)
    ========================= */
 
-#show-panel {
-  width: 73%;
-  height: 100%;
-  background-color: #111;
-  padding: 20px;
-  padding-top: 40px;
-  overflow: hidden;
-}
-
-/* These wrappers can stay, but they should NOT be what we transform */
+/* Make Show&Tell layout “real” so the viewport gets height */
 #zoom-container {
-  position: relative;
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
 #zoom-content {
-  position: relative; /* ✅ changed from absolute */
-  width: 100%;
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  gap: 10px;
+  min-height: 0; /* ✅ critical */
 }
 
 /* Tabs */
@@ -373,42 +399,24 @@ label, h2 {
   color: #000;
 }
 
-#drawing-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 5;          /* above image */
-  pointer-events: auto;
-}
-
-#panzoom-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-
-/* =========================
-   Image viewport + panzoom
-   ========================= */
-
-/* ✅ Make this a fixed viewport (no scrollbars, no resizing) */
+/* ✅ Image viewport: flex-sized, no scrollbars */
 #image-display-area {
+  flex: 1 1 auto;
+  min-height: 0;
   position: relative;
-  width: 95%;
-  height: 80vh;
+  overflow: hidden;
   margin: 0 auto;
-
-  overflow: hidden;      /* ✅ changed from auto */
-  padding: 0;            /* ✅ remove padding so math is clean */
-  background-color: #111;
+  width: 100%;
   border: 2px solid #333;
+  border-radius: 8px;
+  background: #0b0b0b;
 
   cursor: grab;
   user-select: none;
+  touch-action: none;
 }
 
-/* ✅ This is the only element that moves/scales */
+/* ✅ ONLY this layer gets transformed by JS */
 #panzoom-layer {
   position: absolute;
   top: 0;
@@ -417,38 +425,49 @@ label, h2 {
   will-change: transform;
 }
 
-/* ✅ Let JS scale it; don't constrain it */
+/* ✅ image should never steal drag */
 #tab-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
-  max-width: none;       /* ✅ changed */
-  max-height: none;      /* ✅ changed */
-  object-fit: unset;     /* ✅ changed */
+  max-width: none;
+  max-height: none;
   margin: 0;
   border: 2px solid #ccc;
   border-radius: 8px;
 
-  user-drag: none;
-  pointer-events: none;  /* ✅ prevent drag-image behavior */
+  pointer-events: none;
+  user-select: none;
   -webkit-user-drag: none;
 }
 
+/* ✅ CANVAS: default to NOT stealing pointer events (so pan works)
+   Your JS should enable drawing by adding class "draw-active" to #image-display-area */
+#draw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  pointer-events: none;     /* ✅ default = panning works */
+  touch-action: none;
+}
+
+/* When drawing mode is on, allow canvas to capture input */
+#image-display-area.draw-active #draw-canvas {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+/* Optional: while drawing, show “pen” cursor */
+#image-display-area.draw-active {
+  cursor: crosshair;
+}
 
 /* =========================
    Chat panel basics
    ========================= */
 
-#chat-panel {
-  flex: 1;
-  display: none;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #222;
-  color: white;
-  border-left: 2px solid #555;
-  overflow: hidden;
-}
-
-/* (Optional) make chat input readable */
 #chatInput {
   background: #111;
   color: #fff;

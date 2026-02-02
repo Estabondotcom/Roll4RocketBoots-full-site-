@@ -192,13 +192,190 @@
       </div>
 
       <!-- Rules Modal -->
-      <div class="modal" id="rules-modal">
-        <div class="modal-content">
-          <span class="close" onclick="toggleRules()">×</span>
-          <img alt="Rule Page 1" src="rules/1.png"/>
-          <img alt="Rule Page 2" src="rules/2.png"/>
-        </div>
-      </div>
+      <!-- Rules Modal -->
+<div class="modal" id="rules-modal">
+  <div class="modal-content">
+    <span class="close" onclick="toggleRules()">×</span>
+
+    <div class="rules-body">
+      <h2>Roll for Rocket Boots – Core Rules</h2>
+
+      <h3>1) The Core Loop</h3>
+      <p>When a player does something risky or uncertain, the GM calls for a Skill Check:</p>
+      <ol>
+        <li>Pick the most relevant skill.</li>
+        <li>Roll the dice for that skill level.</li>
+        <li>Add up the total.</li>
+        <li>If the total meets or beats the GM’s Difficulty, you succeed. Otherwise, you fail.</li>
+      </ol>
+
+      <h3>2) Skills</h3>
+      <table class="rules-table">
+        <thead>
+          <tr>
+            <th>Skill Level</th>
+            <th>Dice Rolled</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Level 1</td><td>2d6</td></tr>
+          <tr><td>Level 2</td><td>3d6</td></tr>
+          <tr><td>Level 3</td><td>4d6</td></tr>
+          <tr><td>Level 4</td><td>5d6</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Starting Skill</h4>
+      <ul>
+        <li>Everyone starts with <strong>Do Anything 1</strong>.</li>
+        <li><strong>Do Anything</strong> can never level up.</li>
+      </ul>
+
+      <h4>Gaining New Skills</h4>
+      <ul>
+        <li>If you succeed using <strong>Do Anything</strong>, you gain a new skill based on what you did (named however you and the GM like).</li>
+        <li>Using the right specific skill usually means the GM sets a lower Difficulty than doing it with <strong>Do Anything</strong>.</li>
+      </ul>
+
+      <h3>3) Difficulty Scale (GM)</h3>
+      <p>The GM sets a target number based on how hard the action is:</p>
+      <table class="rules-table">
+        <tbody>
+          <tr><td>1–4</td><td>Trivial</td></tr>
+          <tr><td>5–7</td><td>Average</td></tr>
+          <tr><td>8–9</td><td>Difficult</td></tr>
+          <tr><td>10–12</td><td>Very Hard</td></tr>
+          <tr><td>12–15</td><td>Very Very Hard</td></tr>
+          <tr><td>16–20</td><td>Extremely Hard</td></tr>
+          <tr><td>20–25</td><td>Mind-Bogglingly Hard</td></tr>
+          <tr><td>26–29</td><td>Starting to push the limits of reality</td></tr>
+          <tr><td>30</td><td>Almost impossible; may change reality</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4) Traits</h3>
+      <p>Traits are tags the GM attaches to Skills, Items, and Conditions.</p>
+
+      <h4>How Traits Work</h4>
+      <ul>
+        <li>Conditions only affect skills that share at least one matching trait.</li>
+        <li>Items only affect skills that share at least one matching trait.</li>
+        <li>If there is no shared trait, the condition/item does nothing for that roll.</li>
+      </ul>
+
+      <h4>GM Creates Traits</h4>
+      <ul>
+        <li>The GM makes up traits when handing out skills, items, or conditions.</li>
+        <li>The GM decides how many traits something gets.</li>
+        <li>It is recommended to include at least one general trait and one specific trait.</li>
+      </ul>
+
+      <p><strong>Example (Item):</strong> A machete might have: <em>Melee</em> (general), <em>Cutting</em> (semi-specific), <em>Brush-Clearing</em> (very specific).</p>
+
+      <h3>5) Conditions, Items &amp; Situational Modifiers</h3>
+      <p>The GM can apply bonuses or penalties through conditions, items, and the situation.</p>
+
+      <h4>Conditions</h4>
+      <ul>
+        <li>Conditions represent things affecting your character (injury, fear, exhaustion, adrenaline, etc.).</li>
+        <li>Conditions should have traits.</li>
+        <li>A condition only affects a check if it shares at least one trait with the skill being rolled.</li>
+      </ul>
+
+      <h4>Items</h4>
+      <ul>
+        <li>Items are things your character possesses that can alter a skill check.</li>
+        <li>Items should have traits.</li>
+        <li>An item only affects a check if it shares at least one trait with the skill being rolled.</li>
+        <li><strong>Do Anything</strong> can be attempted with any item, even without matching traits, but the results are uncertain and determined by the GM.</li>
+      </ul>
+
+      <h4>Situational Modifiers</h4>
+      <ul>
+        <li>The GM may apply modifiers based on environment, timing, positioning, preparation, or narrative advantage/disadvantage.</li>
+      </ul>
+
+      <h3>6) Aiding Another Player</h3>
+      <p>A player can help another player’s check if it makes sense in the fiction.</p>
+      <ul>
+        <li>The helper contributes half their skill dice (rounded down) from a relevant skill.</li>
+        <li>Add those aiding dice into the main roll.</li>
+      </ul>
+
+      <h4>Leveling While Aiding</h4>
+      <ul>
+        <li>When you are aiding, your dice only contribute to a level-up if all aiding dice come up 6.</li>
+        <li>Only the person being aided can level up from that roll.</li>
+      </ul>
+
+      <h3>7) XP</h3>
+      <h4>Gaining XP</h4>
+      <ul>
+        <li>Whenever you fail a check, you gain <strong>+1 XP</strong>.</li>
+      </ul>
+
+      <h4>Spending XP</h4>
+      <ul>
+        <li>XP can be spent at any time to level skills, unlock specializations, or buy Luck.</li>
+      </ul>
+
+      <h4>XP Costs to Level Skills</h4>
+      <p>Level-up cost is based on the number of dice at your current level:</p>
+      <ul>
+        <li>Level 1 → 2: 2 XP</li>
+        <li>Level 2 → 3: 3 XP</li>
+        <li>Level 3 → 4: 4 XP</li>
+        <li>Level 4 → Upgrade/Specialization: 5 XP</li>
+      </ul>
+
+      <h3>8) Level 4 Cap – Upgrades / Specializations</h3>
+      <ul>
+        <li>Skills cap at Level 4.</li>
+        <li>At Level 4, instead of leveling, you unlock an Upgrade / Specialization of that skill.</li>
+        <li>You unlock that upgrade by spending 5 XP or by rolling the level-up trigger (see Luck and blow-ups).</li>
+        <li>Upgrades are more specific skills, and the GM should usually give them easier difficulties.</li>
+      </ul>
+
+      <h3>9) Luck</h3>
+      <p>Luck lets you push rolls beyond what your skill normally allows.</p>
+
+      <h4>Spending Luck</h4>
+      <ul>
+        <li>Spend 1 Luck to roll +1d6 and add it to your total.</li>
+        <li>You can spend Luck whenever you want, including after seeing the roll.</li>
+        <li>You can spend as much Luck as you want, as many times as you want, on the same check.</li>
+      </ul>
+
+      <h4>Luck and Blow-Ups (Exploding Bonus Dice)</h4>
+      <ul>
+        <li>If a Luck die comes up 6, it blows up: roll +1 bonus d6.</li>
+        <li>If that bonus die is a 6, roll another. Keep going until you roll something other than 6.</li>
+        <li>All those bonus dice are added to the total.</li>
+      </ul>
+
+      <h4>Luck and Leveling</h4>
+      <ul>
+        <li>If you roll a 6 on a Luck die, the skill you’re using levels up (if it’s not Do Anything).</li>
+        <li>Luck dice count toward any all-6s thresholds used for leveling and blow-ups.</li>
+      </ul>
+
+      <h4>Refreshing Luck</h4>
+      <ul>
+        <li>At the start of each session, each player gets 1 Luck.</li>
+        <li>You can also buy Luck: 2 XP = 1 Luck.</li>
+      </ul>
+
+      <h3>10) Wounds (4 Levels)</h3>
+      <p>Wounds are a condition track. The GM decides when you take wounds.</p>
+      <ol>
+        <li><strong>Superficial</strong> – Clears with basic first aid or a night’s rest.</li>
+        <li><strong>Seriously Injured</strong> – -3 to all checks. Requires advanced medical care to clear. May cause permanent damage.</li>
+        <li><strong>Unconscious / Bleeding Out</strong> – You can’t act. Requires immediate advanced medical attention or you die. Causes permanent damage.</li>
+        <li><strong>Death</strong> – If you take more wounds after Level 3, you die.</li>
+      </ol>
+    </div>
+  </div>
+</div>
 
       <!-- Character Panel -->
       <div id="character-panel">

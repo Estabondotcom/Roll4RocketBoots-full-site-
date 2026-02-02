@@ -1,8 +1,9 @@
 /* =========================
-   script.js (tidied)
+   script.js (tidied + drawing)
    - Character sheet UI
    - GM Gallery + Show & Tell tabs
-   - Pan/zoom image viewport (no canvas)
+   - Pan/zoom image viewport
+   - Simple per-user drawing canvas (sync on pointerup)
    ========================= */
 
 let gmUnsubscribe = null;
@@ -32,20 +33,22 @@ let _lastFitUrl = null;
 // =========================
 // Drawing (per-user layers)
 // =========================
-let drawingEnabled = true;         // you can toggle later if desired
-let drawTool = "pen";              // "pen" | "eraser"
+let drawingEnabled = true;
+let drawTool = "pen"; // "pen" | "eraser"
 let drawColor = "#ff0000";
 let drawWidth = 4;
 
 let isDrawing = false;
 let lastPt = null;
 
-let drawCanvas, drawCtx;
-let myLayerCanvas, myLayerCtx;     // your own layer (offscreen)
-let userLayers = {};               // uid -> offscreen canvas
+let drawCanvas = null;
+let drawCtx = null;
 
+let myLayerCanvas = null;
+let myLayerCtx = null;
+
+let userLayers = {}; // uid -> offscreen canvas
 let drawingsUnsub = null;
-
 
 // =========================
 // Character Sheet Builders
@@ -210,7 +213,6 @@ function adjustExp(amount) {
   current = Math.max(0, current + amount);
   expSpan.textContent = current;
 
-  // autosave is in login.js; don’t crash if it isn’t loaded yet
   if (typeof window.silentAutoSaveCharacter === "function") {
     window.silentAutoSaveCharacter();
   }
@@ -295,7 +297,6 @@ function applyTransform() {
 }
 
 function fitImageToViewportIfNeeded(imageUrl) {
-  // Only auto-fit when a new image is shown
   if (!imageUrl) return;
   if (_lastFitUrl === imageUrl) return;
 
@@ -312,7 +313,10 @@ function fitImageToViewportIfNeeded(imageUrl) {
   panY = (rect.height - img.naturalHeight * zoomLevel) / 2;
 
   _lastFitUrl = imageUrl;
+
   applyTransform();
+  setupDrawingCanvasToImage(); // ✅ keep canvas aligned/sized to image pixels
+  redrawAllLayers();
 }
 
 function toggleShowAndTell() {
@@ -323,8 +327,6 @@ function toggleShowAndTell() {
   if (characterPanel) characterPanel.style.display = "none";
   if (main) main.style.display = "none";
   if (show) show.style.display = "block";
-
-  // display image updates are handled in login.js; don’t duplicate here.
 }
 
 function toggleCharacterPanel() {
@@ -354,8 +356,11 @@ function setupPanZoom() {
     localStorage.setItem("panY", panY);
   };
 
-  // ✅ Wheel zoom (non-passive so preventDefault works)
+  // ✅ Wheel zoom
   area.addEventListener("wheel", (e) => {
+    // If drawing is happening, ignore wheel zoom
+    if (isDrawing) return;
+
     e.preventDefault();
     e.stopPropagation();
 
@@ -367,7 +372,6 @@ function setupPanZoom() {
     const scaleChange = e.deltaY < 0 ? (1 + zoomFactor) : (1 - zoomFactor);
     const newZoom = Math.min(Math.max(zoomLevel * scaleChange, 0.1), 6);
 
-    // ✅ Zoom around cursor in *area space*
     const worldX = (mouseX - panX) / zoomLevel;
     const worldY = (mouseY - panY) / zoomLevel;
 
@@ -382,10 +386,12 @@ function setupPanZoom() {
     localStorage.setItem("panY", panY);
   }, { passive: false });
 
-  // ✅ Start pan: only left button, and prevent browser drag/select
+  // ✅ Start pan
   area.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return; // left click only
-    e.preventDefault();         // stops image dragging + selection
+    if (e.button !== 0) return;
+    if (isDrawing) return; // don't pan if drawing
+
+    e.preventDefault();
 
     isPanning = true;
     startX = e.clientX - panX;
@@ -400,10 +406,9 @@ function setupPanZoom() {
     applyTransform();
   });
 
-  // ✅ Stop pan in more cases
   document.addEventListener("mouseup", stopPanning);
-  window.addEventListener("blur", stopPanning);      // alt-tab etc.
-  document.addEventListener("mouseleave", stopPanning); // leaving document
+  window.addEventListener("blur", stopPanning);
+  document.addEventListener("mouseleave", stopPanning);
 }
 
 // Tabs
@@ -434,8 +439,12 @@ function showTabImage(url) {
   const img = document.getElementById("tab-image");
   if (!img) return console.warn("⚠️ #tab-image missing.");
   img.src = url || "";
+
   if (url) {
-    img.onload = () => fitImageToViewportIfNeeded(url);
+    img.onload = () => {
+      fitImageToViewportIfNeeded(url);
+      startDrawingsListener(); // ✅ ensure listener is active for session
+    };
   }
 }
 
@@ -448,11 +457,16 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
   }
 
   img.src = imageUrl || "";
+
   if (imageUrl) {
-    img.onload = () => fitImageToViewportIfNeeded(imageUrl);
+    img.onload = () => {
+      fitImageToViewportIfNeeded(imageUrl);
+      startDrawingsListener();
+    };
   } else {
-    // cleared
     _lastFitUrl = null;
+    setupDrawingCanvasToImage();
+    redrawAllLayers();
   }
 
   localStorage.setItem("gmDisplayImage", imageUrl || "");
@@ -491,6 +505,301 @@ function createNewTab(name, imageUrl, updateFirestore = true) {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
+  }
+}
+
+// =========================
+// Drawing implementation
+// =========================
+
+function setupDrawingCanvasToImage() {
+  const img = document.getElementById("tab-image");
+  const canvas = document.getElementById("drawing-canvas");
+
+  if (!img || !canvas) {
+    // It's OK if you haven't added the canvas yet.
+    return;
+  }
+
+  // if no image loaded, clear sizing
+  if (!img.naturalWidth || !img.naturalHeight) {
+    canvas.width = 1;
+    canvas.height = 1;
+    drawCanvas = canvas;
+    drawCtx = canvas.getContext("2d");
+    return;
+  }
+
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+
+  canvas.style.width = img.naturalWidth + "px";
+  canvas.style.height = img.naturalHeight + "px";
+
+  drawCanvas = canvas;
+  drawCtx = canvas.getContext("2d");
+
+  if (!myLayerCanvas) {
+    myLayerCanvas = document.createElement("canvas");
+    myLayerCtx = myLayerCanvas.getContext("2d");
+  }
+
+  // Always keep my layer matching image pixel size
+  myLayerCanvas.width = canvas.width;
+  myLayerCanvas.height = canvas.height;
+
+  // Ensure my layer is present in userLayers for compositing
+  const me = auth?.currentUser?.uid;
+  if (me) userLayers[me] = myLayerCanvas;
+}
+
+function getDrawPointFromEvent(e) {
+  const area = document.getElementById("image-display-area");
+  if (!area) return null;
+
+  const rect = area.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  // Convert viewport -> image pixels (inverse of translate+scale)
+  const x = (mouseX - panX) / zoomLevel;
+  const y = (mouseY - panY) / zoomLevel;
+
+  return { x, y };
+}
+
+function strokeTo(ctx, a, b) {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = drawWidth;
+
+  if (drawTool === "eraser") {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.strokeStyle = "rgba(0,0,0,1)";
+  } else {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = drawColor;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+}
+
+function redrawAllLayers() {
+  if (!drawCtx || !drawCanvas) return;
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+
+  const uids = Object.keys(userLayers).sort();
+  for (const uid of uids) {
+    const layer = userLayers[uid];
+    if (layer) drawCtx.drawImage(layer, 0, 0);
+  }
+}
+
+function saveMyDrawingToFirestore() {
+  const sessionId = getActiveSessionId();
+  const user = auth?.currentUser;
+
+  if (!sessionId || !user || !myLayerCanvas) return;
+
+  const dataUrl = myLayerCanvas.toDataURL("image/png");
+  return db.collection("sessions")
+    .doc(sessionId)
+    .collection("drawings")
+    .doc(user.uid)
+    .set({
+      imageData: dataUrl,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+}
+
+function startDrawingsListener() {
+  const sessionId = getActiveSessionId();
+  if (!sessionId) return;
+
+  if (drawingsUnsub) drawingsUnsub();
+
+  drawingsUnsub = db.collection("sessions")
+    .doc(sessionId)
+    .collection("drawings")
+    .onSnapshot((snap) => {
+      snap.docChanges().forEach((ch) => {
+        const uid = ch.doc.id;
+
+        if (ch.type === "removed") {
+          delete userLayers[uid];
+          redrawAllLayers();
+          return;
+        }
+
+        const data = ch.doc.data();
+        const imageData = data?.imageData;
+        if (!imageData) return;
+
+        // If canvas isn't ready (no image yet), skip
+        if (!drawCanvas || drawCanvas.width <= 1) return;
+
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement("canvas");
+          c.width = drawCanvas.width;
+          c.height = drawCanvas.height;
+
+          const cctx = c.getContext("2d");
+          cctx.drawImage(img, 0, 0);
+
+          userLayers[uid] = c;
+
+          // If this is me, mirror into my layer too (so erase/continue is consistent)
+          const me = auth?.currentUser?.uid;
+          if (me && uid === me && myLayerCanvas && myLayerCtx) {
+            myLayerCtx.clearRect(0, 0, myLayerCanvas.width, myLayerCanvas.height);
+            myLayerCtx.drawImage(img, 0, 0);
+            userLayers[me] = myLayerCanvas; // keep pointer to my live layer
+          }
+
+          redrawAllLayers();
+        };
+        img.src = imageData;
+      });
+    });
+}
+
+function setupDrawingEvents() {
+  const canvas = document.getElementById("drawing-canvas");
+  if (!canvas) {
+    console.warn("⚠️ No #drawing-canvas found. Drawing disabled.");
+    return;
+  }
+
+  // Prevent browser dragging/selection behavior
+  canvas.addEventListener("dragstart", (e) => e.preventDefault());
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!drawingEnabled) return;
+    if (!auth?.currentUser) return;
+
+    // Only left button for mouse
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // ensure canvas is sized
+    setupDrawingCanvasToImage();
+
+    isDrawing = true;
+    canvas.setPointerCapture(e.pointerId);
+    lastPt = getDrawPointFromEvent(e);
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (!isDrawing || !lastPt) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const pt = getDrawPointFromEvent(e);
+    if (!pt || !myLayerCtx) return;
+
+    strokeTo(myLayerCtx, lastPt, pt);
+    lastPt = pt;
+
+    const me = auth?.currentUser?.uid;
+    if (me) userLayers[me] = myLayerCanvas;
+
+    redrawAllLayers();
+  });
+
+  const endStroke = () => {
+    if (!isDrawing) return;
+    isDrawing = false;
+    lastPt = null;
+
+    // Sync once per stroke
+    saveMyDrawingToFirestore();
+  };
+
+  canvas.addEventListener("pointerup", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    endStroke();
+  });
+
+  canvas.addEventListener("pointercancel", endStroke);
+}
+
+function setupDrawingToolbar() {
+  const widthEl = document.getElementById("draw-width");
+  const colorEl = document.getElementById("draw-color");
+  const penBtn = document.getElementById("tool-pen");
+  const eraserBtn = document.getElementById("tool-eraser");
+  const clearMineBtn = document.getElementById("clear-mine");
+  const clearAllBtn = document.getElementById("clear-all");
+
+  if (widthEl) {
+    drawWidth = parseInt(widthEl.value, 10) || drawWidth;
+    widthEl.addEventListener("input", () => {
+      drawWidth = parseInt(widthEl.value, 10) || 4;
+    });
+  }
+
+  if (colorEl) {
+    drawColor = colorEl.value || drawColor;
+    colorEl.addEventListener("input", () => {
+      drawColor = colorEl.value || "#ff0000";
+    });
+  }
+
+  if (penBtn) {
+    penBtn.addEventListener("click", () => { drawTool = "pen"; });
+  }
+
+  if (eraserBtn) {
+    eraserBtn.addEventListener("click", () => { drawTool = "eraser"; });
+  }
+
+  if (clearMineBtn) {
+    clearMineBtn.addEventListener("click", async () => {
+      const user = auth?.currentUser;
+      const sessionId = getActiveSessionId();
+      if (!user || !sessionId || !myLayerCtx || !myLayerCanvas) return;
+
+      myLayerCtx.clearRect(0, 0, myLayerCanvas.width, myLayerCanvas.height);
+      userLayers[user.uid] = myLayerCanvas;
+      redrawAllLayers();
+
+      // Remove my drawing doc
+      await db.collection("sessions").doc(sessionId).collection("drawings").doc(user.uid).delete();
+    });
+  }
+
+  if (clearAllBtn) {
+    // show only if gm
+    const role = window.currentUserRole;
+    clearAllBtn.style.display = (role === "gm") ? "inline-block" : "none";
+
+    clearAllBtn.addEventListener("click", async () => {
+      if (window.currentUserRole !== "gm") return;
+      const sessionId = getActiveSessionId();
+      if (!sessionId) return;
+
+      if (!confirm("Clear ALL drawings for everyone?")) return;
+
+      const snap = await db.collection("sessions").doc(sessionId).collection("drawings").get();
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+
+      userLayers = {};
+      // keep my live layer canvas available
+      const me = auth?.currentUser?.uid;
+      if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
+
+      redrawAllLayers();
+    });
   }
 }
 
@@ -683,21 +992,17 @@ function deleteGMImage(sessionId, docId, fileName, wrapper) {
 }
 
 function cleardisplay() {
-  // clear local
   localStorage.removeItem("gmDisplayImage");
   _lastFitUrl = null;
 
-  // clear image
   pushToDisplayArea("", false);
 
-  // clear tabs UI only (Firestore clearing stays same as your old behavior)
   const tabBar = document.getElementById("tab-bar");
   if (tabBar) tabBar.innerHTML = "";
 
   const sessionId = getActiveSessionId();
   if (!sessionId) return;
 
-  // delete tabs collection
   const tabsRef = db.collection("sessions").doc(sessionId).collection("tabs");
   tabsRef.get().then(snapshot => {
     const batch = db.batch();
@@ -869,6 +1174,12 @@ function initScript() {
   // Pan/zoom bindings
   setupPanZoom();
 
+  // Drawing setup (safe if toolbar/canvas not present yet)
+  setupDrawingCanvasToImage();
+  setupDrawingEvents();
+  setupDrawingToolbar();
+  startDrawingsListener();
+
   // GM upload filename label
   const gmUpload = document.getElementById("gm-image-upload");
   if (gmUpload) {
@@ -925,3 +1236,7 @@ window.cleardisplay = cleardisplay;
 window.clearchat = clearchat;
 
 window.toggleGMMode = toggleGMMode;
+
+// Optional debug handles
+window.applyTransform = applyTransform;
+window.startDrawingsListener = startDrawingsListener;

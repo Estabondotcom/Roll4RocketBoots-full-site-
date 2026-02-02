@@ -801,15 +801,21 @@ function setupDrawingEvents() {
     redrawAllLayers();
   });
 
-  canvas.addEventListener("pointerup", (e) => {
-    if (!drawingEnabled) return;
-    e.preventDefault();
-    e.stopPropagation();
-    endStrokeAndSync();
-  });
+ canvas.addEventListener("pointerup", (e) => {
+   e.preventDefault();
+   e.stopPropagation();
+   
+   try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+   
+   endStroke();
+   });
 
-  canvas.addEventListener("pointercancel", endStrokeAndSync);
-}
+
+canvas.addEventListener("pointercancel", (e) => {
+  try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+  endStroke();
+});
+
 
 function setupDrawingToolbar() {
   const widthEl = document.getElementById("draw-width");

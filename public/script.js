@@ -30,6 +30,24 @@ let startY = 0;
 let _lastFitUrl = null;
 
 // =========================
+// Drawing (per-user layers)
+// =========================
+let drawingEnabled = true;         // you can toggle later if desired
+let drawTool = "pen";              // "pen" | "eraser"
+let drawColor = "#ff0000";
+let drawWidth = 4;
+
+let isDrawing = false;
+let lastPt = null;
+
+let drawCanvas, drawCtx;
+let myLayerCanvas, myLayerCtx;     // your own layer (offscreen)
+let userLayers = {};               // uid -> offscreen canvas
+
+let drawingsUnsub = null;
+
+
+// =========================
 // Character Sheet Builders
 // =========================
 

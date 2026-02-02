@@ -325,8 +325,18 @@ function setupPanZoom() {
   if (!area) return;
 
   area.style.cursor = "grab";
-  applyTransform();
 
+  const stopPanning = () => {
+    if (!isPanning) return;
+    isPanning = false;
+    area.style.cursor = "grab";
+
+    localStorage.setItem("zoomLevel", zoomLevel);
+    localStorage.setItem("panX", panX);
+    localStorage.setItem("panY", panY);
+  };
+
+  // ✅ Wheel zoom (non-passive so preventDefault works)
   area.addEventListener("wheel", (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -339,6 +349,7 @@ function setupPanZoom() {
     const scaleChange = e.deltaY < 0 ? (1 + zoomFactor) : (1 - zoomFactor);
     const newZoom = Math.min(Math.max(zoomLevel * scaleChange, 0.1), 6);
 
+    // ✅ Zoom around cursor in *area space*
     const worldX = (mouseX - panX) / zoomLevel;
     const worldY = (mouseY - panY) / zoomLevel;
 
@@ -353,13 +364,16 @@ function setupPanZoom() {
     localStorage.setItem("panY", panY);
   }, { passive: false });
 
-   area.addEventListener("mousedown", (e) => {
-     isPanning = true;
-     startX = e.clientX - panX;
-     startY = e.clientY - panY;
-     area.style.cursor = "grabbing";
-   });
+  // ✅ Start pan: only left button, and prevent browser drag/select
+  area.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return; // left click only
+    e.preventDefault();         // stops image dragging + selection
 
+    isPanning = true;
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+    area.style.cursor = "grabbing";
+  });
 
   document.addEventListener("mousemove", (e) => {
     if (!isPanning) return;
@@ -368,15 +382,10 @@ function setupPanZoom() {
     applyTransform();
   });
 
-  document.addEventListener("mouseup", () => {
-    if (!isPanning) return;
-    isPanning = false;
-    area.style.cursor = "grab";
-
-    localStorage.setItem("zoomLevel", zoomLevel);
-    localStorage.setItem("panX", panX);
-    localStorage.setItem("panY", panY);
-  });
+  // ✅ Stop pan in more cases
+  document.addEventListener("mouseup", stopPanning);
+  window.addEventListener("blur", stopPanning);      // alt-tab etc.
+  document.addEventListener("mouseleave", stopPanning); // leaving document
 }
 
 // Tabs

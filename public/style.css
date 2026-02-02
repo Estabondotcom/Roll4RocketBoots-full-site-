@@ -412,14 +412,9 @@ label, h2 {
   border: 2px solid #ccc;
   border-radius: 8px;
 
+  user-drag: none;
   pointer-events: none;  /* ✅ prevent drag-image behavior */
   -webkit-user-drag: none;
-}
-
-#tab-image {
-  -webkit-user-drag: none;
-  user-drag: none;
-  pointer-events: none; /* important: drag should grab the viewport, not the img */
 }
 
 

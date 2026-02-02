@@ -330,7 +330,40 @@ label, h2 {
   font-weight: bold;
   cursor: pointer;
 }
+.rules-body{
+  width: 100%;
+  max-height: 75vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
 
+.rules-body h2,
+.rules-body h3,
+.rules-body h4{
+  width: 100%;
+  text-align: left;
+  margin: 12px 0 6px;
+}
+
+.rules-body p,
+.rules-body li{
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rules-table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 14px;
+  font-size: 14px;
+}
+
+.rules-table th,
+.rules-table td{
+  border: 2px solid #000;
+  padding: 6px 8px;
+  text-align: left;
+}
 /* =========================
    GM tools button
    ========================= */

@@ -373,6 +373,21 @@ label, h2 {
   color: #000;
 }
 
+#drawing-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;          /* above image */
+  pointer-events: auto;
+}
+
+#panzoom-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+
 /* =========================
    Image viewport + panzoom
    ========================= */

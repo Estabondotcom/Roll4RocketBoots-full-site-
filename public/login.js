@@ -245,7 +245,14 @@ function selectSession(sessionId) {
       currentUserRole = "player";
       if (gmBtn) gmBtn.style.display = "none";
     }
-
+    
+    window.currentSessionId = sessionId;
+    window.currentUserRole = currentUserRole;
+    
+    // If script.js has drawing, initialize it now
+    if (typeof window.initDrawingSystem === "function") {
+      window.initDrawingSystem(sessionId, currentUserRole);
+    }
     // Ensure base UI exists
     if (document.getElementById("skills-container")?.children.length === 0) addSkill("Do anything");
     if (document.getElementById("conditions-container")?.children.length === 0) addCondition();

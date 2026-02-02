@@ -353,12 +353,13 @@ function setupPanZoom() {
     localStorage.setItem("panY", panY);
   }, { passive: false });
 
-  area.addEventListener("mousedown", () => {
-    isPanning = true;
-    startX = event.clientX - panX;
-    startY = event.clientY - panY;
-    area.style.cursor = "grabbing";
-  });
+   area.addEventListener("mousedown", (e) => {
+     isPanning = true;
+     startX = e.clientX - panX;
+     startY = e.clientY - panY;
+     area.style.cursor = "grabbing";
+   });
+
 
   document.addEventListener("mousemove", (e) => {
     if (!isPanning) return;

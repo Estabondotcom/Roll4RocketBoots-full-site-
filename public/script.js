@@ -1,9 +1,9 @@
 /* =========================
-   script.js (tidied + drawing)
+   script.js (FIXED)
    - Character sheet UI
-   - GM Gallery + Show & Tell tabs
-   - Pan/zoom image viewport
-   - Simple per-user drawing canvas (sync on pointerup)
+   - GM Gallery + Show & Tell
+   - Pan/zoom viewport
+   - Per-user drawing canvas (sync on pointerup)
    ========================= */
 
 let gmUnsubscribe = null;
@@ -12,7 +12,6 @@ let gmUnsubscribe = null;
 function getActiveSessionId() {
   return (localStorage.getItem("currentSessionId") || "").trim();
 }
-
 function requireSessionId() {
   const id = getActiveSessionId();
   if (!id) console.warn("❌ Missing currentSessionId in localStorage; refusing Firestore .doc() call.");
@@ -23,17 +22,20 @@ function requireSessionId() {
 let zoomLevel = parseFloat(localStorage.getItem("zoomLevel")) || 1;
 let panX = parseFloat(localStorage.getItem("panX")) || 0;
 let panY = parseFloat(localStorage.getItem("panY")) || 0;
+
 let isPanning = false;
 let startX = 0;
 let startY = 0;
 
-// Track whether we've “fit to view” for a given image URL (prevents snapping back constantly)
+// Track whether we've fit-to-view for a given url
 let _lastFitUrl = null;
 
 // =========================
 // Drawing (per-user layers)
 // =========================
-let drawingEnabled = true;
+
+// ✅ IMPORTANT: drawing is OFF by default (so pan works)
+let drawingEnabled = false;
 let drawTool = "pen"; // "pen" | "eraser"
 let drawColor = "#ff0000";
 let drawWidth = 4;
@@ -49,6 +51,47 @@ let myLayerCtx = null;
 
 let userLayers = {}; // uid -> offscreen canvas
 let drawingsUnsub = null;
+
+let _panZoomBound = false;
+let _drawingBound = false;
+
+// Helpers to locate canvas even if ID changes later
+function getDrawingCanvasEl() {
+  return document.getElementById("drawing-canvas") || document.getElementById("draw-canvas");
+}
+
+function setDrawingEnabled(enabled, tool = null) {
+  drawingEnabled = !!enabled;
+  if (tool) drawTool = tool;
+
+  const area = document.getElementById("image-display-area");
+  if (area) {
+    area.classList.toggle("draw-active", drawingEnabled);
+    area.style.cursor = drawingEnabled ? "crosshair" : "grab";
+  }
+
+  // If turning off drawing mid-stroke, end cleanly
+  if (!drawingEnabled && isDrawing) {
+    endStrokeAndSync();
+  }
+
+  // Button active styling (optional)
+  const penBtn = document.getElementById("tool-pen");
+  const eraserBtn = document.getElementById("tool-eraser");
+  if (penBtn) penBtn.classList.toggle("active", drawingEnabled && drawTool === "pen");
+  if (eraserBtn) eraserBtn.classList.toggle("active", drawingEnabled && drawTool === "eraser");
+}
+
+function togglePen() {
+  // If already drawing with pen, toggle OFF
+  if (drawingEnabled && drawTool === "pen") setDrawingEnabled(false);
+  else setDrawingEnabled(true, "pen");
+}
+function toggleEraser() {
+  // If already drawing with eraser, toggle OFF
+  if (drawingEnabled && drawTool === "eraser") setDrawingEnabled(false);
+  else setDrawingEnabled(true, "eraser");
+}
 
 // =========================
 // Character Sheet Builders
@@ -71,7 +114,6 @@ function createSkillInput(value = "", levels = [true, false, false, false]) {
     checkbox.type = "checkbox";
     checkbox.className = "skill-level";
     checkbox.dataset.level = i;
-
     checkbox.checked = anyChecked ? levels[i - 1] : i === 1;
 
     checkbox.addEventListener("change", () => {
@@ -208,27 +250,19 @@ function addCondition(value = "") {
 function adjustExp(amount) {
   const expSpan = document.getElementById("exp-value");
   if (!expSpan) return;
-
   let current = parseInt(expSpan.textContent || "0", 10);
   current = Math.max(0, current + amount);
   expSpan.textContent = current;
-
-  if (typeof window.silentAutoSaveCharacter === "function") {
-    window.silentAutoSaveCharacter();
-  }
+  if (typeof window.silentAutoSaveCharacter === "function") window.silentAutoSaveCharacter();
 }
 
 function adjustLuck(amount) {
   const luckSpan = document.getElementById("luck-value");
   if (!luckSpan) return;
-
   let current = parseInt(luckSpan.textContent || "0", 10);
   current = Math.max(0, current + amount);
   luckSpan.textContent = current;
-
-  if (typeof window.silentAutoSaveCharacter === "function") {
-    window.silentAutoSaveCharacter();
-  }
+  if (typeof window.silentAutoSaveCharacter === "function") window.silentAutoSaveCharacter();
 }
 
 function toggleWound(index) {
@@ -282,7 +316,6 @@ function setTheme(theme) {
     sky: "style-sky.css",
     default: "style-default.css"
   };
-
   link.href = map[theme] || map.default;
 }
 
@@ -315,7 +348,7 @@ function fitImageToViewportIfNeeded(imageUrl) {
   _lastFitUrl = imageUrl;
 
   applyTransform();
-  setupDrawingCanvasToImage(); // ✅ keep canvas aligned/sized to image pixels
+  setupDrawingCanvasToImage();
   redrawAllLayers();
 }
 
@@ -339,8 +372,11 @@ function toggleCharacterPanel() {
   if (show) show.style.display = "none";
 }
 
-// Pan/zoom event binding
+// ✅ Pan/zoom event binding (works everywhere when drawing is OFF)
 function setupPanZoom() {
+  if (_panZoomBound) return;
+  _panZoomBound = true;
+
   const area = document.getElementById("image-display-area");
   if (!area) return;
 
@@ -349,17 +385,16 @@ function setupPanZoom() {
   const stopPanning = () => {
     if (!isPanning) return;
     isPanning = false;
-    area.style.cursor = "grab";
+    area.style.cursor = drawingEnabled ? "crosshair" : "grab";
 
     localStorage.setItem("zoomLevel", zoomLevel);
     localStorage.setItem("panX", panX);
     localStorage.setItem("panY", panY);
   };
 
-  // ✅ Wheel zoom
+  // Wheel zoom
   area.addEventListener("wheel", (e) => {
-    // If drawing is happening, ignore wheel zoom
-    if (isDrawing) return;
+    if (drawingEnabled || isDrawing) return;
 
     e.preventDefault();
     e.stopPropagation();
@@ -386,13 +421,12 @@ function setupPanZoom() {
     localStorage.setItem("panY", panY);
   }, { passive: false });
 
-  // ✅ Start pan
+  // Start pan
   area.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
-    if (isDrawing) return; // don't pan if drawing
+    if (drawingEnabled) return; // ✅ if in draw mode, don’t pan
 
     e.preventDefault();
-
     isPanning = true;
     startX = e.clientX - panX;
     startY = e.clientY - panY;
@@ -438,12 +472,12 @@ function renderTabs(tabs, activeTabId) {
 function showTabImage(url) {
   const img = document.getElementById("tab-image");
   if (!img) return console.warn("⚠️ #tab-image missing.");
-  img.src = url || "";
 
+  img.src = url || "";
   if (url) {
     img.onload = () => {
       fitImageToViewportIfNeeded(url);
-      startDrawingsListener(); // ✅ ensure listener is active for session
+      startDrawingsListener();
     };
   }
 }
@@ -451,10 +485,7 @@ function showTabImage(url) {
 // Display push
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const img = document.getElementById("tab-image");
-  if (!img) {
-    console.warn("⚠️ tab-image not found.");
-    return;
-  }
+  if (!img) return console.warn("⚠️ tab-image not found.");
 
   img.src = imageUrl || "";
 
@@ -514,14 +545,11 @@ function createNewTab(name, imageUrl, updateFirestore = true) {
 
 function setupDrawingCanvasToImage() {
   const img = document.getElementById("tab-image");
-  const canvas = document.getElementById("drawing-canvas");
+  const canvas = getDrawingCanvasEl();
 
-  if (!img || !canvas) {
-    // It's OK if you haven't added the canvas yet.
-    return;
-  }
+  if (!img || !canvas) return;
 
-  // if no image loaded, clear sizing
+  // if no image loaded, keep tiny
   if (!img.naturalWidth || !img.naturalHeight) {
     canvas.width = 1;
     canvas.height = 1;
@@ -530,6 +558,7 @@ function setupDrawingCanvasToImage() {
     return;
   }
 
+  // ✅ If canvas size changes, it clears. We preserve by reloading layers afterwards.
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
 
@@ -544,11 +573,11 @@ function setupDrawingCanvasToImage() {
     myLayerCtx = myLayerCanvas.getContext("2d");
   }
 
-  // Always keep my layer matching image pixel size
+  // Always keep my layer matching image size (this clears my layer, so we restore from Firestore listener)
   myLayerCanvas.width = canvas.width;
   myLayerCanvas.height = canvas.height;
 
-  // Ensure my layer is present in userLayers for compositing
+  // ✅ Always keep my layer registered so compositor never “forgets me”
   const me = auth?.currentUser?.uid;
   if (me) userLayers[me] = myLayerCanvas;
 }
@@ -601,7 +630,6 @@ function redrawAllLayers() {
 function saveMyDrawingToFirestore() {
   const sessionId = getActiveSessionId();
   const user = auth?.currentUser;
-
   if (!sessionId || !user || !myLayerCanvas) return;
 
   const dataUrl = myLayerCanvas.toDataURL("image/png");
@@ -630,6 +658,9 @@ function startDrawingsListener() {
 
         if (ch.type === "removed") {
           delete userLayers[uid];
+          // always keep mine present
+          const me = auth?.currentUser?.uid;
+          if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
           redrawAllLayers();
           return;
         }
@@ -643,34 +674,61 @@ function startDrawingsListener() {
 
         const img = new Image();
         img.onload = () => {
+          const me = auth?.currentUser?.uid;
+
+          // ✅ If this doc is ME, draw into myLayerCanvas directly (never replace it)
+          if (me && uid === me && myLayerCtx && myLayerCanvas) {
+            myLayerCtx.clearRect(0, 0, myLayerCanvas.width, myLayerCanvas.height);
+            myLayerCtx.drawImage(img, 0, 0, myLayerCanvas.width, myLayerCanvas.height);
+            userLayers[me] = myLayerCanvas;
+            redrawAllLayers();
+            return;
+          }
+
+          // Other users: store in offscreen canvas
           const c = document.createElement("canvas");
           c.width = drawCanvas.width;
           c.height = drawCanvas.height;
-
           const cctx = c.getContext("2d");
-          cctx.drawImage(img, 0, 0);
-
+          cctx.drawImage(img, 0, 0, c.width, c.height);
           userLayers[uid] = c;
 
-          // If this is me, mirror into my layer too (so erase/continue is consistent)
-          const me = auth?.currentUser?.uid;
-          if (me && uid === me && myLayerCanvas && myLayerCtx) {
-            myLayerCtx.clearRect(0, 0, myLayerCanvas.width, myLayerCanvas.height);
-            myLayerCtx.drawImage(img, 0, 0);
-            userLayers[me] = myLayerCanvas; // keep pointer to my live layer
-          }
+          // keep mine present
+          if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
 
           redrawAllLayers();
         };
         img.src = imageData;
       });
+
+      // Also, if nothing changed but we need to ensure mine exists:
+      const me = auth?.currentUser?.uid;
+      if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
+      redrawAllLayers();
     });
 }
 
+// Stroke ending helper (used by toggles too)
+function endStrokeAndSync() {
+  if (!isDrawing) return;
+  isDrawing = false;
+  lastPt = null;
+
+  // ensure my layer is registered before saving
+  const me = auth?.currentUser?.uid;
+  if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
+
+  redrawAllLayers();
+  saveMyDrawingToFirestore();
+}
+
 function setupDrawingEvents() {
-  const canvas = document.getElementById("drawing-canvas");
+  if (_drawingBound) return;
+  _drawingBound = true;
+
+  const canvas = getDrawingCanvasEl();
   if (!canvas) {
-    console.warn("⚠️ No #drawing-canvas found. Drawing disabled.");
+    console.warn("⚠️ No drawing canvas found. Drawing disabled.");
     return;
   }
 
@@ -681,18 +739,20 @@ function setupDrawingEvents() {
     if (!drawingEnabled) return;
     if (!auth?.currentUser) return;
 
-    // Only left button for mouse
     if (e.pointerType === "mouse" && e.button !== 0) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    // ensure canvas is sized
     setupDrawingCanvasToImage();
 
     isDrawing = true;
     canvas.setPointerCapture(e.pointerId);
     lastPt = getDrawPointFromEvent(e);
+
+    // ✅ ensure my layer is registered even if no move happens
+    const me = auth?.currentUser?.uid;
+    if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
   });
 
   canvas.addEventListener("pointermove", (e) => {
@@ -708,27 +768,19 @@ function setupDrawingEvents() {
     lastPt = pt;
 
     const me = auth?.currentUser?.uid;
-    if (me) userLayers[me] = myLayerCanvas;
+    if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
 
     redrawAllLayers();
   });
 
-  const endStroke = () => {
-    if (!isDrawing) return;
-    isDrawing = false;
-    lastPt = null;
-
-    // Sync once per stroke
-    saveMyDrawingToFirestore();
-  };
-
   canvas.addEventListener("pointerup", (e) => {
+    if (!drawingEnabled) return;
     e.preventDefault();
     e.stopPropagation();
-    endStroke();
+    endStrokeAndSync();
   });
 
-  canvas.addEventListener("pointercancel", endStroke);
+  canvas.addEventListener("pointercancel", endStrokeAndSync);
 }
 
 function setupDrawingToolbar() {
@@ -753,13 +805,9 @@ function setupDrawingToolbar() {
     });
   }
 
-  if (penBtn) {
-    penBtn.addEventListener("click", () => { drawTool = "pen"; });
-  }
-
-  if (eraserBtn) {
-    eraserBtn.addEventListener("click", () => { drawTool = "eraser"; });
-  }
+  // ✅ TOGGLE behavior (not "always on")
+  if (penBtn) penBtn.addEventListener("click", togglePen);
+  if (eraserBtn) eraserBtn.addEventListener("click", toggleEraser);
 
   if (clearMineBtn) {
     clearMineBtn.addEventListener("click", async () => {
@@ -771,13 +819,11 @@ function setupDrawingToolbar() {
       userLayers[user.uid] = myLayerCanvas;
       redrawAllLayers();
 
-      // Remove my drawing doc
       await db.collection("sessions").doc(sessionId).collection("drawings").doc(user.uid).delete();
     });
   }
 
   if (clearAllBtn) {
-    // show only if gm
     const role = window.currentUserRole;
     clearAllBtn.style.display = (role === "gm") ? "inline-block" : "none";
 
@@ -785,7 +831,6 @@ function setupDrawingToolbar() {
       if (window.currentUserRole !== "gm") return;
       const sessionId = getActiveSessionId();
       if (!sessionId) return;
-
       if (!confirm("Clear ALL drawings for everyone?")) return;
 
       const snap = await db.collection("sessions").doc(sessionId).collection("drawings").get();
@@ -794,13 +839,14 @@ function setupDrawingToolbar() {
       await batch.commit();
 
       userLayers = {};
-      // keep my live layer canvas available
       const me = auth?.currentUser?.uid;
       if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;
-
       redrawAllLayers();
     });
   }
+
+  // ✅ ensure canvas input matches CSS expectation
+  setDrawingEnabled(false);
 }
 
 // =========================
@@ -862,7 +908,6 @@ function uploadGMImage() {
     () => {
       uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
         if (status) status.textContent = "✅ Upload complete!";
-
         const folder = document.getElementById("gm-folder-input")?.value?.trim() || "Unsorted";
 
         return firebase.firestore()
@@ -1156,6 +1201,17 @@ function pushToChat(imageUrl, label) {
 // Init
 // =========================
 
+// ✅ Called by login.js after session selection (optional but helpful)
+function initDrawingSystem(sessionId, role) {
+  // make sure our sessionId is set (login.js already does this)
+  if (role === "gm") {
+    const clearAllBtn = document.getElementById("clear-all");
+    if (clearAllBtn) clearAllBtn.style.display = "inline-block";
+  }
+  setupDrawingCanvasToImage();
+  startDrawingsListener();
+}
+
 function initScript() {
   // Ensure starter fields exist (only if empty)
   if (document.getElementById("skills-container")?.children.length === 0) addSkill("Do anything");
@@ -1174,7 +1230,7 @@ function initScript() {
   // Pan/zoom bindings
   setupPanZoom();
 
-  // Drawing setup (safe if toolbar/canvas not present yet)
+  // Drawing setup
   setupDrawingCanvasToImage();
   setupDrawingEvents();
   setupDrawingToolbar();
@@ -1237,6 +1293,11 @@ window.clearchat = clearchat;
 
 window.toggleGMMode = toggleGMMode;
 
+// ✅ used by login.js
+window.initDrawingSystem = initDrawingSystem;
+
 // Optional debug handles
 window.applyTransform = applyTransform;
 window.startDrawingsListener = startDrawingsListener;
+window.setDrawingEnabled = setDrawingEnabled;
+

@@ -473,35 +473,73 @@ function showTabImage(url) {
   const img = document.getElementById("tab-image");
   if (!img) return console.warn("⚠️ #tab-image missing.");
 
-  img.src = url || "";
-  if (url) {
-    img.onload = () => {
-      fitImageToViewportIfNeeded(url);
-      startDrawingsListener();
-    };
+  // Clear
+  if (!url) {
+    img.onload = null;
+    img.src = "";
+    _lastFitUrl = null;
+    setupDrawingCanvasToImage();
+    redrawAllLayers();
+    return;
+  }
+
+  const afterLoad = async () => {
+    // Fit + align canvas + start drawing sync
+    fitImageToViewportIfNeeded(url);
+    startDrawingsListener();
+  };
+
+  // IMPORTANT: set handler before src
+  img.onload = () => { afterLoad(); };
+
+  img.src = url;
+
+  // Cached-image fallback (load may have already happened)
+  if (img.complete && img.naturalWidth) {
+    // Defer one tick so layout exists
+    requestAnimationFrame(() => afterLoad());
+  } else if (img.decode) {
+    // Another reliable fallback in modern browsers
+    img.decode().then(() => afterLoad()).catch(() => {});
   }
 }
 
 // Display push
 function pushToDisplayArea(imageUrl, updateFirestore = true) {
   const img = document.getElementById("tab-image");
-  if (!img) return console.warn("⚠️ tab-image not found.");
+  if (!img) {
+    console.warn("⚠️ tab-image not found.");
+    return;
+  }
 
-  img.src = imageUrl || "";
-
-  if (imageUrl) {
-    img.onload = () => {
-      fitImageToViewportIfNeeded(imageUrl);
-      startDrawingsListener();
-    };
-  } else {
+  // Clear
+  if (!imageUrl) {
+    img.onload = null;
+    img.src = "";
     _lastFitUrl = null;
     setupDrawingCanvasToImage();
     redrawAllLayers();
+    localStorage.setItem("gmDisplayImage", "");
+  } else {
+    const afterLoad = async () => {
+      fitImageToViewportIfNeeded(imageUrl);
+      startDrawingsListener();
+    };
+
+    img.onload = () => { afterLoad(); }; // handler first
+    img.src = imageUrl;
+
+    // Cached-image fallback
+    if (img.complete && img.naturalWidth) {
+      requestAnimationFrame(() => afterLoad());
+    } else if (img.decode) {
+      img.decode().then(() => afterLoad()).catch(() => {});
+    }
+
+    localStorage.setItem("gmDisplayImage", imageUrl);
   }
 
-  localStorage.setItem("gmDisplayImage", imageUrl || "");
-
+  // Firestore write
   if (updateFirestore) {
     const sessionId = getActiveSessionId();
     if (sessionId) {
@@ -512,6 +550,7 @@ function pushToDisplayArea(imageUrl, updateFirestore = true) {
     }
   }
 }
+
 
 function createNewTab(name, imageUrl, updateFirestore = true) {
   const tabBar = document.getElementById("tab-bar");

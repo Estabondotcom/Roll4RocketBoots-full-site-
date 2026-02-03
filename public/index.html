@@ -276,108 +276,129 @@
       </div>
 
       <!-- Character Panel -->
-      <div id="character-panel">
-        <form id="char-form">
-          <div style="margin-bottom:10px;">
-            <button onclick="saveCharacterToFirestore()" type="button">💾 Save</button>
-            <button onclick="loadCharacterFromFirestore()" type="button">📂 Load</button>
-            <span id="autosave-hint" style="font-size:12px; color:#333; margin-left:10px;">
-              Autosave initializes after first save
-            </span>
+      <!-- Character Panel -->
+<div id="character-panel">
+  <form id="char-form">
 
-            <div style="margin-top:10px;">
-              <div class="section-label">NAME</div>
+    <!-- Save / Load row -->
+    <div class="sheet-topbar" style="margin-bottom:10px;">
+      <button type="button" onclick="saveCharacterToFirestore()">💾 Save</button>
+      <button type="button" onclick="loadCharacterFromFirestore()">📂 Load</button>
 
-              <div class="name-row">
-                <div class="portrait-wrap">
-                 <img
-                      id="character-portrait"
-                      class="portrait-img"
-                      alt="Character portrait"
-                      src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
-                    />
-                  <label class="portrait-upload-btn" title="Upload portrait">
-                    📷
-                    <input id="portrait-upload" type="file" accept="image/*" />
-                  </label>
-                </div>
+      <span id="autosave-hint" style="font-size:12px; color:#333; margin-left:10px;">
+        Autosave initializes after first save
+      </span>
 
-                <input id="player-name" autocomplete="off" placeholder="Enter your name" type="text"/>
-              </div>
-            </div>
+      <!-- Hidden JSON import -->
+      <input
+        id="fileInput"
+        type="file"
+        accept=".json"
+        onchange="uploadCharacter(event)"
+        style="display:none;"
+      />
+    </div>
 
-            <input accept=".json" id="fileInput" onchange="uploadCharacter(event)" style="display:none;" type="file"/>
-          </div>
-
-          <br/><br/>
-
-          <div id="counters-section">
-            <div class="counter-block">
-              <h2>Exp.</h2>
-              <div class="counter">
-                <button onclick="adjustExp(-1)" type="button">⬇</button>
-                <span id="exp-value">0</span>
-                <button onclick="adjustExp(1)" type="button">⬆</button>
-              </div>
-            </div>
-
-            <div class="counter-block">
-              <h2>Luck</h2>
-              <div class="counter">
-                <button onclick="adjustLuck(-1)" type="button">⬇</button>
-                <span id="luck-value">1</span>
-                <button onclick="adjustLuck(1)" type="button">⬆</button>
-              </div>
-            </div>
-
-            <div class="counter-block">
-              <div class="wounds-section">
-                <h2>Wounds</h2>
-                <div class="wounds">
-                  <button onclick="toggleWound(0)" type="button"></button>
-                  <button onclick="toggleWound(1)" type="button"></button>
-                  <button onclick="toggleWound(2)" type="button"></button>
-                  <button onclick="toggleWound(3)" type="button"></button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <br/>
-
-          <h2 class="section-title skills-title">Skills</h2>
-          <div id="skills-section">
-            <div id="skills-container"></div>
-            <div style="margin-top:10px;">
-              <button onclick="addSkill()" type="button">+ New Skill</button>
-            </div>
-          </div>
-
-          <h2 class="section-title">Conditions</h2>
-          <div id="conditions-section">
-            <div id="conditions-container"></div>
-            <div style="margin-top:10px;">
-              <button onclick="addCondition()" type="button">+ New Condition</button>
-            </div>
-          </div>
-
-          <br/>
-
-          <h2 class="section-title">Inventory</h2>
-          <div id="items-section">
-            <div id="items-container"></div>
-            <div style="margin-top:10px;">
-              <button onclick="addItem()" type="button">+ Add Item</button>
-            </div>
-          </div>
-
-          <br/>
-          <button onclick="clearData()" type="button">Clear</button>
-        </form>
+    <!-- NAME block (label above the input row) -->
+    <div class="name-block" style="margin-bottom:14px;">
+      <div class="name-label-row">
+        <div class="section-label">NAME</div>
       </div>
 
-      <div id="bottom-buttons" style="margin-top:20px; text-align:center;"></div>
+      <div class="name-row">
+        <div class="portrait-wrap">
+          <img
+            id="character-portrait"
+            class="portrait-img"
+            alt="Character portrait"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+          />
+          <label class="portrait-upload-btn" title="Upload portrait">
+            📷
+            <input id="portrait-upload" type="file" accept="image/*" />
+          </label>
+        </div>
+
+        <input
+          id="player-name"
+          type="text"
+          autocomplete="off"
+          placeholder="Enter your name"
+        />
+      </div>
     </div>
+
+    <!-- Counters -->
+    <div id="counters-section">
+      <div class="counter-block">
+        <h2>Exp.</h2>
+        <div class="counter">
+          <button type="button" onclick="adjustExp(-1)">⬇</button>
+          <span id="exp-value">0</span>
+          <button type="button" onclick="adjustExp(1)">⬆</button>
+        </div>
+      </div>
+
+      <div class="counter-block">
+        <h2>Luck</h2>
+        <div class="counter">
+          <button type="button" onclick="adjustLuck(-1)">⬇</button>
+          <span id="luck-value">1</span>
+          <button type="button" onclick="adjustLuck(1)">⬆</button>
+        </div>
+      </div>
+
+      <div class="counter-block">
+        <div class="wounds-section">
+          <h2>Wounds</h2>
+          <div class="wounds">
+            <button type="button" onclick="toggleWound(0)"></button>
+            <button type="button" onclick="toggleWound(1)"></button>
+            <button type="button" onclick="toggleWound(2)"></button>
+            <button type="button" onclick="toggleWound(3)"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <br />
+
+    <!-- Skills -->
+    <h2 class="section-title skills-title">Skills</h2>
+    <div id="skills-section">
+      <div id="skills-container"></div>
+      <div style="margin-top:10px;">
+        <button type="button" onclick="addSkill()">+ New Skill</button>
+      </div>
+    </div>
+
+    <!-- Conditions -->
+    <h2 class="section-title">Conditions</h2>
+    <div id="conditions-section">
+      <div id="conditions-container"></div>
+      <div style="margin-top:10px;">
+        <button type="button" onclick="addCondition()">+ New Condition</button>
+      </div>
+    </div>
+
+    <br />
+
+    <!-- Inventory -->
+    <h2 class="section-title">Inventory</h2>
+    <div id="items-section">
+      <div id="items-container"></div>
+      <div style="margin-top:10px;">
+        <button type="button" onclick="addItem()">+ Add Item</button>
+      </div>
+    </div>
+
+    <br />
+    <button type="button" onclick="clearData()">Clear</button>
+  </form>
+</div>
+
+<div id="bottom-buttons" style="margin-top:20px; text-align:center;"></div>
+
 
     <!-- GM Mode Dash -->
     <div id="gm-mode-panel" style="display:none; padding:10px; flex-grow:1;">

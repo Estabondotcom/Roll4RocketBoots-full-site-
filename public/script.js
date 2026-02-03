@@ -840,19 +840,20 @@ function setupDrawingEvents() {
     redrawAllLayers();
   });
 
- canvas.addEventListener("pointerup", (e) => {
-   e.preventDefault();
-   e.stopPropagation();
-   
-   try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
-   
-   endStroke();
-   });
+canvas.addEventListener("pointerup", (e) => {
+  if (!isDrawing) return;
+  e.preventDefault();
+  e.stopPropagation();
 
+  try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+
+  endStrokeAndSync();
+});
 
 canvas.addEventListener("pointercancel", (e) => {
+  if (!isDrawing) return;
   try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
-  endStroke();
+  endStrokeAndSync();
 });
 }
 

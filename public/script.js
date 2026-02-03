@@ -298,26 +298,22 @@ function clearData() {
 // Rules + Theme
 // =========================
 
-function toggleRules() {
-  const modal = document.getElementById("rules-modal");
-  if (!modal) return;
-  modal.style.display = (modal.style.display === "block") ? "none" : "block";
-}
-
 function setTheme(theme) {
-  const link = document.querySelector('link[rel="stylesheet"]');
+  const link = document.getElementById("theme-stylesheet");
   if (!link) return;
 
   const map = {
+    default: "style-default.css",
     dark: "style-dark.css",
-    lava: "style-lava.css",
     forest: "style-forest.css",
     ocean: "style-ocean.css",
     sky: "style-sky.css",
-    default: "style-default.css"
+    lava: "style-lava.css",
   };
+
   link.href = map[theme] || map.default;
 }
+
 
 // =========================
 // Show & Tell + Pan/Zoom

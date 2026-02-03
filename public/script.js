@@ -744,13 +744,16 @@ function startDrawingsListener() {
           const me = auth?.currentUser?.uid;
 
           // ✅ If this doc is ME, draw into myLayerCanvas directly (never replace it)
-          if (me && uid === me && myLayerCtx && myLayerCanvas) {
-            myLayerCtx.clearRect(0, 0, myLayerCanvas.width, myLayerCanvas.height);
-            myLayerCtx.drawImage(img, 0, 0, myLayerCanvas.width, myLayerCanvas.height);
-            userLayers[me] = myLayerCanvas;
-            redrawAllLayers();
-            return;
-          }
+        if (me && uid === me && myLayerCtx && myLayerCanvas) {
+           // ✅ force normal drawing mode before repainting from snapshot
+           myLayerCtx.globalCompositeOperation = "source-over";
+         
+           myLayerCtx.clearRect(0, 0, myLayerCanvas.width, myLayerCanvas.height);
+           myLayerCtx.drawImage(img, 0, 0, myLayerCanvas.width, myLayerCanvas.height);
+           userLayers[me] = myLayerCanvas;
+           redrawAllLayers();
+           return;
+         }
 
           // Other users: store in offscreen canvas
           const c = document.createElement("canvas");
@@ -780,7 +783,8 @@ function endStrokeAndSync() {
   if (!isDrawing) return;
   isDrawing = false;
   lastPt = null;
-
+    
+   if (myLayerCtx) myLayerCtx.globalCompositeOperation = "source-over";
   // ensure my layer is registered before saving
   const me = auth?.currentUser?.uid;
   if (me && myLayerCanvas) userLayers[me] = myLayerCanvas;

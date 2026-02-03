@@ -1392,6 +1392,12 @@ function initDrawingSystem(sessionId, role) {
   startDrawingsListener();
 }
 
+function toggleRules() {
+  const modal = document.getElementById("rules-modal");
+  if (!modal) return;
+  modal.style.display = (modal.style.display === "block") ? "none" : "block";
+}
+
 
 function initScript() {
   // Ensure starter fields exist (only if empty)

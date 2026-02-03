@@ -338,6 +338,12 @@ function fitImageToViewportIfNeeded(imageUrl) {
   if (!area || !img || !img.naturalWidth || !img.naturalHeight) return;
 
   const rect = area.getBoundingClientRect();
+
+  // ✅ If panel is hidden / not laid out yet, don't fit now.
+  if (rect.width < 5 || rect.height < 5) {
+    return; // IMPORTANT: do NOT set _lastFitUrl
+  }
+
   const scaleX = rect.width / img.naturalWidth;
   const scaleY = rect.height / img.naturalHeight;
 
@@ -352,6 +358,7 @@ function fitImageToViewportIfNeeded(imageUrl) {
   redrawAllLayers();
 }
 
+
 function toggleShowAndTell() {
   const characterPanel = document.getElementById("character-panel");
   const main = document.getElementById("main-container");
@@ -360,7 +367,18 @@ function toggleShowAndTell() {
   if (characterPanel) characterPanel.style.display = "none";
   if (main) main.style.display = "none";
   if (show) show.style.display = "block";
+
+  // ✅ Now that it's visible, fit the already-loaded image
+  const img = document.getElementById("tab-image");
+  if (img && img.src) {
+    requestAnimationFrame(() => {
+      fitImageToViewportIfNeeded(img.src);
+      setupDrawingCanvasToImage();
+      redrawAllLayers();
+    });
+  }
 }
+
 
 function toggleCharacterPanel() {
   const characterPanel = document.getElementById("character-panel");

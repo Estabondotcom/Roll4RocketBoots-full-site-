@@ -171,6 +171,18 @@ label, h2 {
 /* =========================
    NAME ROW + PORTRAIT (fixed, larger)
    ========================= */
+.name-block{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  align-items:flex-start;
+  margin-bottom:12px;
+}
+
+
+.name-label-row{
+  width:100%;
+}
 
 .name-row{
   display:flex;

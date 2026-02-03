@@ -854,7 +854,7 @@ canvas.addEventListener("pointercancel", (e) => {
   try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
   endStroke();
 });
-
+}
 
 function setupDrawingToolbar() {
   const widthEl = document.getElementById("draw-width");

@@ -800,7 +800,10 @@ function setupDrawingEvents() {
   }
 
   // Prevent browser dragging/selection behavior
-  canvas.addEventListener("dragstart", (e) => e.preventDefault());
+   canvas.addEventListener("dragstart", (e) => e.preventDefault());
+   window.addEventListener("blur", endStrokeAndSync);
+   document.addEventListener("mouseup", endStrokeAndSync);
+
 
   canvas.addEventListener("pointerdown", (e) => {
     if (!drawingEnabled) return;

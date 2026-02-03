@@ -1360,6 +1360,9 @@ async function loadMyPortraitFromCharacterDoc() {
   const sessionId = getActiveSessionId();
   if (!user || !sessionId) return;
 
+  const BLANK =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
+
   const doc = await db.collection("sessions")
     .doc(sessionId)
     .collection("characters")
@@ -1367,12 +1370,13 @@ async function loadMyPortraitFromCharacterDoc() {
     .get();
 
   const url = doc.data()?.portraitUrl;
+
   const img = document.getElementById("character-portrait");
   if (img) {
-    img.src = url || ""; // blank if none
+    img.src = url || BLANK;      // ✅ never broken icon
+    img.onerror = () => { img.src = BLANK; };
   }
 }
-
 
 // =========================
 // Init
@@ -1380,14 +1384,18 @@ async function loadMyPortraitFromCharacterDoc() {
 
 // ✅ Called by login.js after session selection (optional but helpful)
 function initDrawingSystem(sessionId, role) {
-  // make sure our sessionId is set (login.js already does this)
   if (role === "gm") {
     const clearAllBtn = document.getElementById("clear-all");
     if (clearAllBtn) clearAllBtn.style.display = "inline-block";
   }
+
+  bindPortraitUpload();              // ✅ ADD
+  loadMyPortraitFromCharacterDoc();  // ✅ ADD
+
   setupDrawingCanvasToImage();
   startDrawingsListener();
 }
+
 
 function initScript() {
   // Ensure starter fields exist (only if empty)

@@ -1299,6 +1299,81 @@ function pushToChat(imageUrl, label) {
   });
 }
 
+async function uploadCharacterPortrait(file) {
+  const user = auth?.currentUser;
+  const sessionId = getActiveSessionId();
+  if (!user || !sessionId || !file) return;
+
+  // Optional: basic file safety
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload an image file.");
+    return;
+  }
+  if (file.size > 3 * 1024 * 1024) { // 3MB
+    alert("Image too large. Please use something under 3MB.");
+    return;
+  }
+
+  // Storage path: stable per user; overwrite to keep it simple
+  const ext = (file.name.split(".").pop() || "png").toLowerCase();
+  const path = `sessions/${sessionId}/portraits/${user.uid}.${ext}`;
+
+  const storageRef = firebase.storage().ref(path);
+  await storageRef.put(file);
+
+  const url = await storageRef.getDownloadURL();
+
+  // Save on their character doc (recommended: characters/<uid>)
+  await db.collection("sessions")
+    .doc(sessionId)
+    .collection("characters")
+    .doc(user.uid)
+    .set({ portraitUrl: url }, { merge: true });
+
+  // Update UI immediately
+  const img = document.getElementById("character-portrait");
+  if (img) img.src = url;
+}
+
+function bindPortraitUpload() {
+  const input = document.getElementById("portrait-upload");
+  if (!input) return;
+
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    try {
+      await uploadCharacterPortrait(file);
+    } catch (err) {
+      console.error("Portrait upload failed:", err);
+      alert("Portrait upload failed. Check console for details.");
+    } finally {
+      // allow re-uploading the same file
+      input.value = "";
+    }
+  });
+}
+
+async function loadMyPortraitFromCharacterDoc() {
+  const user = auth?.currentUser;
+  const sessionId = getActiveSessionId();
+  if (!user || !sessionId) return;
+
+  const doc = await db.collection("sessions")
+    .doc(sessionId)
+    .collection("characters")
+    .doc(user.uid)
+    .get();
+
+  const url = doc.data()?.portraitUrl;
+  const img = document.getElementById("character-portrait");
+  if (img) {
+    img.src = url || ""; // blank if none
+  }
+}
+
+
 // =========================
 // Init
 // =========================

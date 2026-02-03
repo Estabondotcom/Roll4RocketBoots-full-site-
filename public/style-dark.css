@@ -1,302 +1,140 @@
-@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap');
+/* style-dark.css
+   DARK THEME (theme-only)
+   IMPORTANT: This file should NOT contain layout rules.
+   It imports your base stylesheet (style.css) so theme switching never breaks layout.
+*/
 
-/* Page background and base font styling */
+@import url("style.css");
+
+/* =========================
+   Dark theme overrides
+   ========================= */
+
+/* Background + base text */
 body {
-background: url('background/br5.PNG') repeat;
-  font-family: 'Bungee', cursive;
+  background: url("background/br5.PNG") repeat;
   color: #eee;
-  padding: 20px;
-  margin: 0;
 }
 
-/* Page title header styling */
+/* Main sheet panel tint */
+#main-container {
+  background-color: rgba(39, 28, 61, 0.70);
+}
+
+/* Show & Tell panel */
+#show-panel {
+  background-color: #0f0f12;
+}
+
+/* Headline */
 h1 {
-  text-align: center;
-  display: inline-block;
-  padding: 10px 15px;
   background-color: #003D66;
-  box-shadow: 4px 4px #000;
-  padding: 10px;
-  border-radius: 0;
-  font-size: 3.1em;
-  text-shadow: -1px -1px 0 #c2c2c2, 1px -1px 0 #c2c2c2, -1px 1px 0 #c2c2c2, 1px 1px 0 #c2c2c2;
   color: #66003d;
   text-shadow: 2px 2px 0 #c2c2c2;
-  margin-bottom: 20px;
+  box-shadow: 4px 4px #000;
 }
 
-/* Button default styling */
+/* Buttons */
 button {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 12px;
-  padding: 10px 14px;
-  margin: 5px;
-  border: 3px solid #000;
   background-color: #c47600;
   color: #fff;
+  border-color: #000;
   box-shadow: 3px 3px #000;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-/* Button hover effect */
 button:hover {
   background-color: #130c00;
   color: #fff;
-  transform: scale(1.05);
 }
 
-/* Text input and textarea styling */
-input[type="text"], textarea {
-  font-family: monospace;
-  font-size: 16px;
-  padding: 6px;
-  border: 2px solid #000;
+/* Inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select,
+#player-name,
+.skill-input,
+.item-input,
+.condition-input {
   background-color: #c2c2c2;
-  width: 250px;
-  margin-bottom: 8px;
+  color: #111;
+  border-color: #000;
   box-shadow: inset 2px 2px #888;
 }
 
-textarea {
-  width: 100%;
-  height: 100px;
+/* Labels / section tags */
+label,
+h2,
+.section-label {
+  background-color: rgba(0, 61, 102, 0.70);
+  color: #eee;
 }
 
-#skills-container,
-#items-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 15px;
+/* Delete button */
+.delete-button {
+  background-color: #760000;
+  color: #fff;
+  border: 3px solid #000;
+  box-shadow: 2px 2px #000;
 }
 
-.input-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+.delete-button:hover {
+  background-color: #4f0000;
 }
 
-.skill-levels {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-
+/* Skill level checkbox tint */
 .skill-level {
   accent-color: #66003d;
 }
 
-/* Styling for delete buttons */
-.delete-button {
-  margin-top: 4px;
-  background-color: #760000;
-  color: white;
-  font-size: 14px;
-  border: none;
-  padding: 4px 8px;
+/* Wounds */
+.wounds button {
+  background-color: #4d4d4d;
+  color: #111;
+  border-color: #000;
   box-shadow: 2px 2px #000;
 }
 
-#counters-section {
-  display: flex;
-  gap: 30px;
-  margin-bottom: 20px;
-}
-
-.counter-block h2 {
-  margin: 0;
-  font-size: 1.2em;
-  text-align: center;
-}
-
-.counter {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: bold;
-  padding-top: 5px;
-}
-
-.wounds {
-  display: flex;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-/* Wound circle button styling */
-.wounds button {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: #4d4d4d;
-  color: #000;
-  font-weight: bold;
-  border: 2px solid #000;
-  cursor: pointer;
-}
-
-/* Active wound button (damaged) styling */
 .wounds button.active {
   background-color: darkred;
-  color: white;
+  color: #fff;
 }
 
+/* Rules button (optional distinct) */
 #rules-button {
-  margin-bottom: 10px;
   background-color: #4d4d4d;
   color: #d9d9d9;
-  font-size: 14px;
-  padding: 6px 10px;
 }
 
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 10;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  overflow: auto;
-  background-color: rgba(0,0,0,0.7);
-}
-
+/* Modal content */
 .modal-content {
-  background-color: #fff;
-  margin: 5% auto;
-  padding: 20px;
-  width: 80%;
-  max-width: 700px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.modal-content img {
-  max-width: 100%;
-  margin: 10px 0;
-}
-
-.close {
-  align-self: flex-end;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* Main content box styling */
-#main-container {
-  background-color: rgba(39, 28, 61, 0.7);
-  padding: 20px;
-  border-radius: 12px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-/* Label and section header background styling */
-label, h2 {
-  background-color: rgba(0, 61, 102, 0.7);
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-block;
-}
-
-/* Special styling for player name label */
-label[for="player-name"] {
-  font-size: 1.5em;
-  background-color: rgba(0, 61, 102, 0.7);
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-block;
-  font-family: 'Bungee', cursive;
-  margin-right: 10px;
-}
-
-/* Section title banner styling */
-.section-label {
-  font-size: 2em;
-  font-family: 'Bungee', cursive;
-  background-color: rgba(0, 61, 102, 0.7);
-  padding: 4px 12px;
-  border-radius: 6px;
-  display: inline-block;
-  margin: 6px 0;
-}
-
-/* Player name input field styling */
-#player-name {
-  font-family: monospace;
-  font-size: 30px;
-  font-weight: bold;
-  padding: 8px;
-  height: 38px;
-  border: 2px solid #000;
-  background-color: #c2c2c2;
-  width: 300px;
-  box-shadow: inset 2px 2px #888;
-}
-
-/* Additional button styling (duplicate of base button) */
-.add-button {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 12px;
-  padding: 10px 14px;
-  margin: 5px;
+  background-color: #f2f2f2;
+  color: #111;
   border: 3px solid #000;
-  background-color: #c47600;
+  box-shadow: 6px 6px #000;
+}
+
+/* Chat */
+#chat-panel {
+  background-color: #191919;
+  color: #eee;
+  border-left: 2px solid #555;
+}
+
+#chatInput {
+  background: #111;
   color: #fff;
-  box-shadow: 3px 3px #000;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-/* Input field for conditions */
-.condition-input {
-  width: 250px;
-  font-size: 16px;
-  padding: 6px;
-  font-family: monospace;
-  border: 2px solid #000;
-  background-color: #c2c2c2;
-  box-shadow: inset 2px 2px #888;
-  margin: 4px 0;
+/* Tabs */
+.tab-button {
+  background: #2b2b2b;
+  color: #fff;
 }
 
-.section-title {
-  font-size: 1.95em;
+.tab-button.active {
+  background: #c47600;
+  color: #000;
 }
 
-.skills-title {
-  font-size: 2.535em;
-}
-
-.wounds-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.exp-section, .luck-section {
-  display: grid;
-  grid-template-columns: auto auto auto;
-  grid-template-rows: auto auto;
-  gap: 4px;
-  align-items: center;
-  justify-items: center;
-}
-
-/* EXP and Luck label styling */
-.exp-label, .luck-label {
-  grid-column: 2 / 3;
-  font-weight: bold;
-  font-size: 1.2em;
-  background: #ff0;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.exp-section h2,
-.luck-section h2 {
-  grid-column: 1 / -1;
-  margin: 0;
-}

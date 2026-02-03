@@ -1,81 +1,96 @@
 @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap');
 
-/* =========================
-   Base / Layout
-   ========================= */
+/* =========================================================
+   GLOBAL RESET / BASE
+   ========================================================= */
 
 * { box-sizing: border-box; }
 
 html, body { height: 100%; }
 
 body {
-  background: url('background/br1.png') repeat;
-  font-family: 'Bungee', cursive;
-  color: #222;
   margin: 0;
   padding: 0;
+  font-family: 'Bungee', cursive;
+  color: #222;
+  background: url('background/br1.png') repeat;
+  overflow: hidden; /* app controls scrolling per panel */
 }
 
-/* Main app split (sheet + chat) */
+/* =========================================================
+   APP LAYOUT: 75% (sheet/show) + 25% (chat)
+   ========================================================= */
+
 #app-content {
   display: flex;
   flex-direction: row;
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
 }
 
-/* ✅ Sheet is hard 75% */
-#main-container {
+/* Left lane: character sheet OR show panel (same size) */
+#main-container,
+#show-panel {
   flex: 0 0 75%;
   width: 75%;
   max-width: 75%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Character sheet container */
+#main-container {
   background-color: rgba(144, 238, 144, 0.7);
+  border-radius: 12px;
   padding: 10px;
   padding-top: 60px;
-  border-radius: 12px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* ✅ Show panel is also a 75% lane */
+/* Show panel container (hidden unless active) */
 #show-panel {
-  display: none; /* shown via JS */
-  flex: 0 0 75%;
-  width: 75%;
-  max-width: 75%;
-  height: 100vh;
+  display: none; /* JS shows it */
   background: #111;
   padding: 20px;
   padding-top: 40px;
-  overflow: hidden;
 }
 
-/* ✅ Chat is hard 25% */
+/* Chat lane */
 #chat-panel {
   flex: 0 0 25%;
   width: 25%;
   max-width: 25%;
-  display: none;
-  flex-direction: column;
   height: 100vh;
-  background-color: #222;
+
+  display: none; /* JS shows it when in session */
+  flex-direction: column;
+
+  background: #222;
   color: #fff;
   border-left: 2px solid #555;
   overflow: hidden;
 }
 
 #chat-messages {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 10px;
 }
 
-/* Character + Show panels should not overlap by CSS */
+#chatInput {
+  background: #111;
+  color: #fff;
+}
+
+/* Safety: panels should never overlap via positioning */
 #character-panel { display: block; }
 
-/* =========================
-   Title
-   ========================= */
+/* =========================================================
+   TITLE
+   ========================================================= */
 
 .title-wrapper { text-align: center; }
 
@@ -92,9 +107,9 @@ h1 {
   margin: 0 0 20px 0;
 }
 
-/* =========================
-   Buttons / Inputs
-   ========================= */
+/* =========================================================
+   BUTTONS / INPUTS
+   ========================================================= */
 
 button {
   font-family: 'Press Start 2P', cursive;
@@ -144,9 +159,9 @@ textarea {
   height: 100px;
 }
 
-/* =========================
-   Labels / Section styling
-   ========================= */
+/* =========================================================
+   LABELS / SECTION HEADERS
+   ========================================================= */
 
 label, h2 {
   background-color: rgba(255, 255, 0, 0.7);
@@ -166,96 +181,112 @@ label, h2 {
 }
 
 .section-title { font-size: 1.95em; }
-.skills-title { font-size: 2.535em; }
+.skills-title  { font-size: 2.535em; }
 
-/* =========================
-   NAME ROW + PORTRAIT (fixed, larger)
-   ========================= */
+/* =========================================================
+   NAME BLOCK (NAME label above row + bigger portrait)
+   ========================================================= */
+
+/* The NAME area should look like:
+   [NAME label]
+   [portrait][name input]
+*/
 .name-block{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  align-items:flex-start;
-  margin-bottom:12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 12px;
 }
-
 
 .name-label-row{
-  width:100%;
+  width: 100%;
 }
 
+/* Row contains portrait + input */
 .name-row{
-  display:flex;
-  align-items:center;
-  gap:12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
 }
 
-/* 50% bigger portrait (96px) */
+/* Portrait: bigger (128px) and stable */
 .portrait-wrap{
-  position:relative;
-  width:128px;
-  height:128px;
-  flex:0 0 128px;
+  position: relative;
+  width: 128px;
+  height: 128px;
+  flex: 0 0 128px;
 }
 
 .portrait-img{
-  width:100%;
-  height:100%;
-  border-radius:12px;
-  object-fit:cover;
-  background:#222;
-  border:2px solid #555;
-  display:block;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #222;
+  border: 3px solid #000;
+  box-shadow: 3px 3px #000;
 }
 
-/* Camera badge pinned to portrait corner */
+/* Upload button pinned to portrait corner.
+   IMPORTANT: remove inherited label padding */
 .portrait-upload-btn{
-  position:absolute;
-  bottom:-10px;
-  right:-10px;
-  width:30px;
-  height:30px;
-  border-radius:999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#00e5ff;
-  border:3px solid #000;
+  position: absolute;
+  right: -12px;
+  bottom: -12px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;                 /* stop label padding inheritance */
+  border-radius: 999px;
+
+  background: #00e5ff;
+  color: #000;
+
+  border: 3px solid #000;
   box-shadow: 2px 2px #000;
-  cursor:pointer;
-  font-size:14px;
-  color:#000;
+  cursor: pointer;
+
+  font-size: 14px;
+  line-height: 1;
 }
 
 .portrait-upload-btn:hover{
-  background:#ff00ff;
-  color:#fff;
+  background: #ff00ff;
+  color: #fff;
 }
 
-.portrait-upload-btn input{
-  display:none;
-}
+.portrait-upload-btn input{ display: none; }
 
-/* Name input: flexible, no overlap */
-#player-name {
+/* Name input should expand/shrink without overlap */
+#player-name{
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: 0;     /* allows it to shrink in flex row */
   width: auto;
-  max-width: 520px;
+  max-width: 560px;
 
   font-family: monospace;
   font-size: 30px;
   font-weight: bold;
   padding: 8px;
   height: 48px;
+
   border: 2px solid #000;
   background-color: #fff6d1;
   box-shadow: inset 2px 2px #888;
 }
 
-/* =========================
-   Skills / Items / Conditions
-   ========================= */
+/* =========================================================
+   SKILLS / ITEMS / CONDITIONS
+   ========================================================= */
 
 #skills-container,
 #items-container,
@@ -305,15 +336,15 @@ label, h2 {
 
 .delete-button:hover { background-color: #b30000; }
 
-/* =========================
-   Counters / Wounds
-   ========================= */
+/* =========================================================
+   COUNTERS / WOUNDS
+   ========================================================= */
 
 #counters-section {
   display: flex;
+  flex-wrap: wrap;
   gap: 30px;
   margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
 .counter-block h2 {
@@ -360,9 +391,9 @@ label, h2 {
   color: #fff;
 }
 
-/* =========================
-   Rules modal
-   ========================= */
+/* =========================================================
+   RULES MODAL
+   ========================================================= */
 
 #rules-button {
   margin-bottom: 10px;
@@ -444,9 +475,9 @@ label, h2 {
   text-align: left;
 }
 
-/* =========================
-   GM tools button
-   ========================= */
+/* =========================================================
+   GM TOOLS BUTTON
+   ========================================================= */
 
 #gm-tools-button {
   font-family: 'Press Start 2P', cursive;
@@ -459,11 +490,10 @@ label, h2 {
   cursor: pointer;
 }
 
-/* =========================
-   Show & Tell / Tabs / Zoom
-   ========================= */
+/* =========================================================
+   SHOW & TELL / TABS / PAN-ZOOM / DRAW CANVAS
+   ========================================================= */
 
-/* Make Show&Tell layout “real” so the viewport gets height */
 #zoom-container {
   width: 100%;
   height: 100%;
@@ -477,10 +507,9 @@ label, h2 {
   flex-direction: column;
   height: 100%;
   gap: 10px;
-  min-height: 0;
+  min-height: 0; /* critical for flex children scroll math */
 }
 
-/* Tabs */
 #tab-container {
   display: flex;
   flex-direction: column;
@@ -512,7 +541,6 @@ label, h2 {
   color: #000;
 }
 
-/* ✅ Image viewport: flex-sized, no scrollbars */
 #image-display-area {
   flex: 1 1 auto;
   min-height: 0;
@@ -529,7 +557,6 @@ label, h2 {
   touch-action: none;
 }
 
-/* ✅ ONLY this layer gets transformed by JS */
 #panzoom-layer {
   position: absolute;
   top: 0;
@@ -538,7 +565,6 @@ label, h2 {
   will-change: transform;
 }
 
-/* ✅ image should never steal drag */
 #tab-image {
   position: absolute;
   top: 0;
@@ -555,8 +581,8 @@ label, h2 {
   -webkit-user-drag: none;
 }
 
-/* ✅ Canvas: default doesn't steal pointer events (pan works).
-   JS enables drawing by toggling .draw-active on #image-display-area */
+/* Canvas: default off for pointer events so panning works.
+   Enable by adding .draw-active to #image-display-area in JS */
 #draw-canvas {
   position: absolute;
   top: 0;
@@ -574,13 +600,3 @@ label, h2 {
 #image-display-area.draw-active {
   cursor: crosshair;
 }
-
-/* =========================
-   Chat panel basics
-   ========================= */
-
-#chatInput {
-  background: #111;
-  color: #fff;
-}
-

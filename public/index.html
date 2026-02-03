@@ -1,37 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Roll for Rocket Boots! - Character Sheet</title>
 
-  <!-- ✅ Global CSS (layout, show&tell sizing, portrait classes, etc.) -->
+  <!-- Global CSS (layout, show&tell sizing, portrait classes, etc.) -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- IMPORTANT: your theme switcher swaps this href -->
-  <link id="theme-stylesheet" href="style-default.css" rel="stylesheet"/>
+  <!-- Theme CSS (theme switcher swaps this href) -->
+  <link id="theme-stylesheet" rel="stylesheet" href="style-default.css" />
 </head>
 
 <body>
-  <!-- Login Screen -->
+  <!-- ======================================================
+       LOGIN SCREEN
+       ====================================================== -->
   <div id="login-screen"
        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
               background-color:#222; color:white; flex-direction:column;
               justify-content:center; align-items:center; z-index:2000;">
     <h2>Welcome to Roll for Rocket Boots!</h2>
 
-    <input type="email" id="authEmail" placeholder="Email">
-    <input type="password" id="authPassword" placeholder="Password">
+    <input type="email" id="authEmail" placeholder="Email" />
+    <input type="password" id="authPassword" placeholder="Password" />
 
-    <div style="margin-top: 10px;">
-      <button onclick="login()">Log In</button>
-      <button onclick="signup()">Sign Up</button>
+    <div style="margin-top:10px;">
+      <button type="button" onclick="login()">Log In</button>
+      <button type="button" onclick="signup()">Sign Up</button>
     </div>
 
     <div id="loginError" style="color:red; margin-top:10px;"></div>
   </div>
 
-  <!-- Session Screen -->
+  <!-- ======================================================
+       SESSION SCREEN
+       ====================================================== -->
   <div id="session-screen"
        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
               background-color:#333; color:white; flex-direction:column;
@@ -39,63 +43,75 @@
     <h2>Select a Game Session</h2>
     <div id="session-list"></div>
 
-    <button onclick="showCreateSessionScreen()">+ Create New Session</button>
-    <button onclick="logout()">🚪 Log Out</button>
+    <button type="button" onclick="showCreateSessionScreen()">+ Create New Session</button>
+    <button type="button" onclick="logout()">🚪 Log Out</button>
 
     <div id="sessionError" style="color:red; margin-top:10px;"></div>
   </div>
 
-  <!-- Create Session Screen -->
+  <!-- ======================================================
+       CREATE SESSION SCREEN
+       ====================================================== -->
   <div id="create-session-screen"
        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
               background-color:#444; color:white; flex-direction:column;
               justify-content:center; align-items:center; z-index:2000;">
     <h2>Create a New Game Session</h2>
-    <input type="text" id="newSessionName" placeholder="Session Name">
-    <textarea id="inviteEmails" placeholder="Invite emails (comma-separated)"></textarea>
-    <button onclick="createSession()">Create Session</button>
 
-    <!-- ✅ FIX: you didn’t have cancelCreateSession() anywhere -->
-    <button onclick="hide('create-session-screen'); show('session-screen','flex');">Cancel</button>
+    <input type="text" id="newSessionName" placeholder="Session Name" />
+    <textarea id="inviteEmails" placeholder="Invite emails (comma-separated)"></textarea>
+
+    <button type="button" onclick="createSession()">Create Session</button>
+    <button type="button" onclick="hide('create-session-screen'); show('session-screen','flex');">Cancel</button>
 
     <div id="createSessionError" style="color:red; margin-top:10px;"></div>
   </div>
 
   <div id="userStatus"></div>
 
-  <!-- App Content -->
+  <!-- ======================================================
+       APP CONTENT (75% sheet/show + 25% chat)
+       ====================================================== -->
   <div id="app-content" style="display:none;">
 
+    <!-- Top-left floating GM Tools button -->
     <div style="position:absolute; top:10px; left:10px; z-index:1000; display:flex; gap:10px;">
-      <button id="gm-tools-button" onclick="openGMTools()" style="display:none;">🛠️ GM Tools</button>
+      <button id="gm-tools-button" type="button" onclick="toggleGMToolsSafe()" style="display:none;">🛠️ GM Tools</button>
     </div>
 
-    <!-- Main Container -->
+    <!-- =========================
+         MAIN CONTAINER (LEFT 75%)
+         ========================= -->
     <div id="main-container">
-      <div style="display:flex; gap:10px;">
-        <button id="rules-button" onclick="toggleRules()" type="button">📖 Rules</button>
-        <button onclick="returnToSessions()">⬅️ Return to Sessions</button>
 
-        <div id="theme-toggle" style="display:flex; justify-content:flex-end; gap:5px; margin-bottom:10px;">
-          <button onclick="setTheme('default')">🏠</button>
-          <button onclick="setTheme('dark')">🌙</button>
-          <button onclick="setTheme('forest')">🌲</button>
-          <button onclick="setTheme('ocean')">🌊</button>
-          <button onclick="setTheme('sky')">🌈</button>
-          <button onclick="setTheme('lava')">🌋</button>
+      <!-- Top Row: Rules + Return + Theme buttons -->
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button id="rules-button" type="button" onclick="toggleRulesSafe()">📖 Rules</button>
+        <button type="button" onclick="returnToSessionsSafe()">⬅️ Return to Sessions</button>
+
+        <div id="theme-toggle"
+             style="display:flex; justify-content:flex-end; gap:5px; margin-left:auto; flex-wrap:wrap;">
+          <button type="button" onclick="setThemeSafe('default')">🏠</button>
+          <button type="button" onclick="setThemeSafe('dark')">🌙</button>
+          <button type="button" onclick="setThemeSafe('forest')">🌲</button>
+          <button type="button" onclick="setThemeSafe('ocean')">🌊</button>
+          <button type="button" onclick="setThemeSafe('sky')">🌈</button>
+          <button type="button" onclick="setThemeSafe('lava')">🌋</button>
         </div>
       </div>
 
-      <div class="title-wrapper" style="text-align:center;">
+      <div class="title-wrapper">
         <h1>Roll for Rocket Boots!</h1>
       </div>
 
-      <!-- Rules Modal -->
+      <!-- =========================
+           RULES MODAL
+           ========================= -->
       <div class="modal" id="rules-modal">
         <div class="modal-content">
-          <span class="close" onclick="toggleRules()">×</span>
-
+          <span class="close" onclick="toggleRulesSafe()">×</span>
           <div class="rules-body">
+            <!-- Keep your rules content exactly as-is -->
             <h2>Roll for Rocket Boots – Core Rules</h2>
 
             <h3>1) The Core Loop</h3>
@@ -218,7 +234,6 @@
             </ul>
 
             <h4>XP Costs to Level Skills</h4>
-            <p>Level-up cost is based on the number of dice at your current level:</p>
             <ul>
               <li>Level 1 → 2: 2 XP</li>
               <li>Level 2 → 3: 3 XP</li>
@@ -275,138 +290,141 @@
         </div>
       </div>
 
-      <!-- Character Panel -->
-      <!-- Character Panel -->
-<div id="character-panel">
-  <form id="char-form">
+      <!-- =========================
+           CHARACTER PANEL
+           ========================= -->
+      <div id="character-panel">
+        <form id="char-form">
 
-    <!-- Save / Load row -->
-    <div class="sheet-topbar" style="margin-bottom:10px;">
-      <button type="button" onclick="saveCharacterToFirestore()">💾 Save</button>
-      <button type="button" onclick="loadCharacterFromFirestore()">📂 Load</button>
+          <!-- Save / Load row -->
+          <div class="sheet-topbar" style="margin-bottom:10px;">
+            <button type="button" onclick="saveCharacterToFirestore()">💾 Save</button>
+            <button type="button" onclick="loadCharacterFromFirestore()">📂 Load</button>
 
-      <span id="autosave-hint" style="font-size:12px; color:#333; margin-left:10px;">
-        Autosave initializes after first save
-      </span>
+            <span id="autosave-hint" style="font-size:12px; color:#333; margin-left:10px;">
+              Autosave initializes after first save
+            </span>
 
-      <!-- Hidden JSON import -->
-      <input
-        id="fileInput"
-        type="file"
-        accept=".json"
-        onchange="uploadCharacter(event)"
-        style="display:none;"
-      />
-    </div>
-
-    <!-- NAME block (label above the input row) -->
-    <div class="name-block" style="margin-bottom:14px;">
-      <div class="name-label-row">
-        <div class="section-label">NAME</div>
-      </div>
-
-      <div class="name-row">
-        <div class="portrait-wrap">
-          <img
-            id="character-portrait"
-            class="portrait-img"
-            alt="Character portrait"
-            src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
-          />
-          <label class="portrait-upload-btn" title="Upload portrait">
-            📷
-            <input id="portrait-upload" type="file" accept="image/*" />
-          </label>
-        </div>
-
-        <input
-          id="player-name"
-          type="text"
-          autocomplete="off"
-          placeholder="Enter your name"
-        />
-      </div>
-    </div>
-
-    <!-- Counters -->
-    <div id="counters-section">
-      <div class="counter-block">
-        <h2>Exp.</h2>
-        <div class="counter">
-          <button type="button" onclick="adjustExp(-1)">⬇</button>
-          <span id="exp-value">0</span>
-          <button type="button" onclick="adjustExp(1)">⬆</button>
-        </div>
-      </div>
-
-      <div class="counter-block">
-        <h2>Luck</h2>
-        <div class="counter">
-          <button type="button" onclick="adjustLuck(-1)">⬇</button>
-          <span id="luck-value">1</span>
-          <button type="button" onclick="adjustLuck(1)">⬆</button>
-        </div>
-      </div>
-
-      <div class="counter-block">
-        <div class="wounds-section">
-          <h2>Wounds</h2>
-          <div class="wounds">
-            <button type="button" onclick="toggleWound(0)"></button>
-            <button type="button" onclick="toggleWound(1)"></button>
-            <button type="button" onclick="toggleWound(2)"></button>
-            <button type="button" onclick="toggleWound(3)"></button>
+            <input
+              id="fileInput"
+              type="file"
+              accept=".json"
+              onchange="uploadCharacter(event)"
+              style="display:none;"
+            />
           </div>
-        </div>
+
+          <!-- NAME block -->
+          <div class="name-block" style="margin-bottom:14px;">
+            <div class="name-label-row">
+              <div class="section-label">NAME</div>
+            </div>
+
+            <div class="name-row">
+              <div class="portrait-wrap">
+                <img
+                  id="character-portrait"
+                  class="portrait-img"
+                  alt="Character portrait"
+                  src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+                />
+                <label class="portrait-upload-btn" title="Upload portrait">
+                  📷
+                  <input id="portrait-upload" type="file" accept="image/*" />
+                </label>
+              </div>
+
+              <input
+                id="player-name"
+                type="text"
+                autocomplete="off"
+                placeholder="Enter your name"
+              />
+            </div>
+          </div>
+
+          <!-- Counters -->
+          <div id="counters-section">
+            <div class="counter-block">
+              <h2>Exp.</h2>
+              <div class="counter">
+                <button type="button" onclick="adjustExp(-1)">⬇</button>
+                <span id="exp-value">0</span>
+                <button type="button" onclick="adjustExp(1)">⬆</button>
+              </div>
+            </div>
+
+            <div class="counter-block">
+              <h2>Luck</h2>
+              <div class="counter">
+                <button type="button" onclick="adjustLuck(-1)">⬇</button>
+                <span id="luck-value">1</span>
+                <button type="button" onclick="adjustLuck(1)">⬆</button>
+              </div>
+            </div>
+
+            <div class="counter-block">
+              <div class="wounds-section">
+                <h2>Wounds</h2>
+                <div class="wounds">
+                  <button type="button" onclick="toggleWound(0)"></button>
+                  <button type="button" onclick="toggleWound(1)"></button>
+                  <button type="button" onclick="toggleWound(2)"></button>
+                  <button type="button" onclick="toggleWound(3)"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <br />
+
+          <!-- Skills -->
+          <h2 class="section-title skills-title">Skills</h2>
+          <div id="skills-section">
+            <div id="skills-container"></div>
+            <div style="margin-top:10px;">
+              <button type="button" onclick="addSkill()">+ New Skill</button>
+            </div>
+          </div>
+
+          <!-- Conditions -->
+          <h2 class="section-title">Conditions</h2>
+          <div id="conditions-section">
+            <div id="conditions-container"></div>
+            <div style="margin-top:10px;">
+              <button type="button" onclick="addCondition()">+ New Condition</button>
+            </div>
+          </div>
+
+          <br />
+
+          <!-- Inventory -->
+          <h2 class="section-title">Inventory</h2>
+          <div id="items-section">
+            <div id="items-container"></div>
+            <div style="margin-top:10px;">
+              <button type="button" onclick="addItem()">+ Add Item</button>
+            </div>
+          </div>
+
+          <br />
+          <button type="button" onclick="clearData()">Clear</button>
+        </form>
       </div>
-    </div>
 
-    <br />
+      <div id="bottom-buttons" style="margin-top:20px; text-align:center;"></div>
 
-    <!-- Skills -->
-    <h2 class="section-title skills-title">Skills</h2>
-    <div id="skills-section">
-      <div id="skills-container"></div>
-      <div style="margin-top:10px;">
-        <button type="button" onclick="addSkill()">+ New Skill</button>
+      <!-- GM Mode Dash (lives inside the left lane) -->
+      <div id="gm-mode-panel" style="display:none; padding:10px; flex-grow:1;">
+        <h2 style="background: yellow; color: black; padding: 5px;">GM MODE - LIVE CHARACTER VIEW</h2>
+        <div id="gm-character-panels" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
       </div>
-    </div>
 
-    <!-- Conditions -->
-    <h2 class="section-title">Conditions</h2>
-    <div id="conditions-section">
-      <div id="conditions-container"></div>
-      <div style="margin-top:10px;">
-        <button type="button" onclick="addCondition()">+ New Condition</button>
-      </div>
-    </div>
+    </div><!-- ✅ CLOSE #main-container properly -->
 
-    <br />
-
-    <!-- Inventory -->
-    <h2 class="section-title">Inventory</h2>
-    <div id="items-section">
-      <div id="items-container"></div>
-      <div style="margin-top:10px;">
-        <button type="button" onclick="addItem()">+ Add Item</button>
-      </div>
-    </div>
-
-    <br />
-    <button type="button" onclick="clearData()">Clear</button>
-  </form>
-</div>
-
-<div id="bottom-buttons" style="margin-top:20px; text-align:center;"></div>
-
-
-    <!-- GM Mode Dash -->
-    <div id="gm-mode-panel" style="display:none; padding:10px; flex-grow:1;">
-      <h2 style="background: yellow; color: black; padding: 5px;">GM MODE - LIVE CHARACTER VIEW</h2>
-      <div id="gm-character-panels" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
-    </div>
-
-    <!-- Show & Tell Panel -->
+    <!-- =========================
+         SHOW & TELL PANEL (LEFT 75%, separate lane)
+         ========================= -->
     <div id="show-panel">
       <div id="zoom-container">
         <div id="zoom-content">
@@ -417,11 +435,10 @@
           </div>
 
           <!-- Drawing Toolbar -->
-          <div id="drawing-toolbar" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+          <div id="drawing-toolbar" style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
             <label style="color:white; font-size:12px;">✏️ Width</label>
-            <input id="draw-width" type="range" min="1" max="30" value="4" step="1">
-
-            <input id="draw-color" type="color" value="#ff0000" title="Pen color">
+            <input id="draw-width" type="range" min="1" max="30" value="4" step="1" />
+            <input id="draw-color" type="color" value="#ff0000" title="Pen color" />
 
             <button id="tool-pen" type="button">✏️ Pen</button>
             <button id="tool-eraser" type="button">🧽 Eraser</button>
@@ -430,10 +447,10 @@
             <button id="clear-all" type="button" style="display:none;">🧹 GM Clear All</button>
           </div>
 
-          <!-- ✅ Image + canvas viewport -->
+          <!-- Image + canvas viewport -->
           <div id="image-display-area">
             <div id="panzoom-layer">
-              <img id="tab-image" src="" alt="" draggable="false">
+              <img id="tab-image" src="" alt="" draggable="false" />
               <canvas id="draw-canvas"></canvas>
             </div>
           </div>
@@ -442,34 +459,43 @@
       </div>
     </div>
 
-    <!-- Chat Panel -->
+    <!-- =========================
+         CHAT PANEL (RIGHT 25%)
+         ========================= -->
     <div id="chat-panel">
-      <div id="chat-controls" style="display:flex; justify-content:space-around; padding:5px; background-color:#111; border-bottom:2px solid #555;">
-        <button onclick="toggleCharacterPanel()">Character</button>
-        <button onclick="toggleShowAndTell()">Show & Tell</button>
+      <div id="chat-controls"
+           style="display:flex; justify-content:space-around; padding:5px; background-color:#111; border-bottom:2px solid #555;">
+        <button type="button" onclick="toggleCharacterPanelSafe()">Character</button>
+        <button type="button" onclick="toggleShowAndTellSafe()">Show & Tell</button>
       </div>
 
-      <div id="chat-messages" style="flex:1; overflow-y:auto; padding:10px; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"></div>
+      <div id="chat-messages"
+           style="flex:1; overflow-y:auto; padding:10px; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;"></div>
 
       <div style="margin-top:5px; display:flex; gap:2px; flex-wrap:wrap;">
-        <button style="padding:2px 6px; font-size:12px;" onclick="rollD6(1)">1🎲</button>
-        <button style="padding:2px 6px; font-size:12px;" onclick="rollD6(2)">2🎲</button>
-        <button style="padding:2px 6px; font-size:12px;" onclick="rollD6(3)">3🎲</button>
-        <button style="padding:2px 6px; font-size:12px;" onclick="rollD6(4)">4🎲</button>
-        <button style="padding:2px 6px; font-size:12px;" onclick="rollD6(5)">5🎲</button>
+        <button type="button" style="padding:2px 6px; font-size:12px;" onclick="rollD6(1)">1🎲</button>
+        <button type="button" style="padding:2px 6px; font-size:12px;" onclick="rollD6(2)">2🎲</button>
+        <button type="button" style="padding:2px 6px; font-size:12px;" onclick="rollD6(3)">3🎲</button>
+        <button type="button" style="padding:2px 6px; font-size:12px;" onclick="rollD6(4)">4🎲</button>
+        <button type="button" style="padding:2px 6px; font-size:12px;" onclick="rollD6(5)">5🎲</button>
       </div>
 
-      <div id="chatInput" contenteditable="true" style="border:1px solid gray; padding:5px; height:60px; overflow-y:auto;"></div>
-      <button onclick="sendChatMessage()">Send</button>
+      <div id="chatInput" contenteditable="true"
+           style="border:1px solid gray; padding:5px; height:60px; overflow-y:auto;"></div>
+
+      <button type="button" onclick="sendChatMessage()">Send</button>
 
       <div style="margin-top:10px;">
         <label for="chatColorPicker">Chat Name Color:</label>
         <input type="color" id="chatColorPicker" value="#ffffff" onchange="saveChatColor()" />
       </div>
     </div>
-  </div>
 
-  <!-- GM Tools Panel -->
+  </div><!-- /#app-content -->
+
+  <!-- ======================================================
+       GM TOOLS PANEL
+       ====================================================== -->
   <div id="gm-tools-panel" style="
     display:none;
     position:fixed;
@@ -487,16 +513,18 @@
     overflow-y:auto;">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0;">GM Tools</h3>
-      <button onclick="toggleGMTools()" style="background:red; color:white;">X</button>
+      <button type="button" onclick="toggleGMToolsSafe()" style="background:red; color:white;">X</button>
     </div>
     <hr style="margin:10px 0;">
-    <button id="gm-mode-toggle" onclick="toggleGMMode()">GM Mode</button>
-    <button onclick="openGMImageModal()">GM Gallery</button>
-    <button onclick="cleardisplay()">Clear S&T</button>
-    <button onclick="clearchat()">Clear Chat</button>
+    <button id="gm-mode-toggle" type="button" onclick="toggleGMMode()">GM Mode</button>
+    <button type="button" onclick="openGMImageModal()">GM Gallery</button>
+    <button type="button" onclick="cleardisplay()">Clear S&amp;T</button>
+    <button type="button" onclick="clearchat()">Clear Chat</button>
   </div>
 
-  <!-- GM Image Gallery Modal -->
+  <!-- ======================================================
+       GM IMAGE GALLERY MODAL
+       ====================================================== -->
   <div id="gm-image-gallery-modal" class="modal"
        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
               background-color:rgba(0,0,0,0.8); z-index:3000; justify-content:center; align-items:center;">
@@ -504,50 +532,57 @@
       <span onclick="closeGMImageModal()" style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:20px; color:white;">❌</span>
       <h2 style="color:white;">gallery</h2>
 
-      <label>
+      <label style="color:white;">
         Folder:
-        <input type="text" id="gm-folder-input" placeholder="e.g., Maps or NPCs">
+        <input type="text" id="gm-folder-input" placeholder="e.g., Maps or NPCs" />
       </label>
 
-      <input type="file" id="gm-image-upload" accept="image/*">
+      <input type="file" id="gm-image-upload" accept="image/*" />
       <span id="gm-upload-filename" style="color:white; margin-left:10px;"></span>
-      <button onclick="uploadGMImage()">Upload</button>
+
+      <button type="button" onclick="uploadGMImage()">Upload</button>
 
       <div id="upload-status" style="margin-top:5px; color:lightgreen;"></div>
       <div id="image-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
     </div>
   </div>
 
-  <!-- Load Character Modal -->
+  <!-- ======================================================
+       LOAD CHARACTER MODAL
+       ====================================================== -->
   <div id="loadCharacterModal"
        style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
               background:#222; padding:20px; border:2px solid #555; color:white; z-index:999;">
     <h3>Select a Character</h3>
     <select id="characterSelect" style="margin-bottom:10px; width:100%; padding:5px;"></select>
-    <br>
-    <button onclick="confirmCharacterLoad()">Load</button>
-    <button onclick="promptAndCreateCharacter()">➕ Create New Character</button>
-    <button onclick="document.getElementById('loadCharacterModal').style.display='none'">Cancel</button>
+    <br />
+    <button type="button" onclick="confirmCharacterLoad()">Load</button>
+    <button type="button" onclick="promptAndCreateCharacter()">➕ Create New Character</button>
+    <button type="button" onclick="document.getElementById('loadCharacterModal').style.display='none'">Cancel</button>
   </div>
 
-  <!-- Username Modal -->
+  <!-- ======================================================
+       USERNAME MODAL
+       ====================================================== -->
   <div id="username-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <h3>Create your username</h3>
       <input type="text" id="usernameInput" placeholder="Choose a username" maxlength="20" />
-      <button id="saveUsernameBtn">Save Username</button>
+      <button id="saveUsernameBtn" type="button">Save Username</button>
       <p id="username-status" style="color: lightgreen; display:none;">✅ Username saved!</p>
-      <button id="nextButton" style="display:none;">Next</button>
+      <button id="nextButton" type="button" style="display:none;">Next</button>
     </div>
   </div>
 
-  <!-- Firebase SDKs FIRST -->
+  <!-- ======================================================
+       Firebase SDKs
+       ====================================================== -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
 
-  <!-- THEN initialize Firebase -->
+  <!-- Firebase init -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCvjcNDhsFrbsc-U3Osp1Xqb-e9MyGfgEI",
@@ -560,12 +595,38 @@
     };
 
     firebase.initializeApp(firebaseConfig);
+
+    // ✅ Standard compat handles bucket from config
     const auth = firebase.auth();
     const db = firebase.firestore();
-    const storage = firebase.app().storage("gs://roll-4-rocket-boots");
+    const storage = firebase.storage();
+
+    // Small helpers used by your "Cancel" button etc.
+    function show(id, display = "block") {
+      const el = document.getElementById(id);
+      if (el) el.style.display = display;
+    }
+    function hide(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    }
+
+    // ✅ "Safe" wrappers so missing functions don't hard-crash clicks
+    function callIfExists(fnName, ...args) {
+      const fn = window[fnName];
+      if (typeof fn === "function") return fn(...args);
+      console.warn(`[UI] Missing function: ${fnName}`);
+    }
+
+    function toggleRulesSafe() { callIfExists("toggleRules"); }
+    function toggleGMToolsSafe() { callIfExists("toggleGMTools") || callIfExists("openGMTools"); }
+    function returnToSessionsSafe() { callIfExists("returnToSessions"); }
+    function setThemeSafe(theme) { callIfExists("setTheme", theme); }
+    function toggleCharacterPanelSafe() { callIfExists("toggleCharacterPanel"); }
+    function toggleShowAndTellSafe() { callIfExists("toggleShowAndTell"); }
   </script>
 
-  <!-- ✅ NOW load your logic files AFTER Firebase is ready -->
+  <!-- App logic -->
   <script src="login.js"></script>
   <script src="script.js"></script>
 </body>

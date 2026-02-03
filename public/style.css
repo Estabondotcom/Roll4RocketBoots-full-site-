@@ -520,8 +520,8 @@ label, h2 {
 }
 
 .portrait-img{
-  width:64px;
-  height:64px;
+  width:96px;
+  height:96px;
   border-radius:12px;
   object-fit:cover;
   background:#222;

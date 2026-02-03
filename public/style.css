@@ -505,3 +505,46 @@ label, h2 {
   background: #111;
   color: #fff;
 }
+
+.name-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.portrait-wrap{
+  position:relative;
+  width:64px;
+  height:64px;
+  flex:0 0 64px;
+}
+
+.portrait-img{
+  width:64px;
+  height:64px;
+  border-radius:12px;
+  object-fit:cover;
+  background:#222;
+  border:2px solid #555;
+  display:block;
+}
+
+.portrait-upload-btn{
+  position:absolute;
+  bottom:-8px;
+  right:-8px;
+  width:28px;
+  height:28px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#333;
+  border:1px solid #666;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.portrait-upload-btn input{
+  display:none;
+}

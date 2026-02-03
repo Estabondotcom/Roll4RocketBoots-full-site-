@@ -6,19 +6,17 @@
 
 * { box-sizing: border-box; }
 
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
   background: url('background/br1.png') repeat;
   font-family: 'Bungee', cursive;
   color: #222;
   margin: 0;
-  padding: 0; /* ✅ important: don't fight 100vh layouts */
+  padding: 0;
 }
 
-/* The main app split (sheet + chat) */
+/* Main app split (sheet + chat) */
 #app-content {
   display: flex;
   flex-direction: row;
@@ -26,38 +24,42 @@ body {
   overflow: hidden;
 }
 
-/* ✅ Sheet takes 75% and can scroll */
+/* ✅ Sheet is hard 75% */
 #main-container {
-  flex: 1 1 75%;
+  flex: 0 0 75%;
+  width: 75%;
   max-width: 75%;
   background-color: rgba(144, 238, 144, 0.7);
   padding: 10px;
   padding-top: 60px;
   border-radius: 12px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
-/* ✅ Show panel is ALSO a flex child (same lane as sheet) */
+/* ✅ Show panel is also a 75% lane */
 #show-panel {
-  display: none;        /* shown via JS */
-  flex: 1 1 75%;
+  display: none; /* shown via JS */
+  flex: 0 0 75%;
+  width: 75%;
   max-width: 75%;
   height: 100vh;
-  background-color: #111;
+  background: #111;
   padding: 20px;
   padding-top: 40px;
   overflow: hidden;
 }
 
-/* Chat is 25% */
+/* ✅ Chat is hard 25% */
 #chat-panel {
   flex: 0 0 25%;
+  width: 25%;
   max-width: 25%;
   display: none;
   flex-direction: column;
   height: 100vh;
   background-color: #222;
-  color: white;
+  color: #fff;
   border-left: 2px solid #555;
   overflow: hidden;
 }
@@ -71,6 +73,12 @@ body {
 /* Character + Show panels should not overlap by CSS */
 #character-panel { display: block; }
 
+/* =========================
+   Title
+   ========================= */
+
+.title-wrapper { text-align: center; }
+
 h1 {
   text-align: center;
   display: inline-block;
@@ -83,8 +91,6 @@ h1 {
   text-shadow: 2px 2px 0 #000;
   margin: 0 0 20px 0;
 }
-
-.title-wrapper { text-align: center; }
 
 /* =========================
    Buttons / Inputs
@@ -138,19 +144,6 @@ textarea {
   height: 100px;
 }
 
-/* NAME input big */
-#player-name {
-  font-family: monospace;
-  font-size: 30px;
-  font-weight: bold;
-  padding: 8px;
-  height: 48px;
-  border: 2px solid #000;
-  background-color: #fff6d1;
-  width: 300px;
-  box-shadow: inset 2px 2px #888;
-}
-
 /* =========================
    Labels / Section styling
    ========================= */
@@ -174,6 +167,79 @@ label, h2 {
 
 .section-title { font-size: 1.95em; }
 .skills-title { font-size: 2.535em; }
+
+/* =========================
+   NAME ROW + PORTRAIT (fixed, larger)
+   ========================= */
+
+.name-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* 50% bigger portrait (96px) */
+.portrait-wrap{
+  position:relative;
+  width:96px;
+  height:96px;
+  flex:0 0 96px;
+}
+
+.portrait-img{
+  width:100%;
+  height:100%;
+  border-radius:12px;
+  object-fit:cover;
+  background:#222;
+  border:2px solid #555;
+  display:block;
+}
+
+/* Camera badge pinned to portrait corner */
+.portrait-upload-btn{
+  position:absolute;
+  bottom:-10px;
+  right:-10px;
+  width:30px;
+  height:30px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#00e5ff;
+  border:3px solid #000;
+  box-shadow: 2px 2px #000;
+  cursor:pointer;
+  font-size:14px;
+  color:#000;
+}
+
+.portrait-upload-btn:hover{
+  background:#ff00ff;
+  color:#fff;
+}
+
+.portrait-upload-btn input{
+  display:none;
+}
+
+/* Name input: flexible, no overlap */
+#player-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: 520px;
+
+  font-family: monospace;
+  font-size: 30px;
+  font-weight: bold;
+  padding: 8px;
+  height: 48px;
+  border: 2px solid #000;
+  background-color: #fff6d1;
+  box-shadow: inset 2px 2px #888;
+}
 
 /* =========================
    Skills / Items / Conditions
@@ -218,7 +284,7 @@ label, h2 {
 .delete-button {
   margin-top: 4px;
   background-color: #ff0000;
-  color: white;
+  color: #fff;
   font-size: 14px;
   border: 3px solid #000;
   padding: 4px 8px;
@@ -279,7 +345,7 @@ label, h2 {
 
 .wounds button.active {
   background-color: darkred;
-  color: white;
+  color: #fff;
 }
 
 /* =========================
@@ -330,6 +396,7 @@ label, h2 {
   font-weight: bold;
   cursor: pointer;
 }
+
 .rules-body{
   width: 100%;
   max-height: 75vh;
@@ -364,6 +431,7 @@ label, h2 {
   padding: 6px 8px;
   text-align: left;
 }
+
 /* =========================
    GM tools button
    ========================= */
@@ -375,7 +443,7 @@ label, h2 {
   background-color: #00e5ff;
   border: 2px solid #000;
   box-shadow: 2px 2px #000;
-  color: black;
+  color: #000;
   cursor: pointer;
 }
 
@@ -397,7 +465,7 @@ label, h2 {
   flex-direction: column;
   height: 100%;
   gap: 10px;
-  min-height: 0; /* ✅ critical */
+  min-height: 0;
 }
 
 /* Tabs */
@@ -418,7 +486,7 @@ label, h2 {
 
 .tab-button {
   background: #444;
-  color: white;
+  color: #fff;
   border: 2px solid #000;
   padding: 8px 12px;
   border-radius: 6px;
@@ -475,24 +543,22 @@ label, h2 {
   -webkit-user-drag: none;
 }
 
-/* ✅ CANVAS: default to NOT stealing pointer events (so pan works)
-   Your JS should enable drawing by adding class "draw-active" to #image-display-area */
+/* ✅ Canvas: default doesn't steal pointer events (pan works).
+   JS enables drawing by toggling .draw-active on #image-display-area */
 #draw-canvas {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 5;
-  pointer-events: none;     /* ✅ default = panning works */
+  pointer-events: none;
   touch-action: none;
 }
 
-/* When drawing mode is on, allow canvas to capture input */
 #image-display-area.draw-active #draw-canvas {
   pointer-events: auto;
   cursor: crosshair;
 }
 
-/* Optional: while drawing, show “pen” cursor */
 #image-display-area.draw-active {
   cursor: crosshair;
 }
@@ -506,45 +572,3 @@ label, h2 {
   color: #fff;
 }
 
-.name-row{
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-
-.portrait-wrap{
-  position:relative;
-  width:64px;
-  height:64px;
-  flex:0 0 64px;
-}
-
-.portrait-img{
-  width:96px;
-  height:96px;
-  border-radius:12px;
-  object-fit:cover;
-  background:#222;
-  border:2px solid #555;
-  display:block;
-}
-
-.portrait-upload-btn{
-  position:absolute;
-  bottom:-8px;
-  right:-8px;
-  width:28px;
-  height:28px;
-  border-radius:999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#333;
-  border:1px solid #666;
-  cursor:pointer;
-  font-size:14px;
-}
-
-.portrait-upload-btn input{
-  display:none;
-}

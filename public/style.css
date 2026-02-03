@@ -181,9 +181,9 @@ label, h2 {
 /* 50% bigger portrait (96px) */
 .portrait-wrap{
   position:relative;
-  width:96px;
-  height:96px;
-  flex:0 0 96px;
+  width:128px;
+  height:128px;
+  flex:0 0 128px;
 }
 
 .portrait-img{

@@ -368,16 +368,19 @@ function toggleShowAndTell() {
   if (main) main.style.display = "none";
   if (show) show.style.display = "block";
 
-  // ✅ Now that it's visible, fit the already-loaded image
   const img = document.getElementById("tab-image");
   if (img && img.src) {
     requestAnimationFrame(() => {
       fitImageToViewportIfNeeded(img.src);
       setupDrawingCanvasToImage();
       redrawAllLayers();
+
+      // ✅ IMPORTANT: now that canvas is real size, resubscribe so initial drawings apply
+      startDrawingsListener();
     });
   }
 }
+
 
 
 function toggleCharacterPanel() {

@@ -199,12 +199,14 @@ label, h2 {
   margin-bottom: 14px;
 }
 
-/* Make the NAME label shrink to its text (don’t stretch full width) */
+/* NAME label: shrink-wrap to text instead of stretching wide */
 .name-input-col .section-label{
-  width: auto;
   display: inline-block;
-  margin: 0;          /* optional: tighter like before */
+  width: fit-content;   /* or just remove width if it exists elsewhere */
+  margin: 0 0 6px 0;    /* optional: small gap above input */
+  padding: 4px 12px;    /* keep the nice label padding */
 }
+
 
 
 .portrait-wrap{

@@ -314,34 +314,32 @@
             />
           </div>
 
-          <!-- NAME block -->
-          <div class="name-block" style="margin-bottom:14px;">
-            <div class="name-label-row">
-              <div class="section-label">NAME</div>
-            </div>
+        <!-- NAME block (label sits above the input, not the portrait) -->
+<div class="name-row">
+  <div class="portrait-wrap">
+    <img
+      id="character-portrait"
+      class="portrait-img"
+      alt="Character portrait"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+    />
+    <label class="portrait-upload-btn" title="Upload portrait">
+      📷
+      <input id="portrait-upload" type="file" accept="image/*" />
+    </label>
+  </div>
 
-            <div class="name-row">
-              <div class="portrait-wrap">
-                <img
-                  id="character-portrait"
-                  class="portrait-img"
-                  alt="Character portrait"
-                  src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
-                />
-                <label class="portrait-upload-btn" title="Upload portrait">
-                  📷
-                  <input id="portrait-upload" type="file" accept="image/*" />
-                </label>
-              </div>
+  <div class="name-input-col">
+    <div class="section-label">NAME</div>
+    <input
+      id="player-name"
+      type="text"
+      autocomplete="off"
+      placeholder="Enter your name"
+    />
+  </div>
+</div>
 
-              <input
-                id="player-name"
-                type="text"
-                autocomplete="off"
-                placeholder="Enter your name"
-              />
-            </div>
-          </div>
 
           <!-- Counters -->
           <div id="counters-section">

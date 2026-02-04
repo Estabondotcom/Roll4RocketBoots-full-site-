@@ -256,6 +256,26 @@ function adjustExp(amount) {
   if (typeof window.silentAutoSaveCharacter === "function") window.silentAutoSaveCharacter();
 }
 
+// Spend 2 XP to gain +1 Luck
+function buyLuckWithExp() {
+  const expSpan = document.getElementById("exp-value");
+  const luckSpan = document.getElementById("luck-value");
+  if (!expSpan || !luckSpan) return;
+
+  const exp = parseInt(expSpan.textContent || "0", 10) || 0;
+  const luck = parseInt(luckSpan.textContent || "0", 10) || 0;
+
+  if (exp < 2) {
+    alert("You need 2 XP to buy 1 Luck.");
+    return;
+  }
+
+  expSpan.textContent = String(exp - 2);
+  luckSpan.textContent = String(luck + 1);
+
+  if (typeof window.silentAutoSaveCharacter === "function") window.silentAutoSaveCharacter();
+}
+
 function adjustLuck(amount) {
   const luckSpan = document.getElementById("luck-value");
   if (!luckSpan) return;

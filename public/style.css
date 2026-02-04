@@ -206,10 +206,10 @@ label, h2 {
 
 /* Row contains portrait + input */
 .name-row{
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:14px;
 }
 
 /* Portrait: bigger (128px) and stable */
@@ -283,7 +283,13 @@ label, h2 {
   background-color: #fff6d1;
   box-shadow: inset 2px 2px #888;
 }
-
+.name-input-col{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 /* =========================================================
    SKILLS / ITEMS / CONDITIONS
    ========================================================= */

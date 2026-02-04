@@ -1192,19 +1192,16 @@ function toggleGMMode() {
   const characterPanel = document.getElementById("character-panel");
   const gmPanel = document.getElementById("gm-mode-panel");
   const gmButton = document.getElementById("gm-mode-toggle");
-  const maincontainer = document.getElementById("main-container");
 
   if (gmModeActive) {
-    if (maincontainer) maincontainer.style.display = "none";
     if (characterPanel) characterPanel.style.display = "none";
     if (gmPanel) gmPanel.style.display = "block";
     if (gmButton) gmButton.textContent = "Exit GM Mode";
     loadAllGMCharacterPanels();
   } else {
-    if (characterPanel) characterPanel.style.display = "block";
     if (gmPanel) gmPanel.style.display = "none";
+    if (characterPanel) characterPanel.style.display = "block";
     if (gmButton) gmButton.textContent = "GM Mode";
-    if (maincontainer) maincontainer.style.display = "block";
   }
 }
 

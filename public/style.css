@@ -191,28 +191,14 @@ label, h2 {
    [NAME label]
    [portrait][name input]
 */
-.name-block{
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: 10px;
-  margin-bottom: 12px;
-}
-
-.name-label-row{
-  width: 100%;
-}
-
-/* Row contains portrait + input */
 .name-row{
   display:flex;
   align-items:center;
   gap:12px;
-  margin-bottom:14px;
+  margin-top: 10px;
+  margin-bottom: 14px;
 }
 
-/* Portrait: bigger (128px) and stable */
 .portrait-wrap{
   position: relative;
   width: 128px;
@@ -231,8 +217,16 @@ label, h2 {
   box-shadow: 3px 3px #000;
 }
 
-/* Upload button pinned to portrait corner.
-   IMPORTANT: remove inherited label padding */
+/* Right column = NAME label above input */
+.name-input-col{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Upload badge pinned to portrait corner */
 .portrait-upload-btn{
   position: absolute;
   right: -12px;
@@ -245,10 +239,10 @@ label, h2 {
   align-items: center;
   justify-content: center;
 
-  padding: 0;                 /* stop label padding inheritance */
+  padding: 0;
   border-radius: 999px;
 
-  background: #00e5ff;
+  background: #00e5ff !important;
   color: #000;
 
   border: 3px solid #000;
@@ -260,18 +254,16 @@ label, h2 {
 }
 
 .portrait-upload-btn:hover{
-  background: #ff00ff;
+  background: #ff00ff !important;
   color: #fff;
 }
 
 .portrait-upload-btn input{ display: none; }
 
-/* Name input should expand/shrink without overlap */
 #player-name{
-  flex: 1 1 auto;
-  min-width: 0;     /* allows it to shrink in flex row */
-  width: auto;
+  width: 100%;
   max-width: 560px;
+  min-width: 0;
 
   font-family: monospace;
   font-size: 30px;
@@ -282,13 +274,6 @@ label, h2 {
   border: 2px solid #000;
   background-color: #fff6d1;
   box-shadow: inset 2px 2px #888;
-}
-.name-input-col{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  flex: 1 1 auto;
-  min-width: 0;
 }
 /* =========================================================
    SKILLS / ITEMS / CONDITIONS

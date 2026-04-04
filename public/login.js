@@ -29,6 +29,17 @@ function hide(elId) {
   if (el) el.style.display = "none";
 }
 
+function updateSessionWelcome() {
+  const welcomeEl = document.getElementById("session-welcome");
+  if (!welcomeEl) return;
+
+  const username =
+    window.currentUsername ||
+    auth.currentUser?.email ||
+    "Player";
+
+  welcomeEl.textContent = `Welcome, ${username}`;
+}
 // =====================
 // Auth
 // =====================
@@ -92,6 +103,7 @@ auth.onAuthStateChanged(async (user) => {
 
     if (hasUsername) {
       window.currentUsername = userDoc.data()?.username || user.email || "Unknown";
+      updateSessionWelcome();
       hide("username-modal");
       loadSessionsForUser(user.uid);
     } else {
@@ -144,7 +156,8 @@ async function submitUsername() {
     }, { merge: true });
 
     window.currentUsername = username;
-
+    updateSessionWelcome();
+    
     hide("username-modal");
     hide("login-screen");
 

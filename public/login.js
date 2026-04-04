@@ -8,6 +8,9 @@ let currentSessionId = null;
 let latestDisplayImage = null;
 let isSavingUsername = false;
 
+let selectedInvitees = [];
+let inviteSearchDebounce = null;
+
 // --- Helpers ---
 function getSessionId() {
   return (localStorage.getItem("currentSessionId") || "").trim();
@@ -40,6 +43,7 @@ function updateSessionWelcome() {
 
   welcomeEl.textContent = `Welcome, ${username}`;
 }
+
 // =====================
 // Auth
 // =====================
@@ -82,6 +86,7 @@ function logout() {
   selectedSessionId = null;
   currentSessionId = null;
   window.currentUsername = null;
+  selectedInvitees = [];
 }
 
 auth.onAuthStateChanged(async (user) => {
@@ -157,7 +162,7 @@ async function submitUsername() {
 
     window.currentUsername = username;
     updateSessionWelcome();
-    
+
     hide("username-modal");
     hide("login-screen");
 
@@ -185,6 +190,219 @@ async function getUserByUsername(usernameInput) {
     uid: doc.id,
     ...doc.data()
   };
+}
+
+// =====================
+// Invite Search
+// =====================
+
+function resetCreateSessionUI() {
+  selectedInvitees = [];
+
+  const nameInput = document.getElementById("newSessionName");
+  const searchInput = document.getElementById("invite-search");
+  const results = document.getElementById("invite-search-results");
+  const selected = document.getElementById("selected-invitees");
+  const err = document.getElementById("createSessionError");
+
+  if (nameInput) nameInput.value = "";
+  if (searchInput) searchInput.value = "";
+  if (results) {
+    results.innerHTML = "";
+    results.style.display = "none";
+  }
+  if (selected) selected.innerHTML = "";
+  if (err) err.textContent = "";
+}
+
+function renderSelectedInvitees() {
+  const container = document.getElementById("selected-invitees");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  selectedInvitees.forEach((user) => {
+    const chip = document.createElement("div");
+    chip.style.display = "flex";
+    chip.style.alignItems = "center";
+    chip.style.gap = "8px";
+    chip.style.padding = "6px 10px";
+    chip.style.background = "#00d9ff";
+    chip.style.color = "#000";
+    chip.style.border = "2px solid #000";
+    chip.style.boxShadow = "3px 3px #000";
+
+    const label = document.createElement("span");
+    label.textContent = `${user.username || "Unknown"}${user.email ? ` (${user.email})` : ""}`;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.textContent = "✕";
+    removeBtn.style.padding = "2px 6px";
+    removeBtn.onclick = () => {
+      selectedInvitees = selectedInvitees.filter(u => u.uid !== user.uid);
+      renderSelectedInvitees();
+    };
+
+    chip.appendChild(label);
+    chip.appendChild(removeBtn);
+    container.appendChild(chip);
+  });
+}
+
+function renderInviteSearchResults(users) {
+  const results = document.getElementById("invite-search-results");
+  if (!results) return;
+
+  results.innerHTML = "";
+
+  if (!users.length) {
+    results.style.display = "none";
+    return;
+  }
+
+  users.forEach((user) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.style.display = "block";
+    row.style.width = "100%";
+    row.style.textAlign = "left";
+    row.style.padding = "10px";
+    row.style.background = "#222";
+    row.style.color = "white";
+    row.style.border = "none";
+    row.style.borderBottom = "1px solid #555";
+    row.style.cursor = "pointer";
+
+    row.textContent = `${user.username || "Unknown"}${user.email ? ` (${user.email})` : ""}`;
+
+    row.onclick = () => {
+      const alreadyAdded = selectedInvitees.some(u => u.uid === user.uid);
+      if (alreadyAdded) return;
+
+      selectedInvitees.push({
+        uid: user.uid,
+        username: user.username || "",
+        email: user.email || ""
+      });
+
+      renderSelectedInvitees();
+
+      const searchInput = document.getElementById("invite-search");
+      if (searchInput) searchInput.value = "";
+
+      results.innerHTML = "";
+      results.style.display = "none";
+    };
+
+    results.appendChild(row);
+  });
+
+  results.style.display = "block";
+}
+
+async function searchUsersForInvite(term) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return [];
+
+  const q = term.trim().toLowerCase();
+  if (!q) return [];
+
+  const snapshot = await db.collection("users").get();
+
+  const matches = [];
+
+  snapshot.forEach((doc) => {
+    const data = doc.data() || {};
+    const username = (data.username || "").toLowerCase();
+    const normalizedUsername = (data.normalizedUsername || "").toLowerCase();
+    const email = (data.email || "").toLowerCase();
+
+    if (doc.id === currentUser.uid) return;
+    if (selectedInvitees.some(u => u.uid === doc.id)) return;
+
+    const matchesSearch =
+      username.includes(q) ||
+      normalizedUsername.includes(q) ||
+      email.includes(q);
+
+    if (!matchesSearch) return;
+
+    matches.push({
+      uid: doc.id,
+      username: data.username || "",
+      email: data.email || ""
+    });
+  });
+
+  matches.sort((a, b) => {
+    const aName = (a.username || a.email || "").toLowerCase();
+    const bName = (b.username || b.email || "").toLowerCase();
+    return aName.localeCompare(bName);
+  });
+
+  return matches.slice(0, 10);
+}
+
+function setupInviteSearch() {
+  const input = document.getElementById("invite-search");
+  const results = document.getElementById("invite-search-results");
+
+  if (!input || !results) return;
+
+  input.addEventListener("input", () => {
+    clearTimeout(inviteSearchDebounce);
+
+    inviteSearchDebounce = setTimeout(async () => {
+      const term = input.value.trim();
+
+      if (!term) {
+        results.innerHTML = "";
+        results.style.display = "none";
+        return;
+      }
+
+      try {
+        const matches = await searchUsersForInvite(term);
+        renderInviteSearchResults(matches);
+      } catch (err) {
+        console.error("Invite search failed:", err);
+      }
+    }, 150);
+  });
+
+  input.addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+
+    const term = input.value.trim();
+    if (!term) return;
+
+    try {
+      const matches = await searchUsersForInvite(term);
+      if (matches.length === 1) {
+        const user = matches[0];
+        if (!selectedInvitees.some(u => u.uid === user.uid)) {
+          selectedInvitees.push(user);
+          renderSelectedInvitees();
+        }
+        input.value = "";
+        results.innerHTML = "";
+        results.style.display = "none";
+      }
+    } catch (err) {
+      console.error("Invite enter-search failed:", err);
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    const wrap = document.getElementById("invite-search-results");
+    const field = document.getElementById("invite-search");
+    if (!wrap || !field) return;
+
+    if (e.target === field || wrap.contains(e.target)) return;
+    wrap.style.display = "none";
+  });
 }
 
 // =====================
@@ -330,6 +548,7 @@ function selectSession(sessionId) {
 function showCreateSessionScreen() {
   hide("session-screen");
   show("create-session-screen", "flex");
+  resetCreateSessionUI();
 }
 
 async function createSession() {
@@ -337,15 +556,6 @@ async function createSession() {
   if (!currentUser) return alert("You must be logged in to create a session!");
 
   const sessionName = document.getElementById("newSessionName")?.value?.trim() || "";
-  const invitedEmails = (document.getElementById("inviteEmails")?.value || "")
-    .split(",")
-    .map(e => e.trim())
-    .filter(Boolean);
-
-  const invitedUsernames = (document.getElementById("inviteUsernames")?.value || "")
-    .split(",")
-    .map(u => u.trim())
-    .filter(Boolean);
 
   if (!sessionName) {
     const err = document.getElementById("createSessionError");
@@ -353,38 +563,23 @@ async function createSession() {
     return;
   }
 
-  const invitedUids = [];
-  const missingUsernames = [];
-
-  for (const username of invitedUsernames) {
-    const foundUser = await getUserByUsername(username);
-
-    if (!foundUser) {
-      missingUsernames.push(username);
-      continue;
-    }
-
-    if (foundUser.uid === currentUser.uid) continue;
-    if (invitedUids.includes(foundUser.uid)) continue;
-
-    invitedUids.push(foundUser.uid);
-  }
-
-  if (missingUsernames.length) {
-    alert("These usernames were not found: " + missingUsernames.join(", "));
-  }
+  const invitedUids = selectedInvitees.map(u => u.uid);
+  const invitedEmails = selectedInvitees
+    .map(u => u.email)
+    .filter(Boolean);
 
   const sessionId = db.collection("sessions").doc().id;
 
   db.collection("sessions").doc(sessionId).set({
     sessionName,
     creatorUid: currentUser.uid,
+    invitedUids,
     invitedUserEmails: invitedEmails,
-    invitedUids: invitedUids,
     roles: { [currentUser.uid]: "gm" }
   }).then(() => {
     alert("Session created!");
     hide("create-session-screen");
+    resetCreateSessionUI();
     loadSessionsForUser(currentUser.uid);
   }).catch(err => {
     console.error("Failed to create session:", err);
@@ -855,6 +1050,8 @@ function listenForDisplayImageUpdates() {
 document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("saveUsernameBtn");
   if (saveBtn) saveBtn.addEventListener("click", submitUsername);
+
+  setupInviteSearch();
 
   const chatInput = document.getElementById("chatInput");
   if (chatInput) {

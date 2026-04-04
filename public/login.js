@@ -115,7 +115,11 @@ function submitUsername() {
     .where("normalizedUsername", "==", normalized)
     .get()
     .then((querySnapshot) => {
-      if (!querySnapshot.empty) {
+      const takenByAnotherUser =
+        !querySnapshot.empty &&
+        querySnapshot.docs.some(doc => doc.id !== user.uid);
+
+      if (takenByAnotherUser) {
         alert("❌ Username is already taken (case-insensitive). Try another.");
         return null;
       }
@@ -130,20 +134,8 @@ function submitUsername() {
     .then((res) => {
       if (!res) return;
 
-      const status = document.getElementById("username-status");
-      if (status) {
-        status.textContent = "✅ Username saved!";
-        status.style.display = "block";
-      }
-
-      const saveBtn = document.getElementById("saveUsernameBtn");
-      if (saveBtn) saveBtn.style.display = "none";
-
-      const input = document.getElementById("usernameInput");
-      if (input) input.disabled = true;
-
-      const nextBtn = document.getElementById("nextButton");
-      if (nextBtn) nextBtn.style.display = "inline-block";
+      hide("username-modal");
+      loadSessionsForUser(user.uid);
     })
     .catch((error) => {
       console.error("Error checking/saving username:", error);

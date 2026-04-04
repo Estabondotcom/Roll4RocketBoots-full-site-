@@ -262,7 +262,7 @@ function renderInviteSearchResults(users) {
   }
 
   users.forEach((user) => {
-    const row = document.createElement("button");
+   const row = document.createElement("button");
     row.type = "button";
     row.style.display = "block";
     row.style.width = "100%";
@@ -273,6 +273,16 @@ function renderInviteSearchResults(users) {
     row.style.border = "none";
     row.style.borderBottom = "1px solid #555";
     row.style.cursor = "pointer";
+    row.style.transform = "none";
+    row.style.transition = "background-color 0.12s ease";
+
+    row.onmouseenter = () => {
+    row.style.background = "#333";
+  };
+
+  row.onmouseleave = () => {
+    row.style.background = "#222";
+  };
 
     row.textContent = `${user.username || "Unknown"}${user.email ? ` (${user.email})` : ""}`;
 

@@ -313,14 +313,19 @@ function showCreateSessionScreen() {
   show("create-session-screen", "flex");
 }
 
-function createSession() {
-  const user = auth.currentUser;
-  if (!user) return alert("You must be logged in to create a session!");
+async function createSession() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return alert("You must be logged in to create a session!");
 
   const sessionName = document.getElementById("newSessionName")?.value?.trim() || "";
   const invitedEmails = (document.getElementById("inviteEmails")?.value || "")
     .split(",")
     .map(e => e.trim())
+    .filter(Boolean);
+
+  const invitedUsernames = (document.getElementById("inviteUsernames")?.value || "")
+    .split(",")
+    .map(u => u.trim())
     .filter(Boolean);
 
   if (!sessionName) {
@@ -329,17 +334,34 @@ function createSession() {
     return;
   }
 
+  const invitedUids = [];
+
+  for (const username of invitedUsernames) {
+    const foundUser = await getUserByUsername(username);
+
+    if (!foundUser) {
+      console.warn("User not found:", username);
+      continue;
+    }
+
+    if (foundUser.uid === currentUser.uid) continue;
+    if (invitedUids.includes(foundUser.uid)) continue;
+
+    invitedUids.push(foundUser.uid);
+  }
+
   const sessionId = db.collection("sessions").doc().id;
 
   db.collection("sessions").doc(sessionId).set({
     sessionName,
-    creatorUid: user.uid,
+    creatorUid: currentUser.uid,
     invitedUserEmails: invitedEmails,
-    roles: { [user.uid]: "gm" }
+    invitedUids: invitedUids,
+    roles: { [currentUser.uid]: "gm" }
   }).then(() => {
     alert("Session created!");
     hide("create-session-screen");
-    loadSessionsForUser(user.uid);
+    loadSessionsForUser(currentUser.uid);
   }).catch(err => {
     console.error("Failed to create session:", err);
     const e = document.getElementById("createSessionError");

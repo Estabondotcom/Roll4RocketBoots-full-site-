@@ -1267,12 +1267,19 @@ function loadAllGMCharacterPanels() {
 
           const wounds = (data.wounds || []).map(active => active ? "❤️" : "🖤").join(" ");
           const skills = (data.skills || []).map(s => {
-            const name = typeof s === "string" ? s : s.name;
-            const dice = (typeof s === "object" && Array.isArray(s.levels))
-              ? s.levels.filter(Boolean).length + 1
-              : 2;
-            return `• ${name} (${dice}🎲)`;
-          }).join("<br>");
+          const name = typeof s === "string" ? s : s.name || "Unnamed Skill";
+
+           let level = 1;
+              let dice = 2;
+
+           if (typeof s === "object" && Array.isArray(s.levels)) {
+          const checkedIndex = s.levels.findIndex(Boolean);
+          level = checkedIndex >= 0 ? checkedIndex + 1 : 1;
+          dice = level + 1;
+  }
+
+           return `• ${name} (Lvl ${level} / ${dice}🎲)`;
+         }).join("<br>");
 
           const conditions = (data.conditions || []).map(c => `• ${c.name || c}`).join("<br>");
           const items = (data.items || []).map(i => `• ${i}`).join("<br>");

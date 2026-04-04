@@ -165,6 +165,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+async function getUserByUsername(usernameInput) {
+  const normalized = usernameInput.trim().toLowerCase();
+
+  const snapshot = await db.collection("users")
+    .where("normalizedUsername", "==", normalized)
+    .get();
+
+  if (snapshot.empty) return null;
+
+  const doc = snapshot.docs[0];
+
+  return {
+    uid: doc.id,
+    ...doc.data()
+  };
+}
+
 // =====================
 // Sessions
 // =====================

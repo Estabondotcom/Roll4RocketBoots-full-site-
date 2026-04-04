@@ -36,18 +36,19 @@
   <!-- ======================================================
        SESSION SCREEN
        ====================================================== -->
-  <div id="session-screen"
-       style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-              background-color:#333; color:white; flex-direction:column;
-              justify-content:center; align-items:center; z-index:2000;">
-    <h2>Select a Game Session</h2>
-    <div id="session-list"></div>
+<div id="session-screen"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background-color:#333; color:white; flex-direction:column;
+            justify-content:center; align-items:center; z-index:2000;">
+  <div id="session-welcome" style="margin-bottom:12px; font-size:20px; color:white;"></div>
+  <h2>Select a Game Session</h2>
+  <div id="session-list"></div>
 
-    <button type="button" onclick="showCreateSessionScreen()">+ Create New Session</button>
-    <button type="button" onclick="logout()">🚪 Log Out</button>
+  <button type="button" onclick="showCreateSessionScreen()">+ Create New Session</button>
+  <button type="button" onclick="logout()">🚪 Log Out</button>
 
-    <div id="sessionError" style="color:red; margin-top:10px;"></div>
-  </div>
+  <div id="sessionError" style="color:red; margin-top:10px;"></div>
+</div>
 
   <!-- ======================================================
        CREATE SESSION SCREEN

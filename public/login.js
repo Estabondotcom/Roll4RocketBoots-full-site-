@@ -233,7 +233,7 @@ function renderSelectedInvitees() {
     chip.style.boxShadow = "3px 3px #000";
 
     const label = document.createElement("span");
-    label.textContent = `${user.username || "Unknown"}${user.email ? ` (${user.email})` : ""}`;
+    label.textContent = user.username || "Unknown";
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";

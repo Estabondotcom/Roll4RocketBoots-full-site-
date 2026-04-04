@@ -403,10 +403,21 @@ function toggleCharacterPanel() {
   const characterPanel = document.getElementById("character-panel");
   const main = document.getElementById("main-container");
   const show = document.getElementById("show-panel");
+  const gmPanel = document.getElementById("gm-mode-panel");
+  const gmButton = document.getElementById("gm-mode-toggle");
 
-  if (characterPanel) characterPanel.style.display = "block";
-  if (main) main.style.display = "block";
   if (show) show.style.display = "none";
+  if (main) main.style.display = "block";
+
+  // Leaving Show & Tell via the Character button should return to normal sheet view
+  gmModeActive = false;
+
+  if (gmPanel) gmPanel.style.display = "none";
+  if (characterPanel) characterPanel.style.display = "block";
+  if (gmButton) gmButton.textContent = "GM Mode";
+
+  gmPanelUnsubscribes.forEach(unsub => unsub());
+  gmPanelUnsubscribes = [];
 }
 
 // ✅ Pan/zoom event binding (works everywhere when drawing is OFF)

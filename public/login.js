@@ -1,11 +1,12 @@
 // =====================
-// login.js (CLEANED + FIXED)
+// login.js
 // =====================
 
 let selectedSessionId = null;
 let currentUserRole = null;
 let currentSessionId = null;
 let latestDisplayImage = null;
+let isSavingUsername = false;
 
 // --- Helpers ---
 function getSessionId() {
@@ -52,7 +53,7 @@ function signup() {
   const email = document.getElementById("authEmail")?.value || "";
   const password = document.getElementById("authPassword")?.value || "";
 
-  firebase.auth().createUserWithEmailAndPassword(email, password)
+  auth.createUserWithEmailAndPassword(email, password)
     .then(() => {
       showUsernameModal();
     })
@@ -69,27 +70,36 @@ function logout() {
   localStorage.removeItem("currentSessionId");
   selectedSessionId = null;
   currentSessionId = null;
+  window.currentUsername = null;
 }
 
-auth.onAuthStateChanged((user) => {
-  // Always reset screens
+auth.onAuthStateChanged(async (user) => {
   show("login-screen", user ? "none" : "flex");
   hide("session-screen");
   hide("create-session-screen");
   hide("app-content");
 
-  if (!user) return;
+  if (!user) {
+    hide("username-modal");
+    return;
+  }
 
-  // Check if user has username set
-  db.collection("users").doc(user.uid).get().then((doc) => {
-    if (doc.exists && doc.data()?.username) {
+  if (isSavingUsername) return;
+
+  try {
+    const userDoc = await db.collection("users").doc(user.uid).get();
+    const hasUsername = userDoc.exists && !!userDoc.data()?.username;
+
+    if (hasUsername) {
+      window.currentUsername = userDoc.data()?.username || user.email || "Unknown";
+      hide("username-modal");
       loadSessionsForUser(user.uid);
     } else {
       showUsernameModal();
     }
-  }).catch((err) => {
+  } catch (err) {
     console.error("Failed to check username:", err);
-  });
+  }
 });
 
 // =====================
@@ -100,9 +110,10 @@ function showUsernameModal() {
   show("username-modal", "flex");
 }
 
-function submitUsername() {
-  let username = document.getElementById("usernameInput")?.value?.trim() || "";
-  const user = firebase.auth().currentUser;
+async function submitUsername() {
+  const inputEl = document.getElementById("usernameInput");
+  const username = inputEl?.value?.trim() || "";
+  const user = auth.currentUser;
 
   if (!username || !user) {
     alert("Please enter a username.");
@@ -111,51 +122,40 @@ function submitUsername() {
 
   const normalized = username.toLowerCase();
 
-  db.collection("users")
-    .where("normalizedUsername", "==", normalized)
-    .get()
-    .then((querySnapshot) => {
-      const takenByAnotherUser =
-        !querySnapshot.empty &&
-        querySnapshot.docs.some(doc => doc.id !== user.uid);
+  try {
+    isSavingUsername = true;
 
-      if (takenByAnotherUser) {
-        alert("❌ Username is already taken (case-insensitive). Try another.");
-        return null;
-      }
+    const existing = await db.collection("users")
+      .where("normalizedUsername", "==", normalized)
+      .get();
 
-      return db.collection("users").doc(user.uid).set({
-        email: user.email,
-        username: username,
-        normalizedUsername: normalized,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    })
-    .then((res) => {
-      if (!res) return;
+    const takenByAnotherUser = existing.docs.some(doc => doc.id !== user.uid);
 
-      hide("username-modal");
-      loadSessionsForUser(user.uid);
-    })
-    .catch((error) => {
-      console.error("Error checking/saving username:", error);
-      alert("An error occurred. Please try again.");
-    });
-}
+    if (takenByAnotherUser) {
+      alert("❌ Username is already taken. Try another.");
+      return;
+    }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const saveBtn = document.getElementById("saveUsernameBtn");
-  if (saveBtn) saveBtn.addEventListener("click", submitUsername);
+    await db.collection("users").doc(user.uid).set({
+      email: user.email || "",
+      username: username,
+      normalizedUsername: normalized,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
 
-  const nextBtn = document.getElementById("nextButton");
-  if (nextBtn) {
-    nextBtn.addEventListener("click", () => {
-      hide("username-modal");
-      const user = auth.currentUser;
-      if (user) loadSessionsForUser(user.uid);
-    });
+    window.currentUsername = username;
+
+    hide("username-modal");
+    hide("login-screen");
+
+    await loadSessionsForUser(user.uid);
+  } catch (error) {
+    console.error("Error checking/saving username:", error);
+    alert("An error occurred while saving the username.");
+  } finally {
+    isSavingUsername = false;
   }
-});
+}
 
 async function getUserByUsername(usernameInput) {
   const normalized = usernameInput.trim().toLowerCase();
@@ -181,7 +181,7 @@ async function getUserByUsername(usernameInput) {
 function loadSessionsForUser(uid) {
   const userEmail = auth.currentUser?.email || "";
 
-  db.collection("sessions").get()
+  return db.collection("sessions").get()
     .then((querySnapshot) => {
       const sessionListDiv = document.getElementById("session-list");
       if (!sessionListDiv) return;
@@ -264,7 +264,6 @@ function selectSession(sessionId) {
       window.currentSessionId = sessionId;
       window.currentUserRole = currentUserRole;
 
-      // Load username for chat/UI fallback
       try {
         const userDoc = await db.collection("users").doc(currentUser.uid).get();
         window.currentUsername =
@@ -342,12 +341,13 @@ async function createSession() {
   }
 
   const invitedUids = [];
+  const missingUsernames = [];
 
   for (const username of invitedUsernames) {
     const foundUser = await getUserByUsername(username);
 
     if (!foundUser) {
-      console.warn("User not found:", username);
+      missingUsernames.push(username);
       continue;
     }
 
@@ -355,6 +355,10 @@ async function createSession() {
     if (invitedUids.includes(foundUser.uid)) continue;
 
     invitedUids.push(foundUser.uid);
+  }
+
+  if (missingUsernames.length) {
+    alert("These usernames were not found: " + missingUsernames.join(", "));
   }
 
   const sessionId = db.collection("sessions").doc().id;
@@ -409,23 +413,20 @@ function disableCharacterInputs(disabled = true) {
   const form = document.getElementById("char-form");
   if (!form) return;
 
-  // Disable all fields except player-name
   form.querySelectorAll("input, textarea, select").forEach(el => {
     if (el.id === "player-name") return;
     el.disabled = disabled;
   });
 
-  // Disable dynamic checkboxes + wound buttons
   form.querySelectorAll(".skill-level, .wounds button").forEach(el => {
     el.disabled = disabled;
   });
 
-  // Disable most buttons, BUT keep Save/Load always enabled so you can recover
   form.querySelectorAll("button").forEach(btn => {
     const onclick = (btn.getAttribute("onclick") || "");
     const isSave = onclick.includes("saveCharacterToFirestore");
     const isLoad = onclick.includes("loadCharacterFromFirestore");
-    const isClear = onclick.includes("clearData"); // up to you; leaving enabled is fine
+    const isClear = onclick.includes("clearData");
     if (isSave || isLoad || isClear) {
       btn.disabled = false;
     } else {
@@ -501,7 +502,6 @@ function saveCharacterToFirestore() {
       localStorage.setItem("char_for_session_" + sessionId, characterName);
       localStorage.setItem("autoSaveCharacterName", characterName);
 
-      // Enable inputs after first real save
       disableCharacterInputs(false);
 
       if (!localStorage.getItem("autoSaveInitialized")) {
@@ -633,7 +633,6 @@ function loadCharacterByName(name) {
         addCondition(typeof cond === "string" ? cond : cond.name);
       });
 
-      // Autosave state
       localStorage.setItem("autoSaveCharacterName", name);
       window._lastSavedCharacterName = name;
 
@@ -691,10 +690,8 @@ function confirmCharacterLoad() {
 
       alert(`Character '${selectedName}' loaded!`);
 
-      // ✅ THIS WAS YOUR BUG: inputs were never re-enabled on success
       disableCharacterInputs(false);
 
-      // Keep autosave aligned with your name-mismatch guard
       window._lastSavedCharacterName = selectedName;
       localStorage.setItem("autoSaveCharacterName", selectedName);
       localStorage.setItem("char_for_session_" + getSessionId(), selectedName);
@@ -819,14 +816,11 @@ function listenForDisplayImageUpdates() {
     const data = doc.data();
     const newImage = data?.currentDisplayImage || null;
 
-    // If GM cleared the image
     if (!newImage) {
       latestDisplayImage = null;
       localStorage.removeItem("gmDisplayImage");
       console.log("🧼 Display image cleared by GM");
-      // Let script.js handle clearing the display (it already does via pushToDisplayArea/cleardisplay)
       if (typeof pushToDisplayArea === "function") {
-        // Just clear visually without writing
         pushToDisplayArea("", false);
       }
       return;
@@ -845,12 +839,14 @@ function listenForDisplayImageUpdates() {
 // Chat + Paste Images
 // =====================
 
-// Wire up paste handler on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
-  const chatInput = document.getElementById("chatInput");
-  if (!chatInput) return;
+  const saveBtn = document.getElementById("saveUsernameBtn");
+  if (saveBtn) saveBtn.addEventListener("click", submitUsername);
 
-  chatInput.addEventListener("paste", handlePasteImage);
+  const chatInput = document.getElementById("chatInput");
+  if (chatInput) {
+    chatInput.addEventListener("paste", handlePasteImage);
+  }
 });
 
 function setupChatListener(sessionId) {
@@ -915,10 +911,10 @@ function sendChatMessage() {
 
   const user = auth.currentUser;
   const characterName =
-  document.getElementById("player-name")?.value ||
-  window.currentUsername ||
-  user.email ||
-  "Unknown";
+    document.getElementById("player-name")?.value ||
+    window.currentUsername ||
+    user.email ||
+    "Unknown";
 
   db.collection("users").doc(user.uid).get().then(userDoc => {
     const color = userDoc.data()?.displayNameColor || "#ffffff";
@@ -960,7 +956,6 @@ function handlePasteImage(event) {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (item.type.startsWith("image/")) {
-      // ✅ IMPORTANT: stop browser pasting the raw blob
       event.preventDefault();
 
       const file = item.getAsFile();
@@ -975,7 +970,11 @@ function handlePasteImage(event) {
           const user = auth.currentUser;
           if (!user || !selectedSessionId) return;
 
-          const characterName = document.getElementById("player-name")?.value || user.email || "Unknown";
+          const characterName =
+            document.getElementById("player-name")?.value ||
+            window.currentUsername ||
+            user.email ||
+            "Unknown";
 
           return db.collection("sessions")
             .doc(selectedSessionId)
@@ -992,7 +991,7 @@ function handlePasteImage(event) {
           alert("Failed to upload image.");
         });
 
-      return; // only handle first image
+      return;
     }
   }
 }
@@ -1012,7 +1011,11 @@ function rollD6(count) {
   if (!user || !selectedSessionId) return alert("You must be in a session and logged in.");
 
   const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
-  const characterName = document.getElementById("player-name")?.value || user.email || "Unknown";
+  const characterName =
+    document.getElementById("player-name")?.value ||
+    window.currentUsername ||
+    user.email ||
+    "Unknown";
 
   db.collection("users").doc(user.uid).get().then(doc => {
     const color = doc.data()?.displayNameColor || "#ffffff";

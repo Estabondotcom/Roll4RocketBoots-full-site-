@@ -187,8 +187,7 @@ async function getUserByUsername(usernameInput) {
 // =====================
 
 function loadSessionsForUser(uid) {
-  const userEmail = auth.currentUser?.email;
-  if (!userEmail) return;
+  const userEmail = auth.currentUser?.email || "";
 
   db.collection("sessions").get()
     .then((querySnapshot) => {
@@ -199,7 +198,10 @@ function loadSessionsForUser(uid) {
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        const invited = (data.invitedUserEmails || []).includes(userEmail);
+        const invitedByEmail = (data.invitedUserEmails || []).includes(userEmail);
+        const invitedByUid = (data.invitedUids || []).includes(uid);
+
+        const invited = invitedByEmail || invitedByUid;
         const isGM = data.creatorUid === uid;
 
         if (!isGM && !invited) return;
@@ -241,71 +243,84 @@ function loadSessionsForUser(uid) {
 function selectSession(sessionId) {
   setSessionId(sessionId);
 
-  // Hide session UI, show app UI
   hide("session-screen");
   show("app-content", "flex");
 
-  // Determine role + toggle GM tools button
-  db.collection("sessions").doc(sessionId).get().then((doc) => {
-    const data = doc.data();
-    const user = auth.currentUser;
-    if (!data || !user) return;
-
-    const gmBtn = document.getElementById("gm-tools-button");
-
-    if (user.uid === data.creatorUid) {
-      console.log("You are the GM for this session.");
-      currentUserRole = "gm";
-      if (gmBtn) gmBtn.style.display = "inline-block";
-    } else {
-      console.log("You are a player in this session.");
-      currentUserRole = "player";
-      if (gmBtn) gmBtn.style.display = "none";
-    }
-    
-    window.currentSessionId = sessionId;
-    window.currentUserRole = currentUserRole;
-    
-    // If script.js has drawing, initialize it now
-    if (typeof window.initDrawingSystem === "function") {
-      window.initDrawingSystem(sessionId, currentUserRole);
-    }
-    // Ensure base UI exists
-    if (document.getElementById("skills-container")?.children.length === 0) addSkill("Do anything");
-    if (document.getElementById("conditions-container")?.children.length === 0) addCondition();
-    if (document.getElementById("items-container")?.children.length === 0) addItem();
-
-    // Start listeners
-    setupChatListener(sessionId);
-    listenForDisplayImageUpdates();
-
-    // Character load flow
-    const previouslySaved = localStorage.getItem("char_for_session_" + sessionId);
-    if (previouslySaved) {
-      console.log("🔄 Auto-loading character:", previouslySaved);
-      loadCharacterByName(previouslySaved);
-      disableCharacterInputs(false);
-      localStorage.setItem("autoSaveCharacterName", previouslySaved);
-      window._lastSavedCharacterName = previouslySaved;
-    } else {
-      console.log("🆕 No saved character for session, prompting...");
-      disableCharacterInputs(true);
-      const pn = document.getElementById("player-name");
-      if (pn) pn.value = "";
-      loadCharacterFromFirestore(); // opens modal
-    }
-
-    // Load current display image once on join
-    if (data.currentDisplayImage) {
-      latestDisplayImage = data.currentDisplayImage;
-      if (typeof pushToDisplayArea === "function") {
-        pushToDisplayArea(data.currentDisplayImage, false);
+  db.collection("sessions").doc(sessionId).get()
+    .then(async (doc) => {
+      if (!doc.exists) {
+        alert("Session not found.");
+        return;
       }
-    }
-  }).catch((error) => {
-    console.error("Error loading session info:", error);
-    alert("Failed to load session info.");
-  });
+
+      const data = doc.data();
+      const currentUser = auth.currentUser;
+      if (!data || !currentUser) return;
+
+      const gmBtn = document.getElementById("gm-tools-button");
+
+      if (currentUser.uid === data.creatorUid) {
+        console.log("You are the GM for this session.");
+        currentUserRole = "gm";
+        if (gmBtn) gmBtn.style.display = "inline-block";
+      } else {
+        console.log("You are a player in this session.");
+        currentUserRole = "player";
+        if (gmBtn) gmBtn.style.display = "none";
+      }
+
+      window.currentSessionId = sessionId;
+      window.currentUserRole = currentUserRole;
+
+      // Load username for chat/UI fallback
+      try {
+        const userDoc = await db.collection("users").doc(currentUser.uid).get();
+        window.currentUsername =
+          userDoc.exists
+            ? (userDoc.data()?.username || currentUser.email || "Unknown")
+            : (currentUser.email || "Unknown");
+      } catch (err) {
+        console.warn("Failed to load username:", err);
+        window.currentUsername = currentUser.email || "Unknown";
+      }
+
+      if (typeof window.initDrawingSystem === "function") {
+        window.initDrawingSystem(sessionId, currentUserRole);
+      }
+
+      if (document.getElementById("skills-container")?.children.length === 0) addSkill("Do anything");
+      if (document.getElementById("conditions-container")?.children.length === 0) addCondition();
+      if (document.getElementById("items-container")?.children.length === 0) addItem();
+
+      setupChatListener(sessionId);
+      listenForDisplayImageUpdates();
+
+      const previouslySaved = localStorage.getItem("char_for_session_" + sessionId);
+      if (previouslySaved) {
+        console.log("🔄 Auto-loading character:", previouslySaved);
+        loadCharacterByName(previouslySaved);
+        disableCharacterInputs(false);
+        localStorage.setItem("autoSaveCharacterName", previouslySaved);
+        window._lastSavedCharacterName = previouslySaved;
+      } else {
+        console.log("🆕 No saved character for session, prompting...");
+        disableCharacterInputs(true);
+        const pn = document.getElementById("player-name");
+        if (pn) pn.value = "";
+        loadCharacterFromFirestore();
+      }
+
+      if (data.currentDisplayImage) {
+        latestDisplayImage = data.currentDisplayImage;
+        if (typeof pushToDisplayArea === "function") {
+          pushToDisplayArea(data.currentDisplayImage, false);
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("Error loading session info:", error);
+      alert("Failed to load session info.");
+    });
 }
 
 function showCreateSessionScreen() {
@@ -907,7 +922,11 @@ function sendChatMessage() {
   }
 
   const user = auth.currentUser;
-  const characterName = document.getElementById("player-name")?.value || user.email || "Unknown";
+  const characterName =
+  document.getElementById("player-name")?.value ||
+  window.currentUsername ||
+  user.email ||
+  "Unknown";
 
   db.collection("users").doc(user.uid).get().then(userDoc => {
     const color = userDoc.data()?.displayNameColor || "#ffffff";

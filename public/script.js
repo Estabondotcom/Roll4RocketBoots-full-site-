@@ -1233,6 +1233,9 @@ function toggleGMMode() {
     if (gmPanel) gmPanel.style.display = "none";
     if (characterPanel) characterPanel.style.display = "block";
     if (gmButton) gmButton.textContent = "GM Mode";
+
+    gmPanelUnsubscribes.forEach(unsub => unsub());
+    gmPanelUnsubscribes = [];
   }
 }
 

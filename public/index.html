@@ -54,23 +54,39 @@
   <!-- ======================================================
        CREATE SESSION SCREEN
        ====================================================== -->
-  <div id="create-session-screen"
-       style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-              background-color:#444; color:white; flex-direction:column;
-              justify-content:center; align-items:center; z-index:2000;">
-    <h2>Create a New Game Session</h2>
+<div id="create-session-screen"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background-color:#444; color:white; flex-direction:column;
+            justify-content:center; align-items:center; z-index:2000;">
+  <h2>Create a New Game Session</h2>
 
-    <input type="text" id="newSessionName" placeholder="Session Name" />
-    <textarea id="inviteEmails" placeholder="Invite emails (comma-separated)"></textarea>
-    <textarea id="inviteUsernames" placeholder="Invite usernames (comma-separated)"></textarea>
+  <input type="text" id="newSessionName" placeholder="Session Name" />
 
-    <button type="button" onclick="createSession()">Create Session</button>
-    <button type="button" onclick="hide('create-session-screen'); show('session-screen','flex');">Cancel</button>
+  <div style="width:min(700px, 90vw); margin-top:14px;">
+    <input
+      type="text"
+      id="invite-search"
+      placeholder="Search by username or email"
+      autocomplete="off"
+      style="width:100%; padding:10px;"
+    />
 
-    <div id="createSessionError" style="color:red; margin-top:10px;"></div>
+    <div
+      id="invite-search-results"
+      style="display:none; width:100%; max-height:220px; overflow-y:auto; background:#222; border:2px solid #555; margin-top:6px;">
+    </div>
+
+    <div
+      id="selected-invitees"
+      style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;">
+    </div>
   </div>
 
-  <div id="userStatus"></div>
+  <button type="button" onclick="createSession()" style="margin-top:18px;">Create Session</button>
+  <button type="button" onclick="hide('create-session-screen'); show('session-screen','flex');">Cancel</button>
+
+  <div id="createSessionError" style="color:red; margin-top:10px;"></div>
+</div>
 
   <!-- ======================================================
        APP CONTENT (75% sheet/show + 25% chat)

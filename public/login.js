@@ -10,6 +10,7 @@ let isSavingUsername = false;
 
 let selectedInvitees = [];
 let inviteSearchDebounce = null;
+let editingSessionId = null;
 
 // --- Helpers ---
 function getSessionId() {
@@ -42,6 +43,19 @@ function updateSessionWelcome() {
     "Player";
 
   welcomeEl.textContent = `Welcome, ${username}`;
+}
+
+function setSessionFormMode(isEdit = false) {
+  const titleEl = document.getElementById("session-form-title");
+  const submitEl = document.getElementById("session-form-submit");
+
+  if (titleEl) {
+    titleEl.textContent = isEdit ? "Edit Game Session" : "Create a New Game Session";
+  }
+
+  if (submitEl) {
+    submitEl.textContent = isEdit ? "Save Changes" : "Create Session";
+  }
 }
 
 // =====================
@@ -85,6 +99,7 @@ function logout() {
   localStorage.removeItem("currentSessionId");
   selectedSessionId = null;
   currentSessionId = null;
+  editingSessionId = null;
   window.currentUsername = null;
   selectedInvitees = [];
 }
@@ -193,10 +208,11 @@ async function getUserByUsername(usernameInput) {
 }
 
 // =====================
-// Invite Search
+// Invite Search / Session Form
 // =====================
 
 function resetCreateSessionUI() {
+  editingSessionId = null;
   selectedInvitees = [];
 
   const nameInput = document.getElementById("newSessionName");
@@ -213,6 +229,8 @@ function resetCreateSessionUI() {
   }
   if (selected) selected.innerHTML = "";
   if (err) err.textContent = "";
+
+  setSessionFormMode(false);
 }
 
 function renderSelectedInvitees() {
@@ -233,7 +251,7 @@ function renderSelectedInvitees() {
     chip.style.boxShadow = "3px 3px #000";
 
     const label = document.createElement("span");
-    label.textContent = user.username || "Unknown";
+    label.textContent = user.username || user.email || "Unknown";
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
@@ -262,7 +280,7 @@ function renderInviteSearchResults(users) {
   }
 
   users.forEach((user) => {
-   const row = document.createElement("button");
+    const row = document.createElement("button");
     row.type = "button";
     row.style.display = "block";
     row.style.width = "100%";
@@ -277,12 +295,12 @@ function renderInviteSearchResults(users) {
     row.style.transition = "background-color 0.12s ease";
 
     row.onmouseenter = () => {
-    row.style.background = "#333";
-  };
+      row.style.background = "#333";
+    };
 
-  row.onmouseleave = () => {
-    row.style.background = "#222";
-  };
+    row.onmouseleave = () => {
+      row.style.background = "#222";
+    };
 
     row.textContent = `${user.username || "Unknown"}${user.email ? ` (${user.email})` : ""}`;
 
@@ -319,7 +337,6 @@ async function searchUsersForInvite(term) {
   if (!q) return [];
 
   const snapshot = await db.collection("users").get();
-
   const matches = [];
 
   snapshot.forEach((doc) => {
@@ -415,12 +432,98 @@ function setupInviteSearch() {
   });
 }
 
+function showCreateSessionScreen() {
+  resetCreateSessionUI();
+  hide("session-screen");
+  show("create-session-screen", "flex");
+}
+
+async function showEditSessionScreen(sessionId) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    const doc = await db.collection("sessions").doc(sessionId).get();
+
+    if (!doc.exists) {
+      alert("Session not found.");
+      return;
+    }
+
+    const data = doc.data() || {};
+
+    if (data.creatorUid !== user.uid) {
+      alert("Only the session creator can edit this session.");
+      return;
+    }
+
+    editingSessionId = sessionId;
+
+    const nameInput = document.getElementById("newSessionName");
+    const searchInput = document.getElementById("invite-search");
+    const results = document.getElementById("invite-search-results");
+    const err = document.getElementById("createSessionError");
+
+    selectedInvitees = [];
+
+    const invitedUids = Array.isArray(data.invitedUids) ? data.invitedUids : [];
+
+    if (invitedUids.length) {
+      const userDocs = await Promise.all(
+        invitedUids.map(uid => db.collection("users").doc(uid).get().catch(() => null))
+      );
+
+      userDocs.forEach((userDoc, index) => {
+        const uid = invitedUids[index];
+        if (userDoc && userDoc.exists) {
+          const userData = userDoc.data() || {};
+          selectedInvitees.push({
+            uid,
+            username: userData.username || "",
+            email: userData.email || ""
+          });
+        }
+      });
+    }
+
+    // fallback for any old sessions that only have emails
+    const invitedEmails = Array.isArray(data.invitedUserEmails) ? data.invitedUserEmails : [];
+    invitedEmails.forEach((email) => {
+      const alreadyExists = selectedInvitees.some(u => u.email?.toLowerCase() === String(email).toLowerCase());
+      if (!alreadyExists) {
+        selectedInvitees.push({
+          uid: "",
+          username: "",
+          email: email || ""
+        });
+      }
+    });
+
+    if (nameInput) nameInput.value = data.sessionName || "";
+    if (searchInput) searchInput.value = "";
+    if (results) {
+      results.innerHTML = "";
+      results.style.display = "none";
+    }
+    if (err) err.textContent = "";
+
+    setSessionFormMode(true);
+    renderSelectedInvitees();
+
+    hide("session-screen");
+    show("create-session-screen", "flex");
+  } catch (err) {
+    console.error("Failed to load session for edit:", err);
+    alert("Failed to load session.");
+  }
+}
+
 // =====================
 // Sessions
 // =====================
 
 function loadSessionsForUser(uid) {
-  const userEmail = auth.currentUser?.email || "";
+  const userEmail = (auth.currentUser?.email || "").toLowerCase();
 
   return db.collection("sessions").get()
     .then((querySnapshot) => {
@@ -430,8 +533,11 @@ function loadSessionsForUser(uid) {
       sessionListDiv.innerHTML = "";
 
       querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const invitedByEmail = (data.invitedUserEmails || []).includes(userEmail);
+        const data = doc.data() || {};
+        const invitedByEmail = (data.invitedUserEmails || [])
+          .map(email => String(email).toLowerCase())
+          .includes(userEmail);
+
         const invitedByUid = (data.invitedUids || []).includes(uid);
 
         const invited = invitedByEmail || invitedByUid;
@@ -443,11 +549,17 @@ function loadSessionsForUser(uid) {
         row.style.marginBottom = "10px";
 
         const joinBtn = document.createElement("button");
-        joinBtn.textContent = data.sessionName;
+        joinBtn.textContent = data.sessionName || "Unnamed Session";
         joinBtn.onclick = () => selectSession(doc.id);
         row.appendChild(joinBtn);
 
         if (isGM) {
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "✏️ Edit";
+          editBtn.style.marginLeft = "10px";
+          editBtn.onclick = () => showEditSessionScreen(doc.id);
+          row.appendChild(editBtn);
+
           const deleteBtn = document.createElement("button");
           deleteBtn.textContent = "❌ Delete";
           deleteBtn.style.marginLeft = "10px";
@@ -555,47 +667,91 @@ function selectSession(sessionId) {
     });
 }
 
-function showCreateSessionScreen() {
-  hide("session-screen");
-  show("create-session-screen", "flex");
-  resetCreateSessionUI();
-}
-
 async function createSession() {
   const currentUser = auth.currentUser;
   if (!currentUser) return alert("You must be logged in to create a session!");
 
   const sessionName = document.getElementById("newSessionName")?.value?.trim() || "";
+  const err = document.getElementById("createSessionError");
+
+  if (err) err.textContent = "";
 
   if (!sessionName) {
-    const err = document.getElementById("createSessionError");
     if (err) err.textContent = "Session name is required.";
     return;
   }
 
-  const invitedUids = selectedInvitees.map(u => u.uid);
-  const invitedEmails = selectedInvitees
-    .map(u => u.email)
-    .filter(Boolean);
+  const cleanedInvitees = selectedInvitees.filter(u => u && (u.uid || u.email));
 
-  const sessionId = db.collection("sessions").doc().id;
+  const invitedUids = [...new Set(
+    cleanedInvitees
+      .map(u => u.uid)
+      .filter(Boolean)
+      .filter(uid => uid !== currentUser.uid)
+  )];
 
-  db.collection("sessions").doc(sessionId).set({
-    sessionName,
-    creatorUid: currentUser.uid,
-    invitedUids,
-    invitedUserEmails: invitedEmails,
-    roles: { [currentUser.uid]: "gm" }
-  }).then(() => {
+  const invitedEmails = [...new Set(
+    cleanedInvitees
+      .map(u => (u.email || "").trim().toLowerCase())
+      .filter(Boolean)
+      .filter(email => email !== (currentUser.email || "").toLowerCase())
+  )];
+
+  try {
+    if (editingSessionId) {
+      const sessionRef = db.collection("sessions").doc(editingSessionId);
+      const existingDoc = await sessionRef.get();
+
+      if (!existingDoc.exists) {
+        if (err) err.textContent = "Session does not exist.";
+        return;
+      }
+
+      const existingData = existingDoc.data() || {};
+
+      if (existingData.creatorUid !== currentUser.uid) {
+        if (err) err.textContent = "Only the session creator can edit this session.";
+        return;
+      }
+
+      await sessionRef.update({
+        sessionName,
+        invitedUids,
+        invitedUserEmails: invitedEmails,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      alert("Session updated!");
+      hide("create-session-screen");
+      resetCreateSessionUI();
+      loadSessionsForUser(currentUser.uid);
+      return;
+    }
+
+    const sessionId = db.collection("sessions").doc().id;
+
+    await db.collection("sessions").doc(sessionId).set({
+      sessionName,
+      creatorUid: currentUser.uid,
+      invitedUids,
+      invitedUserEmails: invitedEmails,
+      roles: { [currentUser.uid]: "gm" },
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
     alert("Session created!");
     hide("create-session-screen");
     resetCreateSessionUI();
     loadSessionsForUser(currentUser.uid);
-  }).catch(err => {
-    console.error("Failed to create session:", err);
-    const e = document.getElementById("createSessionError");
-    if (e) e.textContent = "Failed to create session.";
-  });
+  } catch (errObj) {
+    console.error("Failed to create/update session:", errObj);
+    if (err) {
+      err.textContent = editingSessionId
+        ? "Failed to update session."
+        : "Failed to create session.";
+    }
+  }
 }
 
 function deleteSession(sessionId) {

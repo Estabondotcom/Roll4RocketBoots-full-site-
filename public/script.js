@@ -1433,8 +1433,25 @@ function initDrawingSystem(sessionId, role) {
 function toggleRules() {
   const modal = document.getElementById("rules-modal");
   if (!modal) return;
-  modal.style.display = (modal.style.display === "block") ? "none" : "block";
+  const isOpen = modal.style.display === "block";
+  modal.style.display = isOpen ? "none" : "block";
+  modal.setAttribute("aria-hidden", String(isOpen));
 }
+
+// Only close rules when the backdrop itself is clicked, not the scrollable text.
+document.addEventListener("click", (event) => {
+  const modal = document.getElementById("rules-modal");
+  if (modal && event.target === modal && modal.style.display === "block") {
+    toggleRules();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    const modal = document.getElementById("rules-modal");
+    if (modal && modal.style.display === "block") toggleRules();
+  }
+});
 
 
 function initScript() {
